@@ -51,3 +51,5 @@ Documents/
 # virtual env
 env/ 
 
+# Data
+Data/
