@@ -12,9 +12,9 @@ This is in a testing environment. If pushed to the app store, additional costs w
 3. **On your laptop**:
     - Connect your Wi-Fi to your phone’s hotspot (this ensures both devices are on the same network, which is needed for Expo Go testing to work).
 4. Open **2 terminals** (you can use PowerShell if you’re using Windows).
-5. In both terminals, change directory to the `WoundApp2` folder:
+5. In both terminals, change directory to the `woundApp2` folder:
     ```bash
-    cd WoundApp2
+    cd woundApp2
     ```
 
 ---
