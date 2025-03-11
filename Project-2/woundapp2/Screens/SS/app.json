@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "woundapp2",
+    "slug": "woundapp2",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {},
+    "extra": {
+      "eas": {
+        "projectId": "1832d793-7d89-4594-bb71-173299e3d14c"
+      }
+    }
+  }
+}

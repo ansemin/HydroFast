@@ -1,0 +1,255 @@
+.common-3,
+.login-page-tt-forgot-password-recover-here,
+.login-page-tt-image {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.common-4,
+.login-page-t-vector,
+.login-page-t-don-thave-an-account-sign-up-here {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.common-5,
+.login-page-tt-hydroprint,
+.login-page-tt-vector-email,
+.login-page-t-vector-password,
+.login-page-t-forgot-password-recover-here {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.common-6,
+.login-page-t-line,
+.login-page-tt-rectangle,
+.login-page-tt-image-1 {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.common-7,
+.login-page-ttt-vector-email,
+.login-page-tt-vector-password {
+  display: flex;
+  align-items: flex-end;
+}
+
+.common-8,
+.login-page-t-rectangle,
+.login-page-t-image,
+.login-page-t-image-1 {
+  display: flex;
+  align-items: center;
+}
+
+.common-1,
+.login-page-text-2,
+.login-page-text-3 {
+  color: royalblue;
+  font-weight: 700;
+}
+
+.common-2,
+.login-page-email,
+.login-page-password {
+  color: dimgray;
+  text-align: left;
+}
+
+.login-page-login-page {
+  background-color: white;
+  row-gap: 5px;
+  flex-direction: column;
+  padding-bottom: 39px;
+  padding-left: 25px;
+  padding-right: 8px;
+  padding-top: 83px;
+  display: flex;
+  width: 100%;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  line-height: normal;
+  text-align: center;
+  letter-spacing: 0em;
+}
+
+.login-page-hydroprint {
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  padding-right: 18px;
+}
+
+.login-page-text {
+  color: royalblue;
+  text-align: center;
+}
+
+.login-page-text-1 {
+  font-style: italic;
+  color: midnightblue;
+  text-align: center;
+}
+
+.login-page-ttt-vector-email {
+  padding-left: 32px;
+  padding-right: 32px;
+  padding-top: 56px;
+}
+
+.login-page-tt-vector-email {
+  column-gap: 67px;
+  text-align: center;
+}
+
+.login-page-t-vector {
+  padding-top: 1px;
+}
+
+.login-page-vector {
+  width: 20px;
+  height: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.login-page-t-line {
+  padding-left: 28px;
+  padding-right: 28px;
+  padding-top: 4px;
+}
+
+.login-page-line {
+  flex-grow: 1;
+  height: 2px;
+  text-align: center;
+}
+
+.login-page-tt-vector-password {
+  padding-left: 32px;
+  padding-right: 32px;
+  padding-top: 23px;
+}
+
+.login-page-t-vector-password {
+  column-gap: 59px;
+  text-align: center;
+}
+
+.login-page-vector-1 {
+  width: 16px;
+  height: 21px;
+  flex-shrink: 0;
+}
+
+.login-page-line-1 {
+  height: 2px;
+  flex-shrink: 0;
+}
+
+.login-page-tt-rectangle {
+  padding-top: 14px;
+}
+
+.login-page-t-rectangle {
+  padding-right: 18px;
+  text-align: center;
+}
+
+.login-page-login {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  background-color: royalblue;
+  padding-left: 30px;
+  padding-right: 28px;
+  padding-top: 2px;
+  padding-bottom: 6.2px;
+}
+
+.login-page-tt-forgot-password-recover-here {
+  padding-left: 18px;
+  padding-right: 18px;
+  padding-top: 22px;
+}
+
+.login-page-t-forgot-password-recover-here {
+  padding-right: 8px;
+  text-align: center;
+}
+
+.login-page-para-1 {
+  text-align: center;
+}
+
+.login-page-tt-image {
+  padding-left: 17px;
+  padding-right: 17px;
+  padding-top: 17px;
+}
+
+.login-page-t-image {
+  text-align: center;
+}
+
+.login-page-image {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  background-image: url(/assets/image.png);
+  background-size: 102% 100%;
+  background-position: -3px 0px;
+  background-repeat: no-repeat;
+  max-width: 100%;
+  max-height: 100%;
+  width: 244px;
+  height: 41px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  flex-shrink: 0;
+}
+
+.login-page-tt-image-1 {
+  padding-left: 17px;
+  padding-right: 17px;
+  padding-top: 5px;
+}
+
+.login-page-t-image-1 {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.login-page-image-1 {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  background-image: url(/assets/image-1.png);
+  background-size: 103% 100%;
+  background-position: -4px 0px;
+  background-repeat: no-repeat;
+  max-width: 100%;
+  max-height: 100%;
+  width: 244px;
+  height: 43px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  flex-shrink: 0;
+}
+
+.login-page-t-don-thave-an-account-sign-up-here {
+  padding-right: 8px;
+  padding-top: 20px;
+  justify-content: center;
+}
+
+.login-page-don-thave-an-account-sign-up-here {
+  text-align: center;
+}
+
+.login-page-text-3 {
+  text-align: center;
+}
