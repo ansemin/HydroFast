@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Button, Image, ScrollView, Dimensions, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Button, Image, ScrollView, Dimensions, Alert, Platform } from 'react-native';
 import { Camera, CameraView, useCameraPermissions } from 'expo-camera';
 
 import * as FileSystem from 'expo-file-system';
@@ -100,6 +100,14 @@ const CameraPage = () => {
 
   const saveImage = async (tempUri) => {
     try {
+      // Check if running on web
+      if (Platform.OS === 'web') {
+        console.log('Running on web platform, skipping local file save');
+        // On web, just return the temporary URI since we can't save to the file system
+        return tempUri;
+      }
+      
+      // Native platform code (iOS/Android)
       // Generate a unique file name with a timestamp
       const fileName = `scan_${Date.now()}.jpg`;
       const newPath = `${FileSystem.documentDirectory}images/${fileName}`;
@@ -116,28 +124,143 @@ const CameraPage = () => {
       });
   
       console.log('Image saved to:', newPath);
-      Alert.alert('Success', `Image saved to: ${newPath}`);
       return newPath; // Return the saved path for further use
     } catch (error) {
       console.error('Error saving image:', error);
       Alert.alert('Error', 'Failed to save image.');
+      return null;
+    }
+  };
+
+  const uploadImageToServer = async (localUri, patientId) => {
+    try {
+      // Create form data
+      const formData = new FormData();
+      
+      // Handle Web vs Native URI differently
+      let uriToUse = localUri;
+      let filename = '';
+      
+      if (Platform.OS === 'web') {
+        // On web, we may be dealing with a blob or data URI
+        filename = `image_${Date.now()}.jpg`;
+      } else {
+        // On native, get the filename from the path
+        filename = localUri.split('/').pop();
+      }
+      
+      // Determine the file type
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      
+      // Append the image to the form data - handle web differently
+      if (Platform.OS === 'web') {
+        // For web, we need to handle the URI differently
+        // This assumes localUri is either a blob or a data URI
+        // We need to fetch it and convert to a blob if it's a data URI
+        if (localUri.startsWith('data:')) {
+          const response = await fetch(localUri);
+          const blob = await response.blob();
+          formData.append('image', blob, filename);
+        } else {
+          // Already a blob or file object
+          formData.append('image', localUri, filename);
+        }
+      } else {
+        // Native platforms
+        formData.append('image', {
+          uri: localUri,
+          name: filename,
+          type,
+        });
+      }
+      
+      // Append the patient ID
+      formData.append('patient', patientId);
+      
+      console.log('Uploading image to server for patient:', patientId);
+      
+      // Send the request to your Django backend
+      const response = await api.post(
+        '/scans/upload_image/',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      console.log('Upload successful', response.data);
+      Alert.alert('Success', 'Image uploaded to server successfully');
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      Alert.alert('Error', `Failed to upload image: ${error.message}`);
+      throw error;
     }
   };
 
   const takePhoto = async () => {
-    // console.log(CameraView)
-    // console.log(cameraRef.current);
     if (cameraRef.current) {
       try {
+        // Check if a patient is selected
+        if (!selectedPatient) {
+          Alert.alert('Error', 'Please select a patient before taking a photo.');
+          return;
+        }
+
         // Capture the photo
         const photo = await cameraRef.current.takePictureAsync();
         console.log('Photo captured:', photo.uri);
   
-        // Save the photo to a permanent location
-        await saveImage(photo.uri);
+        try {
+          // Save the photo locally (this will be skipped on web platform)
+          const savedUri = await saveImage(photo.uri);
+          
+          // Use either the saved URI or the original URI for upload
+          const uriToUpload = savedUri || photo.uri;
+          
+          // Upload the image to the server
+          await uploadImageToServer(uriToUpload, selectedPatient.id);
+        } catch (error) {
+          console.error('Error processing photo:', error);
+          
+          // Enhanced error reporting with detailed information
+          console.error('Detailed error info:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+            platform: Platform.OS
+          });
+          
+          // If we're on web and the error is related to FileSystem, try direct upload
+          if (Platform.OS === 'web' && error.message && error.message.includes('expo-file-system')) {
+            try {
+              console.log('Attempting direct upload on web platform');
+              await uploadImageToServer(photo.uri, selectedPatient.id);
+            } catch (uploadError) {
+              console.error('Direct upload failed:', uploadError);
+              console.error('Detailed upload error:', {
+                message: uploadError.message,
+                stack: uploadError.stack,
+                name: uploadError.name
+              });
+              Alert.alert('Error', 'Failed to upload image. Please try again.');
+            }
+          } else {
+            Alert.alert('Error', `Failed to process photo: ${error.message}`);
+          }
+        }
       } catch (error) {
         console.error('Error taking photo:', error);
-        Alert.alert('Error', 'Failed to capture photo.');
+        console.error('Detailed camera error:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+          platform: Platform.OS
+        });
+        Alert.alert('Error', `Failed to capture photo: ${error.message}`);
       }
     }
   };

@@ -10,7 +10,6 @@ WA_venv/
 __pycache__/
 *.py[cod]
 
-
 # dependencies
 node_modules/
 
@@ -48,8 +47,6 @@ yarn-error.*
 # Documents
 Documents/
 
-# virtual env
-env/ 
-
 # Data
 Data/
+**/Data/

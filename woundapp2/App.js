@@ -45,9 +45,13 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
       <NavigationContainer>
-        <Stack.Navigator initialRouteName='Home'>
+        <Stack.Navigator initialRouteName='Login'>
+          <Stack.Screen 
+            name="Login" 
+            component={LoginPage} 
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="Home" component={HomePage} />
-          <Stack.Screen name="Login" component={LoginPage} />
           <Stack.Screen name="Scans Page" component={ScansFullList} />
           <Stack.Screen name="Patients List" component={PatientsList} />
           <Stack.Screen name="New Patient Form" component={NewPatientForm} />
@@ -56,7 +60,6 @@ export default function App() {
           <Stack.Screen name="Test Patients List" component={IPhoneSe} />
           <Stack.Screen name="Test Printer List" component={TestPrinterList} />
           <Stack.Screen name="Camera Page" component={CameraPage}/>
-
         </Stack.Navigator>
       </NavigationContainer>
       
