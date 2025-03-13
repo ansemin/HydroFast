@@ -10,8 +10,8 @@ This is in a testing environment. If pushed to the app store, additional costs w
 2. **On your phone**:
     - Turn on your personal hotspot.
 3. **On your laptop**:
-    - Connect your Wi-Fi to your phone’s hotspot (this ensures both devices are on the same network, which is needed for Expo Go testing to work).
-4. Open **2 terminals** (you can use PowerShell if you’re using Windows).
+    - Connect your Wi-Fi to your phone's hotspot (this ensures both devices are on the same network, which is needed for Expo Go testing to work).
+4. Open **2 terminals** (you can use PowerShell if you're using Windows).
 5. In both terminals, change directory to the `woundApp2` folder:
     ```bash
     cd woundApp2
@@ -24,7 +24,7 @@ This is in a testing environment. If pushed to the app store, additional costs w
 *These steps should be performed in **your first terminal**.*
 
 1. **Activate Virtual Environment**:
-    - If you don’t have one, create it using the command `xx` and activate using `yy`:
+    - If you don't have one, create it using the command `xx` and activate using `yy`:
         ```bash
         # Create the virtual environment
         python -m venv env
@@ -64,9 +64,30 @@ This is in a testing environment. If pushed to the app store, additional costs w
     ```
 
 6. **Start the Backend Server**:
-    ```bash
-    python manage.py runserver
-    ```
+    
+    You have several options to run the server:
+    
+    - **Option 1**: Standard Django command (localhost only)
+        ```bash
+        python manage.py runserver
+        ```
+    
+    - **Option 2**: Run on all network interfaces (for mobile testing)
+        ```bash
+        python manage.py runserver 0.0.0.0:8000
+        ```
+    
+    - **Option 3**: Use the convenience script (Windows)
+        ```bash
+        run_server.bat
+        ```
+    
+    - **Option 4**: Use the cross-platform Python script
+        ```bash
+        python run_server.py
+        ```
+    
+    For mobile testing, you should use Option 2, 3, or 4 to make the server accessible from your phone.
 
 ---
 
@@ -95,6 +116,28 @@ This is in a testing environment. If pushed to the app store, additional costs w
 
 5. **Test on Laptop**:
     - Press `w` on the terminal instead of scanning the QR code.
+
+---
+
+## Troubleshooting
+
+### iOS App Issues
+
+If you encounter issues running the app on iOS:
+
+1. **Cannot read property 'hostname' of undefined**:
+   - This error has been fixed by using `Platform` from React Native to detect if the app is running on web or mobile.
+   - The API configuration now properly handles different platforms.
+
+2. **App entry not found / main not registered**:
+   - This can happen if the app entry point is not properly registered.
+   - Make sure `index.js` file exists and correctly registers the App component.
+   - Verify that `package.json` has the correct main entry point: `"main": "node_modules/expo/AppEntry.js"`
+
+3. **Backend connection issues from mobile**:
+   - Make sure the backend is running with the `0.0.0.0:8000` option to listen on all interfaces
+   - Verify that your phone and computer are on the same network
+   - Check that `api.js` is using the correct IP address for your computer
 
 ---
 
