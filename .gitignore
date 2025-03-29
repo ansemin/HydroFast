@@ -44,4 +44,8 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Document 
+/Documents
 
+# Cursor editor files
+.cursor/
