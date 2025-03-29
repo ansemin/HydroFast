@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "woundapp2",
-    "slug": "woundapp2",
+    "name": "frontend",
+    "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -13,7 +13,7 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.jonleeacc.woundapp2"
+      "package": "com.jonleeacc.frontend"
     },
     "web": {},
     "extra": {

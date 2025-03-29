@@ -97,20 +97,28 @@ export default function LoginPage({ className = "" }) {
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={[styles.loginPage, className && { /* custom class styles */ }]}>
         
-        <View style={styles.hydroprintContainer}>
-          <Text style={styles.hydroprintText}>
+        <View style={styles.hydrofastContainer}>
+          {/* NUS Logo */}
+          <Image 
+            source={require('./assets/NUS_logo.jpg')} 
+            style={styles.nusLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.hydrofastText}>
             <Text style={styles.hydroText}>Hydro</Text>
-            <Text style={styles.printText}>print</Text>
+            <Text style={styles.fastText}>fast</Text>
           </Text>
         </View>
+
+        <Text style={styles.signInText}>Sign in to your account</Text>
 
         {isRegistering && (
           <>
             <Pressable style={styles.inputPressable} onPress={() => null}>
-              <View style={styles.emailContainer}>
-                <Image source={require("./a002_assets/EmailIcon.png")} style={styles.emailIcon} />
+              <View style={styles.inputField}>
+                <Text style={styles.inputLabel}>Username</Text>
                 <TextInput
-                  style={styles.emailText}
+                  style={styles.textInput}
                   placeholder="Username"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -119,16 +127,15 @@ export default function LoginPage({ className = "" }) {
                 />
               </View>
             </Pressable>
-            
             <View style={styles.line} />
           </>
         )}
 
         <Pressable style={styles.inputPressable} onPress={() => null}>
-          <View style={styles.emailContainer}>
-            <Image source={require("./a002_assets/EmailIcon.png")} style={styles.emailIcon} />
+          <View style={styles.inputField}>
+            <Text style={styles.inputLabel}>Email</Text>
             <TextInput
-              style={styles.emailText}
+              style={styles.textInput}
               placeholder="Email"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -142,21 +149,27 @@ export default function LoginPage({ className = "" }) {
         <View style={styles.line} />
 
         <Pressable style={styles.inputPressable} onPress={() => null}>
-          <View style={styles.passwordContainer}>
-            <Image source={require("./a002_assets/PasswordIcon.png")} style={styles.lockIcon} />
+          <View style={styles.inputField}>
+            <Text style={styles.inputLabel}>Password</Text>
             <TextInput
-                style={styles.passwordText}
-                placeholder="Password"
-                secureTextEntry={true}
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={password}
-                onChangeText={setPassword}
+              style={styles.textInput}
+              placeholder="Password"
+              secureTextEntry={true}
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
         </Pressable>
 
         <View style={styles.line} />
+
+        <View style={styles.forgotContainer}>
+          <Pressable onPress={() => Alert.alert("Reset Password", "Please contact your administrator to reset your password.")}>
+            <Text style={styles.forgotText}>Forgot Password?</Text>
+          </Pressable>
+        </View>
 
         <TouchableOpacity 
           style={styles.loginButton}
@@ -166,34 +179,18 @@ export default function LoginPage({ className = "" }) {
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.loginText}>{isRegistering ? "Register" : "Login"}</Text>
+            <View style={styles.loginButtonContent}>
+              <Text style={styles.loginText}>{isRegistering ? "Register" : "Login"}</Text>
+              <Text style={styles.arrowText}>→</Text>
+            </View>
           )}
-        </TouchableOpacity>
-
-        {!isRegistering && (
-          <View style={styles.forgotPasswordContainer}>
-            <Text style={styles.forgotPasswordText}>
-              Forgot Password?{' '}       
-              <Pressable onPress={() => Alert.alert("Reset Password", "Please contact your administrator to reset your password.")}>
-                <Text style={styles.recoverText}>Recover here</Text>
-              </Pressable> 
-            </Text>
-          </View>
-        )}
-
-        <TouchableOpacity onPress={() => Alert.alert("Social Login", "Social login is not available in this version.")}>
-          <Image source={require("../assets/image.png")} style={styles.image} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity onPress={() => Alert.alert("Social Login", "Social login is not available in this version.")}>
-          <Image source={require("../assets/image-1.png")} style={styles.image} />
         </TouchableOpacity>
 
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>
             {isRegistering ? "Already have an account?" : "Don't have an account?"}{' '}
             <TouchableOpacity onPress={toggleAuthMode}>
-              <Text style={styles.signUpText}>{isRegistering ? "Login here" : "Sign up here"}</Text>
+              <Text style={styles.signUpLink}>{isRegistering ? "Login here" : "Sign up here"}</Text>
             </TouchableOpacity>
           </Text>
         </View>
@@ -207,112 +204,115 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     flexDirection: 'column',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
     height: '100%',
   },
-  hydroprintContainer: {
-    marginBottom: 80,
+  hydrofastContainer: {
+    marginBottom: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  hydroprintText: {
-    fontSize: 30,
+  nusLogo: {
+    width: 150,
+    height: 100,
+    marginBottom: 10,
+  },
+  hydrofastText: {
+    fontSize: 36,
     fontWeight: 'bold',
   },
   hydroText: {
-    color: 'royalblue',
+    color: '#1fd655', // Primary green
   },
-  printText: {
-    color: 'midnightblue',
-    fontStyle: 'italic',
+  fastText: {
+    color: '#0c9d37', // Darker green for contrast
+  },
+  signInText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 30,
   },
   inputPressable: {
-    paddingVertical: 10, // Expand clickable area
-    width: '80%',
-    alignItems: 'center',
+    width: '100%',
+    maxWidth: 360,
+    paddingVertical: 5,
   },
-  emailContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
+  inputField: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f8f8f8',
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+    borderRadius: 8,
     width: '100%',
   },
-  emailIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
+  inputLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
   },
-  lockIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
-  },
-  emailText: {
+  textInput: {
     fontSize: 16,
-    color: 'dimgray',
-    flex: 1,
-    paddingLeft: 10,
+    color: '#333',
+    height: 24,
+    padding: 0,
   },
   line: {
-    height: 2,
-    backgroundColor: 'gray',
-    width: '80%',
+    height: 1,
+    backgroundColor: 'transparent',
+    width: '100%',
+    maxWidth: 360,
+    marginBottom: 10,
+  },
+  forgotContainer: {
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'flex-end',
     marginBottom: 20,
   },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 10,
-  },
-  passwordText: {
-    fontSize: 16,
-    color: 'dimgray',
-    flex: 1,
-    paddingLeft: 10,
+  forgotText: {
+    color: '#1fd655',
+    fontSize: 14,
   },
   loginButton: {
-    backgroundColor: 'royalblue',
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 5,
-    marginTop: 20,
-    minWidth: 150,
+    backgroundColor: '#1fd655',
+    paddingVertical: 14,
+    borderRadius: 8,
+    width: '100%',
+    maxWidth: 360,
+    marginBottom: 30,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginButtonContent: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   loginText: {
     color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginRight: 10,
+  },
+  arrowText: {
+    color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
   },
-  forgotPasswordContainer: {
-    marginTop: 20,
-  },
-  forgotPasswordText: {
-    color: 'dimgray',
-    fontSize: 14,
-  },
-  recoverText: {
-    color: 'royalblue',
-    fontWeight: 'bold',
-  },
-  image: {
-    width: 244,
-    height: 41,
-    borderRadius: 5,
-    marginTop: 20,
-  },
   signupContainer: {
-    marginTop: 30,
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
   },
   signupText: {
-    color: 'dimgray',
+    color: '#666',
     fontSize: 14,
   },
-  signUpText: {
-    color: 'royalblue',
+  signUpLink: {
+    color: '#1fd655',
     fontWeight: 'bold',
   },
 });

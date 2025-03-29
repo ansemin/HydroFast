@@ -44,9 +44,4 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# Documents
-Documents/
 
-# Data
-Data/
-**/Data/

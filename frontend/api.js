@@ -20,7 +20,7 @@ const getBaseUrl = () => {
   
   // For mobile (iOS/Android)
   // Use your local network IP address instead of localhost
-  return 'http://172.30.1.54:8000/api';  // Use the WiFi IP the user mentioned
+  return 'http://172.30.1.98:8000/api';  // Updated to match your actual IP address
 };
 
 const API_URL = getBaseUrl();

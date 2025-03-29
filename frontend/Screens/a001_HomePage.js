@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity, Alert } from 'react-native';
 import { NavigationButton } from './../components/NavigationButton';
+import { logout } from '../api'; // Import logout function from api
 
 import LogoHeader from './a001b_LogoHeader';
 import { HomeIcon, CameraIcon } from '../components/Icons';
@@ -24,9 +25,31 @@ const PatientCard = ({ name, id, date, time }) => (
 const HomePage = ({navigation}) => {
   const { width, height } = Dimensions.get('window');
 
+  const handleLogout = async () => {
+    try {
+      await logout(); // This will clear the auth tokens from AsyncStorage
+      Alert.alert(
+        "Logged Out",
+        "You have been successfully logged out.",
+        [{ text: "OK", onPress: () => navigation.replace('Login') }]
+      );
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert("Error", "Failed to log out. Please try again.");
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <LogoHeader/>
+      <View style={styles.headerContainer}>
+        <LogoHeader/>
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
       {/* <View style={styles.logoContainer}>
         <Text style={styles.logoTextPrimary}>Hydro</Text>
         <Text style={styles.logoTextSecondary}>print</Text>
@@ -79,9 +102,7 @@ const HomePage = ({navigation}) => {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <View style={styles.bottomBarIconLeft} />
-        {/* <HomeIcon /> */}
         <CameraIcon />
-        {/* <View style={styles.bottomBarIconMiddle} /> */}
       </View>
 
     </View>
@@ -95,6 +116,27 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     justifyContent: 'flex-start',
     padding: 20,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingRight: 80,
+  },
+  logoutButton: {
+    backgroundColor: '#2864DA',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 80,
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '400',
   },
   logoContainer: {
     flexDirection: 'row',
@@ -200,16 +242,6 @@ const styles = StyleSheet.create({
   bottomBarIconLeft: {
     width: 51,
     height: 46,
-  },
-  bottomBarIcon: {
-    width: 51,
-    height: 46,
-    backgroundColor: 'black',
-  },
-  bottomBarIconMiddle: {
-    width: 49,
-    height: 49,
-    backgroundColor: 'black',
   },
 });
 

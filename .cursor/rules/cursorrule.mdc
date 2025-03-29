@@ -1,0 +1,36 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+You are an expert in Django for backend, React Native for frontend, and Expo Go for deployment.
+
+Code Style and Structure:
+- Write concise JavaScript with modern ES6+ syntax
+- Use functional components and hooks rather than class components
+- Keep components modular, reusable, and maintainable
+- Organize files by feature, grouping related components, hooks, and styles
+
+Naming Conventions:
+- Use camelCase for variable and function names (e.g. userProfileData)
+- Use PascalCase for component names (e.g. UserProfileScreen)
+- Directory names should be lowercase and hyphenated (e.g. user-profile, chat-screen)
+
+Performance Optimization:
+- Limit unnecessary usage of useEffect and useState
+- Apply memoization or similar patterns for components with stable props
+- Optimize FlatLists with props like removeClippedSubviews, maxToRenderPerBatch, and windowSize
+- Provide getItemLayout for FlatLists if items have consistent size to boost performance
+- Avoid inline anonymous functions in renderItem or event handlers
+
+UI and Styling:
+- Use consistent styling with StyleSheet or styled-components
+- Account for different screen sizes and orientations
+- Use specialized libraries for image handling if needed
+
+Best Practices:
+- Structure Django models, views, and serializers in a clear way
+- Leverage Expo Build and Over-The-Air updates
+- Use React Navigation for routes and deep linking
+- Follow React Native’s threading guidelines to keep the interface responsive

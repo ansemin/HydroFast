@@ -12,9 +12,9 @@ This is in a testing environment. If pushed to the app store, additional costs w
 3. **On your laptop**:
     - Connect your Wi-Fi to your phone's hotspot (this ensures both devices are on the same network, which is needed for Expo Go testing to work).
 4. Open **2 terminals** (you can use PowerShell if you're using Windows).
-5. In both terminals, change directory to the `woundApp2` folder:
+5. In both terminals, change directory to the `frontend` folder:
     ```bash
-    cd woundApp2
+    cd frontend
     ```
 
 ---
@@ -89,6 +89,11 @@ This is in a testing environment. If pushed to the app store, additional costs w
     
     For mobile testing, you should use Option 2, 3, or 4 to make the server accessible from your phone.
 
+7. **⚠️ IMPORTANT: Note Your Computer's IP Address ⚠️**:
+    - When you start the server with options 2, 3, or 4, it will display your computer's IP addresses.
+    - **Write down your WiFi/network IP address** (usually starts with 192.168.x.x or 172.x.x.x).
+    - You will need this to update the API configuration in the next section.
+
 ---
 
 ## Frontend Setup
@@ -98,7 +103,7 @@ This is in a testing environment. If pushed to the app store, additional costs w
 1. **Change Directory**:
     - Move to the folder containing `App.js`:
         ```bash
-        cd woundapp2
+        cd frontend
         ```
 
 2. **Install Dependencies**:
@@ -106,20 +111,49 @@ This is in a testing environment. If pushed to the app store, additional costs w
     npm install
     ```
 
-3. **Start the App**:
+3. **Configure API Connection**:
+    - Open the file `api.js` in a text editor
+    - Find this section (around line 23):
+      ```javascript
+      // For mobile (iOS/Android)
+      // Use your local network IP address instead of localhost
+      return 'http://172.30.1.54:8000/api';  // Update this IP address
+      ```
+    - Replace the IP address with your computer's IP address (that you noted in step 7 of Backend Setup)
+    - Save the file
+
+4. **Start the App**:
     ```bash
     npx expo start
     ```
 
-4. **Test on Phone**:
+5. **Test on Phone**:
     - Scan the QR code using your camera app on your phone.
 
-5. **Test on Laptop**:
+6. **Test on Laptop**:
     - Press `w` on the terminal instead of scanning the QR code.
 
 ---
 
 ## Troubleshooting
+
+### Connection Issues
+
+1. **Network Error When Logging In**:
+   - If you get an "ERR_NETWORK" or "Network Error" message when trying to log in:
+   - Double check that you've updated the IP address in `api.js` to match your computer's current IP
+   - Verify this by looking at the output of the backend server startup
+   - This is especially important if you switch networks or restart your computer, as the IP may change
+
+2. **Checking Your IP Address**:
+   - On Windows: Open Command Prompt and type `ipconfig`
+   - On macOS/Linux: Open Terminal and type `ifconfig` or `ip addr`
+   - Look for the IPv4 address of your WiFi or Ethernet connection
+   - Update the `api.js` file with this IP address
+
+3. **Different Networks**:
+   - Your phone and computer MUST be on the same network for the connection to work
+   - The backend server must be running with the `0.0.0.0:8000` option
 
 ### iOS App Issues
 
@@ -134,11 +168,6 @@ If you encounter issues running the app on iOS:
    - Make sure `index.js` file exists and correctly registers the App component.
    - Verify that `package.json` has the correct main entry point: `"main": "node_modules/expo/AppEntry.js"`
 
-3. **Backend connection issues from mobile**:
-   - Make sure the backend is running with the `0.0.0.0:8000` option to listen on all interfaces
-   - Verify that your phone and computer are on the same network
-   - Check that `api.js` is using the correct IP address for your computer
-
 ---
 
 ## Additional Commands
@@ -147,7 +176,7 @@ If you encounter issues running the app on iOS:
 
 1. Change directory to the backend folder:
     ```bash
-    cd WoundApp2/backend
+    cd frontend/backend
     ```
 2. Run:
     ```bash
@@ -158,7 +187,7 @@ If you encounter issues running the app on iOS:
 
 1. Change directory to the backend folder:
     ```bash
-    cd WoundApp2/backend
+    cd frontend/backend
     ```
 2. Use one of the following commands:
     - **Delete all patients**:
@@ -178,7 +207,7 @@ If you encounter issues running the app on iOS:
 
 1. Change directory to the backend folder:
     ```bash
-    cd WoundApp2/backend
+    cd frontend/backend
     ```
 2. Run:
     ```bash
@@ -189,7 +218,7 @@ If you encounter issues running the app on iOS:
 
 1. Change directory to the backend folder:
     ```bash
-    cd WoundApp2/backend
+    cd frontend/backend
     ```
 2. Run:
     ```bash
