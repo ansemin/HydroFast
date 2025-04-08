@@ -11,6 +11,8 @@ import NewPatientForm from './Screens/a005_NewPatientForm';
 import PrintPreview from './Screens/a006_PrintPreview';
 import PrinterList from './Screens/a007_PrintSettings';
 import CameraPage from './Screens/a008e_CameraPage';
+import PatientDetail from './Screens/a009_PatientDetail';
+import ScanResults from './Screens/a010_ScanResults';
 
 import TestPrinterList from './Screens/t007_PrintSettings';
 //Tests
@@ -51,15 +53,61 @@ export default function App() {
             component={LoginPage} 
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="Home" component={HomePage} />
-          <Stack.Screen name="Scans Page" component={ScansFullList} />
-          <Stack.Screen name="Patients List" component={PatientsList} />
-          <Stack.Screen name="New Patient Form" component={NewPatientForm} />
-          <Stack.Screen name="Print Preview" component={PrintPreview} />
-          <Stack.Screen name="Printer Settings" component={PrinterList} />
-          <Stack.Screen name="Test Patients List" component={IPhoneSe} />
-          <Stack.Screen name="Test Printer List" component={TestPrinterList} />
-          <Stack.Screen name="Camera Page" component={CameraPage}/>
+          <Stack.Screen 
+            name="Home" 
+            component={HomePage} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Scans Page" 
+            component={ScansFullList} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Patients List" 
+            component={PatientsList} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="New Patient Form" 
+            component={NewPatientForm} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Print Preview" 
+            component={PrintPreview} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Printer Settings" 
+            component={PrinterList} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Test Patients List" 
+            component={IPhoneSe} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Test Printer List" 
+            component={TestPrinterList} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Camera Page" 
+            component={CameraPage}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Patient Detail" 
+            component={PatientDetail}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Scan Results" 
+            component={ScanResults}
+            options={{ headerShown: false }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
       

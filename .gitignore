@@ -45,7 +45,7 @@ yarn-error.*
 *.tsbuildinfo
 
 # Document 
-/Documents
+# /Documents
 
 # Cursor editor files
 .cursor/

@@ -20,7 +20,11 @@ const getBaseUrl = () => {
   
   // For mobile (iOS/Android)
   // Use your local network IP address instead of localhost
-  return 'http://172.30.1.98:8000/api';  // Updated to match your actual IP address
+  return 'http://172.30.1.68:8000/api';  // Home
+  //return 'http://172.30.114.249:8000/api'; // Starbucks ip 3rd floor
+  //return 'http://172.29.57.159:8000/api' // Starbucks 1st floor 
+  //return 'http://192.168.45.13:8000/api' // Atto Cafe
+  //return 'http://192.168.219.234:8000/api' // Holiday Cafe
 };
 
 const API_URL = getBaseUrl();

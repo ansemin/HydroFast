@@ -21,6 +21,7 @@
     "expo": "^52.0.37",
     "expo-camera": "~16.0.17",
     "expo-file-system": "~18.0.11",
+    "expo-image-picker": "^16.0.6",
     "expo-status-bar": "~2.0.1",
     "expo-system-ui": "~4.0.8",
     "react": "18.3.1",
