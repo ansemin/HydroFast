@@ -13,6 +13,7 @@ import PrinterList from './Screens/a007_PrintSettings';
 import CameraPage from './Screens/a008e_CameraPage';
 import PatientDetail from './Screens/a009_PatientDetail';
 import ScanResults from './Screens/a010_ScanResults';
+import PhotoPreviewScreen from './Screens/a011_PhotoPreviewScreen';
 
 import TestPrinterList from './Screens/t007_PrintSettings';
 //Tests
@@ -101,6 +102,11 @@ export default function App() {
           <Stack.Screen 
             name="Patient Detail" 
             component={PatientDetail}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Photo Preview" 
+            component={PhotoPreviewScreen}
             options={{ headerShown: false }}
           />
           <Stack.Screen 

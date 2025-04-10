@@ -1,49 +1,43 @@
+// HydroFast App - Simplified ERD (DBML Format)
+// MVP for local use
+
 Table users {
-  id integer [primary key]
+  id integer [pk, increment] // Auto-incrementing primary key
   first_name varchar
   last_name varchar
-  email varchar [unique]
-  password varchar
-  created_at timestamp
+  email varchar [unique, not null]
+  password_hash varchar [not null, note: 'Store hashed passwords only']
+  created_at timestamp [default: `now()`] // Default to current time on creation
 }
 
 Table patients {
-  id integer [primary key]
-  user_id integer [not null, ref: > users.id]
+  id integer [pk, increment] // Auto-incrementing primary key
+  // Foreign key reference defined below
+  user_id integer [note: 'ID of the user who manages this patient (Optional if strictly single-user)']
   first_name varchar
   last_name varchar
-  id_number varchar [note: 'NRIC or Passport Number']
-  contact_no varchar
-  created_at timestamp
+  identifier varchar [note: 'NRIC or Passport Number']
+  contact_no varchar // Optional contact number, nullable
+  created_at timestamp [default: `now()`]
 }
 
-Table wound_scans {
-  id integer [primary key]
-  patient_id integer [not null, ref: > patients.id]
-  captured_by integer [ref: > users.id]
-  scan_datetime timestamp
-  image_url varchar
-  status varchar [note: 'pending / mesh_processed / files_generated'] // Updated states
-  created_at timestamp
-}
-// does not need 
-Table segmentation_results {
-  id integer [primary key]
-  scan_id integer [not null, ref: > wound_scans.id]
-  segmentation_mask_url varchar
-  processed_date timestamp
-}
-// width, height, depth -> X
-Table stl_files {
-  id integer [primary key]
-  scan_id integer [not null, ref: > wound_scans.id]
-  file_url varchar [note: 'Downloadable STL file for printing']
-  created_date timestamp
+Table scans {
+  id integer [pk, increment] // Auto-incrementing primary key, serves as Scan ID
+  // Foreign key reference defined below
+  patient_id integer [not null, note: 'ID of the patient this scan belongs to']
+  scan_datetime timestamp [note: 'Timestamp for Scan Date in UI']
+  original_image_path varchar [note: 'Path to the input image file']
+  status varchar [note: 'Enum: Processing, Completed, Failed']
+  stl_file_path varchar [note: 'Path to the generated 3D Model file (STL), null until completed']
+  gcode_file_path varchar [note: 'Path to the generated Print file (G-code), null until completed']
+  created_at timestamp [default: `now()`]
 }
 
-Table gcode_files {
-  id integer [primary key]
-  stl_id integer [not null, ref: > stl_files.id]
-  file_url varchar [note: 'Generated G-code for printer']
-  created_date timestamp
-}
+// --- Relationships ---
+
+// Defines the foreign key relationship: One User manages zero or more Patients
+Ref user_patients: users.id < patients.user_id
+
+// Defines the foreign key relationship: One Patient has zero or more Scans
+Ref patient_scans: patients.id < scans.patient_id [delete: cascade] // Example: If patient is deleted, delete their scans too
+// Note: the [not null] constraint for scans.patient_id is defined within the Table scans definition itself.

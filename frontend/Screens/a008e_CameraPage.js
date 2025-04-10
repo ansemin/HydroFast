@@ -221,11 +221,16 @@ const CameraPage = () => {
           // Save the photo locally (this will be skipped on web platform)
           const savedUri = await saveImage(photo.uri);
           
-          // Use either the saved URI or the original URI for upload
+          // Use either the saved URI or the original URI
           const uriToUpload = savedUri || photo.uri;
           
-          // Upload the image to the server - make sure we're passing the ID
-          await uploadImageToServer(uriToUpload, selectedPatient.id);
+          // Navigate to PhotoPreviewScreen instead of direct upload
+          navigation.navigate('Photo Preview', {
+            imageUri: uriToUpload,
+            patientId: selectedPatient.id,
+            patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`
+          });
+          
         } catch (error) {
           console.error('Error processing photo:', error);
           
@@ -237,19 +242,17 @@ const CameraPage = () => {
             platform: Platform.OS
           });
           
-          // If we're on web and the error is related to FileSystem, try direct upload
+          // If we're on web and the error is related to FileSystem, try direct navigation with original URI
           if (Platform.OS === 'web' && error.message && error.message.includes('expo-file-system')) {
             try {
-              console.log('Attempting direct upload on web platform');
-              await uploadImageToServer(photo.uri, selectedPatient.id);
-            } catch (uploadError) {
-              console.error('Direct upload failed:', uploadError);
-              console.error('Detailed upload error:', {
-                message: uploadError.message,
-                stack: uploadError.stack,
-                name: uploadError.name
+              navigation.navigate('Photo Preview', {
+                imageUri: photo.uri,
+                patientId: selectedPatient.id,
+                patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`
               });
-              Alert.alert('Error', 'Failed to upload image. Please try again.');
+            } catch (navError) {
+              console.error('Navigation failed:', navError);
+              Alert.alert('Error', 'Failed to preview image. Please try again.');
             }
           } else {
             Alert.alert('Error', `Failed to process photo: ${error.message}`);
@@ -308,11 +311,16 @@ const CameraPage = () => {
         try {
           console.log('Selected file from web input:', file.name);
           
-          // Upload the selected image to the server - pass the actual File object
-          await uploadImageToServer(file, selectedPatient.id);
+          // Navigate to Photo Preview screen with the file and patient info
+          navigation.navigate('Photo Preview', {
+            imageUri: URL.createObjectURL(file),
+            patientId: selectedPatient.id,
+            patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`,
+            imageFile: file // Pass file object for web platform
+          });
         } catch (error) {
-          console.error('Error uploading selected image:', error);
-          Alert.alert('Error', `Failed to upload selected image: ${error.message}`);
+          console.error('Error handling selected image:', error);
+          Alert.alert('Error', `Failed to preview selected image: ${error.message}`);
         }
       };
       
@@ -347,11 +355,15 @@ const CameraPage = () => {
             const selectedImage = result.assets[0];
             console.log('Selected image from gallery:', selectedImage.uri);
             
-            // Upload the selected image to the server
-            await uploadImageToServer(selectedImage.uri, selectedPatient.id);
+            // Navigate to Photo Preview screen with the selected image and patient info
+            navigation.navigate('Photo Preview', {
+              imageUri: selectedImage.uri,
+              patientId: selectedPatient.id,
+              patientName: `${selectedPatient.first_name} ${selectedPatient.last_name}`
+            });
           } catch (error) {
-            console.error('Error uploading selected image:', error);
-            Alert.alert('Error', `Failed to upload selected image: ${error.message}`);
+            console.error('Error handling selected image:', error);
+            Alert.alert('Error', `Failed to preview selected image: ${error.message}`);
           }
         }
       } catch (error) {
