@@ -8,6 +8,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import authenticate
 
 from .models import Patient, Scan, AIModel, UserProfile
+from .utils import get_default_user
 from .serializers import PatientSerializer, ScanSerializer, AIModelSerializer
 from django.contrib.auth.models import User
 
@@ -96,10 +97,8 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if self.request.user.is_anonymous:
-            # Useing default user
-            # Default user 'default_user' created with password 'default_password'.
-            default_user = User.objects.get(username="default_user") 
-            serializer.save(user=default_user)
+            # Assign to a default user when unauthenticated
+            serializer.save(user=get_default_user())
         else:
             serializer.save(user=self.request.user)
 
@@ -124,10 +123,8 @@ class ScanViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         if self.request.user.is_anonymous:
-            # Using default user
-            # Default user 'default_user' created with password 'default_password'.
-            default_user = User.objects.get(username="default_user") 
-            serializer.save(user=default_user)
+            # Assign to a default user when unauthenticated
+            serializer.save(user=get_default_user())
         else:
             serializer.save(user=self.request.user)
     

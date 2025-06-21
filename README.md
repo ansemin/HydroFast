@@ -112,15 +112,12 @@ This is in a testing environment. If pushed to the app store, additional costs w
     ```
 
 3. **Configure API Connection**:
-    - Open the file `api.js` in a text editor
-    - Find this section (around line 23):
-      ```javascript
-      // For mobile (iOS/Android)
-      // Use your local network IP address instead of localhost
-      return 'http://172.30.1.54:8000/api';  // Update this IP address
+    - Set the environment variable `EXPO_PUBLIC_API_URL` to your backend's URL.
+      For example:
+      ```bash
+      export EXPO_PUBLIC_API_URL="http://YOUR_IP_ADDRESS:8000/api"
       ```
-    - Replace the IP address with your computer's IP address (that you noted in step 7 of Backend Setup)
-    - Save the file
+    - This avoids editing `api.js` directly and works for both web and mobile builds.
 
 4. **Start the App**:
     ```bash
@@ -141,7 +138,7 @@ This is in a testing environment. If pushed to the app store, additional costs w
 
 1. **Network Error When Logging In**:
    - If you get an "ERR_NETWORK" or "Network Error" message when trying to log in:
-   - Double check that you've updated the IP address in `api.js` to match your computer's current IP
+   - Ensure the `EXPO_PUBLIC_API_URL` environment variable points to your current IP address
    - Verify this by looking at the output of the backend server startup
    - This is especially important if you switch networks or restart your computer, as the IP may change
 
@@ -149,7 +146,7 @@ This is in a testing environment. If pushed to the app store, additional costs w
    - On Windows: Open Command Prompt and type `ipconfig`
    - On macOS/Linux: Open Terminal and type `ifconfig` or `ip addr`
    - Look for the IPv4 address of your WiFi or Ethernet connection
-   - Update the `api.js` file with this IP address
+   - Update the `EXPO_PUBLIC_API_URL` variable with this IP address
 
 3. **Different Networks**:
    - Your phone and computer MUST be on the same network for the connection to work

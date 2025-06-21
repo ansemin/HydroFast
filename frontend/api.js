@@ -3,7 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // Determine the base URL based on the environment
+// Allows overriding via EXPO_PUBLIC_API_URL (Expo) or API_URL (web) environment variables
 const getBaseUrl = () => {
+  // Environment variable override
+  const envUrl = process.env.EXPO_PUBLIC_API_URL || process.env.API_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+
   // For web browser
   if (Platform.OS === 'web') {
     // Make sure window and location are defined
