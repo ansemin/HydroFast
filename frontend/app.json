@@ -39,7 +39,8 @@
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos",
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "sdkVersion": "52.0.0",
     "newArchEnabled": true
