@@ -4,6 +4,7 @@
 venv/
 env/
 .venv/
+.venv-win/
 WA_venv/
 
 # Ignore Python cache files
