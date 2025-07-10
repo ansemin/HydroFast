@@ -2,4 +2,4 @@
 export { default as LogoHeader } from './LogoHeader';
 export { default as PatientCard } from './PatientCard'; 
 export { default as NavigationButton } from './NavigationButton';
-export { CameraIcon, BackButton, SettingsIcon, PawPrint } from './Icons'; 
+export { CameraIcon, BackButton } from './Icons'; 

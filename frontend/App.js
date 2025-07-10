@@ -4,11 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Import all the screens
-import { LoginScreen } from './src/screens/auth';
-import { HomeScreen, PatientsListScreen, ScansListScreen, NewPatientFormScreen, PatientDetailScreen, ScanResultsScreen } from './src/screens/patients';
+import { LoginScreen, SignUpScreen } from './src/screens/auth';
+import { PatientsListScreen, NewPatientFormScreen, PatientDetailScreen, ScanResultsScreen } from './src/screens/patients';
 import { CameraScreen, PhotoPreviewScreen } from './src/screens/scanning';
 import { ProcessingScreen, WoundDetectionScreen, DepthDetectionScreen, MeshDetectionScreen, DownloadFilesScreen } from './src/screens/ai-processing';
-import { PrintSettingsScreen } from './src/screens/printing';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,11 +17,9 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator initialRouteName='Login'>
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Scans Page" component={ScansListScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Sign Up" component={SignUpScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Patients List" component={PatientsListScreen} options={{ headerShown: false }} />
           <Stack.Screen name="New Patient Form" component={NewPatientFormScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Printer Settings" component={PrintSettingsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Camera Page" component={CameraScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Patient Detail" component={PatientDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Photo Preview" component={PhotoPreviewScreen} options={{ headerShown: false }} />

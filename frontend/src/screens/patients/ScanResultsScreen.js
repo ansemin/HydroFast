@@ -110,12 +110,12 @@ const ScanResultsScreen = ({ route, navigation }) => {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => navigation.navigate('Patients List')}
+            onPress={() => navigation.goBack()}
           >
             <Image source={backArrowIcon} style={styles.backArrowImage} />
           </TouchableOpacity>
           
-          <Text style={styles.headerTitle}>Existing Scans</Text>
+          <Text style={styles.headerTitle}>Scan Results</Text>
           
           {/* Placeholder for alignment */}
           <View style={{ width: 30 }} /> 
