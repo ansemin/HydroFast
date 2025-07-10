@@ -5,11 +5,13 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   Alert,
-  ScrollView,
-  TextInput
+  TextInput,
+  Dimensions
 } from 'react-native';
 import { Svg, Path } from 'react-native-svg';
 import { patientService } from '../../services';
+
+const { width, height } = Dimensions.get('window');
 
 const PatientDetailScreen = ({ route, navigation }) => {
   const { patientId } = route.params;
@@ -65,7 +67,6 @@ const PatientDetailScreen = ({ route, navigation }) => {
       setPatient(result);
       setIsEditing(false);
       
-      // Show success message without automatic navigation
       Alert.alert(
         'Success', 
         'Patient details updated successfully!',
@@ -73,11 +74,8 @@ const PatientDetailScreen = ({ route, navigation }) => {
           { 
             text: 'OK',
             onPress: () => {
-              // First go back to ensure we're on the Patients List screen
               navigation.goBack();
-              // Then use a timeout to allow the first navigation to complete
               setTimeout(() => {
-                // Refresh the patients list
                 navigation.navigate('Patients List');
               }, 100);
             }
@@ -89,13 +87,10 @@ const PatientDetailScreen = ({ route, navigation }) => {
       
       if (error.response && error.response.data) {
         const serverErrors = error.response.data;
-        
-        // Format server errors for display
         let errorMessage = "Failed to update patient:";
         Object.entries(serverErrors).forEach(([key, messages]) => {
           errorMessage += `\n• ${key}: ${messages.join(", ")}`;
         });
-        
         Alert.alert("Error", errorMessage);
       } else {
         Alert.alert("Error", "Failed to update patient. Please try again.");
@@ -104,12 +99,10 @@ const PatientDetailScreen = ({ route, navigation }) => {
   };
 
   const handleCancel = () => {
-    // Reset form states to original values
     setFirstName(patient.first_name || '');
     setLastName(patient.last_name || '');
     setNric(patient.nric || '');
     setContactNo(patient.contact_no || '');
-    
     setIsEditing(false);
   };
 
@@ -156,106 +149,117 @@ const PatientDetailScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Svg width="18" height="16" viewBox="0 0 18 16" fill="none">
-            <Path d="M16 9.01626C16.5613 9.01626 17.0163 8.56126 17.0163 8C17.0163 7.43874 16.5613 6.98374 16 6.98374L16 9.01626ZM1.2814 7.2814C0.884525 7.67827 0.884525 8.32173 1.2814 8.7186L7.74882 15.186C8.14569 15.5829 8.78915 15.5829 9.18602 15.186C9.58289 14.7891 9.58289 14.1457 9.18602 13.7488L3.4372 8L9.18602 2.25118C9.58289 1.85431 9.58289 1.21085 9.18602 0.813981C8.78915 0.417108 8.14569 0.417108 7.74881 0.813981L1.2814 7.2814ZM16 6.98374L2 6.98375L2 9.01626L16 9.01626L16 6.98374Z" fill="black"/>
-          </Svg>
-        </TouchableOpacity>
-      </View>
-      
-      <ScrollView style={styles.contentContainer}>
-        <Text style={styles.title}>Patient Detail</Text>
-        
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Svg width="18" height="16" viewBox="0 0 18 16" fill="none">
+          <Path d="M16 9.01626C16.5613 9.01626 17.0163 8.56126 17.0163 8C17.0163 7.43874 16.5613 6.98374 16 6.98374L16 9.01626ZM1.2814 7.2814C0.884525 7.67827 0.884525 8.32173 1.2814 8.7186L7.74882 15.186C8.14569 15.5829 8.78915 15.5829 9.18602 15.186C9.58289 14.7891 9.58289 14.1457 9.18602 13.7488L3.4372 8L9.18602 2.25118C9.58289 1.85431 9.58289 1.21085 9.18602 0.813981C8.78915 0.417108 8.14569 0.417108 7.74881 0.813981L1.2814 7.2814ZM16 6.98374L2 6.98375L2 9.01626L16 9.01626L16 6.98374Z" fill="black"/>
+        </Svg>
+      </TouchableOpacity>
+
+      {/* Title */}
+      <Text style={styles.title}>Patient Detail</Text>
+
+      {/* Form Fields */}
+      <View style={styles.formContainer}>
+        {/* First Name */}
         <Text style={styles.fieldLabel}>First Name</Text>
-        {isEditing ? (
-          <TextInput
-            style={styles.input}
-            value={firstName}
-            onChangeText={setFirstName}
-            placeholder="Enter first name"
-          />
-        ) : (
-          <View style={styles.fieldContainer}>
+        <View style={styles.fieldContainer}>
+          {isEditing ? (
+            <TextInput
+              style={styles.fieldInput}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+            />
+          ) : (
             <Text style={styles.fieldValue}>{patient?.first_name}</Text>
-          </View>
-        )}
+          )}
+        </View>
 
+        {/* Last Name */}
         <Text style={styles.fieldLabel}>Last Name</Text>
-        {isEditing ? (
-          <TextInput
-            style={styles.input}
-            value={lastName}
-            onChangeText={setLastName}
-            placeholder="Enter last name"
-          />
-        ) : (
-          <View style={styles.fieldContainer}>
+        <View style={styles.fieldContainer}>
+          {isEditing ? (
+            <TextInput
+              style={styles.fieldInput}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter last name"
+            />
+          ) : (
             <Text style={styles.fieldValue}>{patient?.last_name}</Text>
-          </View>
-        )}
+          )}
+        </View>
 
+        {/* NRIC/Passport No. */}
         <Text style={styles.fieldLabel}>NRIC/Passport No.</Text>
-        {isEditing ? (
-          <TextInput
-            style={styles.input}
-            value={nric}
-            onChangeText={setNric}
-            placeholder="Enter NRIC/Passport No."
-            maxLength={9}
-          />
-        ) : (
-          <View style={styles.fieldContainer}>
+        <View style={styles.fieldContainer}>
+          {isEditing ? (
+            <TextInput
+              style={styles.fieldInput}
+              value={nric}
+              onChangeText={setNric}
+              placeholder="Enter NRIC/Passport No."
+              maxLength={9}
+            />
+          ) : (
             <Text style={styles.fieldValue}>{patient?.nric}</Text>
-          </View>
-        )}
+          )}
+        </View>
 
-        <Text style={styles.fieldLabel}>Contact No.</Text>
-        {isEditing ? (
-          <TextInput
-            style={styles.input}
-            value={contactNo}
-            onChangeText={setContactNo}
-            placeholder="Enter contact number"
-          />
-        ) : (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldValue}>{patient?.contact_no || 'Not provided'}</Text>
-          </View>
-        )}
+        {/* Contact No. */}
+        <Text style={styles.fieldLabel}>Contact No. (Optional)</Text>
+        <View style={styles.fieldContainer}>
+          {isEditing ? (
+            <TextInput
+              style={styles.fieldInput}
+              value={contactNo}
+              onChangeText={setContactNo}
+              placeholder="Enter contact number"
+            />
+          ) : (
+            <Text style={styles.fieldValue}>{patient?.contact_no || ''}</Text>
+          )}
+        </View>
+
+        {/* Scan Results Button */}
+        <TouchableOpacity style={styles.scanResultsButton} onPress={handleViewScans}>
+          <Text style={styles.scanResultsText}>Scan results</Text>
+        </TouchableOpacity>
 
         {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
+        <View style={styles.actionButtonsContainer}>
           {isEditing ? (
             <>
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={styles.buttonText}>Save</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
               <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                <Text style={styles.editButtonText}>Edit</Text>
+                <Text style={styles.buttonText}>Edit</Text>
               </TouchableOpacity>
+              
               <TouchableOpacity style={styles.cameraButton} onPress={handleCamera}>
-                <Text style={styles.cameraButtonText}>Take Photo</Text>
+                <Svg width="25" height="25" viewBox="0 0 25 25" fill="none">
+                  <Path d="M0.809822 7.99373C0.287356 7.99373 0 7.69331 0 7.17085V3.814C0 1.2931 1.30617 0 3.85319 0H7.19697C7.7325 0 8.01985 0.287356 8.01985 0.809822C8.01985 1.31923 7.7325 1.61964 7.19697 1.61964H3.87931C2.41641 1.61964 1.61964 2.39028 1.61964 3.90543V7.17085C1.61964 7.69331 1.33229 7.99373 0.809822 7.99373ZM24.1902 7.99373C23.6677 7.99373 23.3804 7.69331 23.3804 7.17085V3.90543C23.3804 2.39028 22.5575 1.61964 21.1076 1.61964H17.79C17.2675 1.61964 16.9671 1.31923 16.9671 0.809822C16.9671 0.287356 17.2675 0 17.79 0H21.1468C23.6938 0 25 1.30617 25 3.814V7.17085C25 7.69331 24.7126 7.99373 24.1902 7.99373ZM6.55695 18.3777C5.25078 18.3777 4.58464 17.7247 4.58464 16.4316V9.44357C4.58464 8.15047 5.25078 7.48433 6.55695 7.48433H8.26803C8.80355 7.48433 8.96029 7.40596 9.27377 7.05329L9.83542 6.43939C10.175 6.06061 10.5016 5.90387 11.1416 5.90387H13.7539C14.4201 5.90387 14.7074 6.06061 15.0601 6.43939L15.6217 7.05329C15.9483 7.41902 16.105 7.48433 16.6275 7.48433H18.4561C19.7362 7.48433 20.4154 8.15047 20.4154 9.44357V16.4316C20.4154 17.7247 19.7362 18.3777 18.4561 18.3777H6.55695ZM12.5131 16.7842C14.6813 16.7842 16.4185 15.0862 16.4185 12.8657C16.4185 10.6844 14.6813 8.94723 12.5131 8.94723C10.3448 8.94723 8.59457 10.6844 8.59457 12.8657C8.59457 15.0601 10.3448 16.7842 12.5131 16.7842ZM17.7377 10.9848C18.1818 10.9848 18.5345 10.6322 18.5345 10.175C18.5214 9.73093 18.1818 9.3652 17.7377 9.3652C17.2936 9.3652 16.9279 9.73093 16.9279 10.175C16.9279 10.6322 17.2936 10.9848 17.7377 10.9848ZM12.5 15.8568C10.8542 15.8568 9.52194 14.5246 9.52194 12.8657C9.52194 11.2069 10.8542 9.87461 12.5 9.87461C14.1458 9.87461 15.4911 11.2069 15.4911 12.8657C15.4911 14.5246 14.1458 15.8568 12.5 15.8568ZM3.85319 25C1.30617 25 0 23.7069 0 21.1729V17.8292C0 17.3067 0.274295 17.0063 0.809822 17.0063C1.33229 17.0063 1.61964 17.3067 1.61964 17.8292V21.0946C1.61964 22.5967 2.41641 23.3804 3.87931 23.3804H7.19697C7.7325 23.3804 8.01985 23.6677 8.01985 24.1902C8.01985 24.6996 7.7325 25 7.19697 25H3.85319ZM17.79 25C17.2675 25 16.9671 24.6996 16.9671 24.1902C16.9671 23.6677 17.2675 23.3804 17.79 23.3804H21.1076C22.5575 23.3804 23.3804 22.5967 23.3804 21.0946V17.8292C23.3804 17.3067 23.6546 17.0063 24.1902 17.0063C24.6996 17.0063 25 17.3067 25 17.8292V21.1729C25 23.6938 23.6938 25 21.1468 25H17.79Z" fill="white"/>
+                </Svg>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.viewScansButton} onPress={handleViewScans}>
-                <Text style={styles.viewScansButtonText}>View Scans</Text>
-              </TouchableOpacity>
+              
               <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                <Text style={styles.deleteButtonText}>Delete Patient</Text>
+                <Text style={styles.buttonText}>Delete</Text>
               </TouchableOpacity>
             </>
           )}
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 };
@@ -264,6 +268,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FCFFF8',
+    borderRadius: 30,
+    overflow: 'hidden',
+    position: 'relative',
   },
   loadingContainer: {
     flex: 1,
@@ -271,124 +278,153 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FCFFF8',
   },
-  header: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
   backButton: {
-    padding: 5,
-  },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
+    position: 'absolute',
+    top: 25,
+    left: 18,
+    padding: 10,
+    zIndex: 1,
   },
   title: {
-    fontSize: 24,
+    position: 'absolute',
+    left: 28,
+    top: 70,
+    color: 'black',
+    fontSize: 22,
+    fontFamily: 'Urbanist',
     fontWeight: '700',
-    marginBottom: 30,
-    color: '#333',
+  },
+  formContainer: {
+    position: 'absolute',
+    top: 110,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
   fieldLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 15,
-    color: '#333',
+    color: '#707070',
+    fontSize: 12,
+    fontFamily: 'Urbanist',
+    fontWeight: '700',
+    marginBottom: 3,
+    width: 240,
+    textAlign: 'left',
   },
   fieldContainer: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 5,
+    width: 240,
+    height: 44,
+    backgroundColor: '#EEEEEE',
+    borderRadius: 13,
+    justifyContent: 'center',
+    paddingHorizontal: 15,
+    marginBottom: 12,
   },
   fieldValue: {
-    fontSize: 16,
-    color: '#333',
+    color: 'black',
+    fontSize: 12,
+    fontFamily: 'Urbanist',
+    fontWeight: '400',
   },
-  input: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
-    padding: 15,
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 5,
+  fieldInput: {
+    color: 'black',
+    fontSize: 12,
+    fontFamily: 'Urbanist',
+    fontWeight: '400',
+    padding: 0,
+    margin: 0,
   },
-  buttonContainer: {
-    marginTop: 30,
-    paddingBottom: 30,
+  scanResultsButton: {
+    width: 240,
+    height: 44,
+    backgroundColor: '#EEEEEE',
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 15,
+  },
+  scanResultsText: {
+    color: '#707070',
+    fontSize: 12,
+    fontFamily: 'Urbanist',
+    fontWeight: '700',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 5,
+    width: 240,
   },
   editButton: {
-    backgroundColor: '#2864DA',
-    borderRadius: 10,
-    paddingVertical: 15,
+    width: 71,
+    height: 44,
+    backgroundColor: '#27CFA0',
+    borderRadius: 13,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  editButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButton: {
-    backgroundColor: '#28a745',
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    backgroundColor: '#6c757d',
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  cancelButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    shadowColor: 'rgba(112, 231, 187, 0.55)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   cameraButton: {
-    backgroundColor: '#17a2b8',
-    borderRadius: 10,
-    paddingVertical: 15,
+    width: 71,
+    height: 44,
+    backgroundColor: '#27CFA0',
+    borderRadius: 13,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  cameraButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  viewScansButton: {
-    backgroundColor: '#ffc107',
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  viewScansButtonText: {
-    color: '#333',
-    fontSize: 16,
-    fontWeight: '600',
+    shadowColor: 'rgba(112, 231, 187, 0.55)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   deleteButton: {
-    backgroundColor: '#dc3545',
-    borderRadius: 10,
-    paddingVertical: 15,
+    width: 71,
+    height: 44,
+    backgroundColor: '#27CFA0',
+    borderRadius: 13,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    shadowColor: 'rgba(112, 231, 187, 0.55)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  deleteButtonText: {
+  saveButton: {
+    width: 71,
+    height: 44,
+    backgroundColor: '#27CFA0',
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: 'rgba(112, 231, 187, 0.55)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  cancelButton: {
+    width: 71,
+    height: 44,
+    backgroundColor: '#27CFA0',
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: 'rgba(112, 231, 187, 0.55)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  buttonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontFamily: 'Urbanist',
+    fontWeight: '700',
   },
 });
 

@@ -8,7 +8,7 @@ import { LoginScreen } from './src/screens/auth';
 import { HomeScreen, PatientsListScreen, ScansListScreen, NewPatientFormScreen, PatientDetailScreen, ScanResultsScreen } from './src/screens/patients';
 import { CameraScreen, PhotoPreviewScreen } from './src/screens/scanning';
 import { ProcessingScreen, WoundDetectionScreen, DepthDetectionScreen, MeshDetectionScreen, DownloadFilesScreen } from './src/screens/ai-processing';
-import { PrintPreviewScreen, PrintSettingsScreen } from './src/screens/printing';
+import { PrintSettingsScreen } from './src/screens/printing';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,7 +22,6 @@ export default function App() {
           <Stack.Screen name="Scans Page" component={ScansListScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Patients List" component={PatientsListScreen} options={{ headerShown: false }} />
           <Stack.Screen name="New Patient Form" component={NewPatientFormScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Print Preview" component={PrintPreviewScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Printer Settings" component={PrintSettingsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Camera Page" component={CameraScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Patient Detail" component={PatientDetailScreen} options={{ headerShown: false }} />
