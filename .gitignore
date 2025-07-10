@@ -4,6 +4,7 @@
 venv/
 env/
 .venv/
+.venv-win/
 WA_venv/
 
 # Ignore Python cache files
@@ -39,13 +40,21 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env
 
 # typescript
 *.tsbuildinfo
 
-# Document 
-/Documents
+# Documentation & Media
+Documents/
+docs/
+MLIntegration/
+backend/media/
 
 # Cursor editor files
 .cursor/
+
+# Gemini-specific files
+GEMINI.md
+db.sqlite3
+backend/backup/

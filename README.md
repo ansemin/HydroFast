@@ -112,15 +112,14 @@ This is in a testing environment. If pushed to the app store, additional costs w
     ```
 
 3. **Configure API Connection**:
-    - Open the file `api.js` in a text editor
-    - Find this section (around line 23):
-      ```javascript
-      // For mobile (iOS/Android)
-      // Use your local network IP address instead of localhost
-      return 'http://172.30.1.54:8000/api';  // Update this IP address
+    - Open the file `frontend/.env` in a text editor
+    - Find this line:
+      ```
+      API_BASE_URL=172.30.1.98
       ```
     - Replace the IP address with your computer's IP address (that you noted in step 7 of Backend Setup)
     - Save the file
+    - **Note**: The app will automatically construct the full URL (http://YOUR_IP:8000/api) from this IP address
 
 4. **Start the App**:
     ```bash
@@ -141,7 +140,7 @@ This is in a testing environment. If pushed to the app store, additional costs w
 
 1. **Network Error When Logging In**:
    - If you get an "ERR_NETWORK" or "Network Error" message when trying to log in:
-   - Double check that you've updated the IP address in `api.js` to match your computer's current IP
+   - Double check that you've updated the IP address in `frontend/.env` to match your computer's current IP
    - Verify this by looking at the output of the backend server startup
    - This is especially important if you switch networks or restart your computer, as the IP may change
 
@@ -149,11 +148,18 @@ This is in a testing environment. If pushed to the app store, additional costs w
    - On Windows: Open Command Prompt and type `ipconfig`
    - On macOS/Linux: Open Terminal and type `ifconfig` or `ip addr`
    - Look for the IPv4 address of your WiFi or Ethernet connection
-   - Update the `api.js` file with this IP address
+   - Update the `frontend/.env` file with this IP address
 
 3. **Different Networks**:
    - Your phone and computer MUST be on the same network for the connection to work
    - The backend server must be running with the `0.0.0.0:8000` option
+
+4. **Environment Configuration**:
+   - The app now uses a `.env` file in the `frontend/` directory for configuration
+   - This file contains the `API_BASE_URL` setting with just your IP address (e.g., `192.168.1.100`)
+   - The app automatically constructs the full URL (http://YOUR_IP:8000/api) from this IP
+   - Simply update the IP address in `frontend/.env` instead of editing code files
+   - After changing the `.env` file, you may need to restart the Expo development server (`npx expo start`)
 
 ### iOS App Issues
 
