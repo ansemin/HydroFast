@@ -15,7 +15,6 @@ import {
 import { patientService, logout } from '../../services';
 import { LogoHeader } from '../../components';
 import { TextInput } from 'react-native-gesture-handler';
-import { HomeIcon, CameraIcon } from '../../components';
 import { Alert } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';

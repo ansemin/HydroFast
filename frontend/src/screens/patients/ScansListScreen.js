@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { PatientCard, LogoHeader, HomeIcon, CameraIcon } from '../../components';
+import { PatientCard, LogoHeader } from '../../components';
 import { scanService } from '../../services';
 
 const ScansListScreen = () => {
@@ -39,13 +39,6 @@ const ScansListScreen = () => {
           time={scan.time}
         />
       ))}
-
-      {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
-        <View style={styles.bottomBarIconLeft} />
-        <HomeIcon />
-        <CameraIcon />
-      </View>
     </View>
   );
 };
@@ -56,7 +49,6 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: 'white',
     padding: 20,
-    position: 'relative',
   },
   logoContainer: {
     marginBottom: 20,
@@ -65,22 +57,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 20,
-  },
-  bottomBar: {
-    width: '100%',
-    height: 70,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'white',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  bottomBarIconLeft: {
-    width: 51,
-    height: 46,
   },
 });
 
