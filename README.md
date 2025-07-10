@@ -1,3 +1,5 @@
+readme update 
+
 # Wound Analysis Application User Guide
 
 A Django backend with React Native (Expo) frontend application for wound scanning and analysis using AI processing.
@@ -391,13 +393,13 @@ python -m venv .venv-win
 ```
 
 **macOS/Linux:**
-```bash
+    ```bash
 # Create virtual environment (this directory will be ignored by Git)
 python -m venv .venv
 
 # Activate virtual environment
 source .venv/bin/activate
-```
+    ```
 
 ---
 
@@ -405,50 +407,50 @@ source .venv/bin/activate
 
 ### 1. Install Dependencies
 
-```bash
+        ```bash
 # Navigate to backend directory
-cd backend
+        cd backend
 
 # Install development dependencies (includes all base requirements)
 pip install -r requirements/development.txt
-```
+        ```
 
 ### 2. Database Setup
 
-```bash
+        ```bash
 # Create and apply migrations
-python manage.py makemigrations
-python manage.py migrate
-```
+        python manage.py makemigrations
+        python manage.py migrate
+        ```
 
 ### 3. Create Initial Data
 
-```bash
+    ```bash
 # Create default admin users (admin/admin and default_user/default_password)
-python manage.py create_default_user
+    python manage.py create_default_user
 
 # Load sample patient data (20 realistic patient records)
 python manage.py load_sample_patients
 
 # Generate additional test patients (optional)
-python manage.py generate_patients --count=5
+    python manage.py generate_patients --count=5
 
 # Create sample scan data
-python manage.py create_scans --count=3
-```
+    python manage.py create_scans --count=3
+    ```
 
 ### 4. Start Backend Server
-
+    
 **Recommended (for mobile testing):**
-```bash
+        ```bash
 # Use the automated script (detects and displays IP addresses)
 python scripts/run_server.py
-```
-
+        ```
+    
 **Alternative methods:**
-```bash
+        ```bash
 # Manual command (for mobile testing)
-python manage.py runserver 0.0.0.0:8000
+        python manage.py runserver 0.0.0.0:8000
 
 # Localhost only (for web testing)
 python manage.py runserver
@@ -465,13 +467,13 @@ scripts\run_server.bat
 
 ### 1. Install Dependencies
 
-```bash
+        ```bash
 # Navigate to frontend directory
-cd frontend
+        cd frontend
 
 # Install npm packages
-npm install
-```
+    npm install
+    ```
 
 ### 2. Configure API Connection
 
@@ -484,12 +486,12 @@ npm install
 
 ### 3. Start the App
 
-```bash
+    ```bash
 # Start Expo development server
 npm start
 # or
-npx expo start
-```
+    npx expo start
+    ```
 
 ### 4. Test the Application
 
@@ -516,14 +518,14 @@ The application comes with pre-configured test accounts:
 
 ### User Management
 
-```bash
+    ```bash
 # Create default admin and test users
-python manage.py create_default_user
-```
+    python manage.py create_default_user
+    ```
 
 ### Patient Management
 
-```bash
+    ```bash
 # Load realistic sample patient data (20 patients)
 python manage.py load_sample_patients
 
@@ -538,10 +540,10 @@ python manage.py delete_patients --id=1                   # Delete by ID
 
 ### Scan Data Management
 
-```bash
+    ```bash
 # Create sample scan data
 python manage.py create_scans --count=5
-```
+    ```
 
 ---
 
