@@ -111,62 +111,76 @@ const NewPatientFormScreen = ({ navigation }) => {
         {/* Form Header */}
         <Text style={styles.formHeader}>Add New Patient</Text>
 
-        {/* Input Fields */}
-        <Text style={styles.inputLabel}>First Name</Text>
-        <View style={styles.inputBox}>
-          <TextInput
-            style={styles.inputField}
-            placeholder="Enter first name"
-            placeholderTextColor="#BBBBBB"
-            value={firstName}
-            onChangeText={(text) => {
-              setFirstName(text);
-              setErrors({...errors, firstName: null});
-            }}
-          />
-        </View>
-        {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+        {/* Input Fields Container */}
+        <View style={styles.inputContainer}>
+          {/* First Name */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>First Name</Text>
+            <View style={styles.inputBox}>
+              <TextInput
+                style={styles.inputField}
+                placeholder=""
+                placeholderTextColor="#BBBBBB"
+                value={firstName}
+                onChangeText={(text) => {
+                  setFirstName(text);
+                  setErrors({...errors, firstName: null});
+                }}
+              />
+            </View>
+            {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+          </View>
 
-        <Text style={styles.inputLabel}>Last Name</Text>
-        <View style={styles.inputBox}>
-          <TextInput
-            style={styles.inputField}
-            placeholder="Enter last name"
-            placeholderTextColor="#BBBBBB"
-            value={lastName}
-            onChangeText={(text) => {
-              setLastName(text);
-              setErrors({...errors, lastName: null});
-            }}
-          />
-        </View>
-        {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
+          {/* Last Name */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Last Name</Text>
+            <View style={styles.inputBox}>
+              <TextInput
+                style={styles.inputField}
+                placeholder=""
+                placeholderTextColor="#BBBBBB"
+                value={lastName}
+                onChangeText={(text) => {
+                  setLastName(text);
+                  setErrors({...errors, lastName: null});
+                }}
+              />
+            </View>
+            {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
+          </View>
 
-        <Text style={styles.inputLabel}>NRIC/Passport No.</Text>
-        <View style={styles.inputBox}>
-          <TextInput
-            style={styles.inputField}
-            placeholder="Enter NRIC/Passport No."
-            placeholderTextColor="#BBBBBB"
-            value={nric}
-            maxLength={9}
-            onChangeText={(text) => {
-              setNric(text);
-              setErrors({...errors, nric: null});
-            }}
-          />
-        </View>
-        {errors.nric && <Text style={styles.errorText}>{errors.nric}</Text>}
+          {/* NRIC/Passport No. */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>NRIC/Passport No.</Text>
+            <View style={styles.inputBox}>
+              <TextInput
+                style={styles.inputField}
+                placeholder=""
+                placeholderTextColor="#BBBBBB"
+                value={nric}
+                maxLength={9}
+                onChangeText={(text) => {
+                  setNric(text);
+                  setErrors({...errors, nric: null});
+                }}
+              />
+            </View>
+            {errors.nric && <Text style={styles.errorText}>{errors.nric}</Text>}
+          </View>
 
-        <Text style={styles.inputLabel}>Contact No. (Optional)</Text>
-        <View style={styles.inputBox}>
-          <TextInput
-            style={styles.inputField}
-            placeholder="Enter contact number"
-            placeholderTextColor="#BBBBBB"
-            value={contactNo}
-            onChangeText={setContactNo}
-          />
+          {/* Contact No. (Optional) */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Contact No. (Optional)</Text>
+            <View style={styles.inputBox}>
+              <TextInput
+                style={styles.inputField}
+                placeholder=""
+                placeholderTextColor="#BBBBBB"
+                value={contactNo}
+                onChangeText={setContactNo}
+              />
+            </View>
+          </View>
         </View>
 
         {/* Submit Button */}
@@ -187,61 +201,96 @@ const styles = StyleSheet.create({
   },
   formWrapper: {
     width: 320,
-    height: 580,
+    height: 577,
     backgroundColor: '#FCFFF8',
     borderRadius: 30,
-    padding: 20,
-    paddingHorizontal: 40,
-    paddingTop: 40,
+    padding: 0,
     position: 'relative',
-    justifyContent: 'space-between',
+    overflow: 'hidden',
   },
   backButton: {
     position: 'absolute',
-    top: 20,
-    left: 20,
+    top: 40,
+    left: 18,
     zIndex: 1,
   },
   formHeader: {
-    fontSize: 24,
+    position: 'absolute',
+    top: 100,
+    left: 18,
+    width: 170,
+    height: 25,
+    color: '#000000',
+    fontSize: 22,
+    fontFamily: 'Urbanist',
     fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 30,
-    marginTop: 40,
   },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
+  inputContainer: {
+    position: 'absolute',
+    top: 140,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 40,
   },
-  inputBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
+  inputGroup: {
     marginBottom: 15,
   },
+  inputLabel: {
+    position: 'relative',
+    top: 0,
+    color: '#707070',
+    fontSize: 12,
+    fontFamily: 'Urbanist',
+    fontWeight: '700',
+    marginBottom: 5,
+  },
+  inputBox: {
+    width: 240,
+    height: 44,
+    backgroundColor: '#EEEEEE',
+    borderRadius: 13,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
   inputField: {
-    padding: 15,
-    fontSize: 16,
-    color: '#333',
+    fontSize: 14,
+    color: '#000000',
+    fontFamily: 'Urbanist',
+    fontWeight: '400',
+    padding: 0,
+    margin: 0,
   },
   errorText: {
     color: 'red',
-    fontSize: 14,
-    marginBottom: 10,
-    marginTop: -10,
+    fontSize: 12,
+    fontFamily: 'Urbanist',
+    fontWeight: '400',
+    marginTop: 4,
   },
   submitButton: {
-    backgroundColor: '#2864DA',
-    borderRadius: 10,
-    paddingVertical: 15,
+    position: 'absolute',
+    width: 240,
+    height: 44,
+    left: 40,
+    top: 480,
+    backgroundColor: '#27CFA0',
+    borderRadius: 13,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    shadowColor: '#70E7BB',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.55,
+    shadowRadius: 4,
+    elevation: 4,
   },
   submitButtonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'Urbanist',
+    fontWeight: '700',
   },
 });
 

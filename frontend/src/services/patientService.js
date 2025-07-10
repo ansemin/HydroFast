@@ -51,6 +51,7 @@ const deletePatient = async (patientId) => {
 
 export const patientService = {
   getAllPatients,
+  getPatients: getAllPatients, // Alias for compatibility
   getPatient,
   createPatient,
   updatePatient,
