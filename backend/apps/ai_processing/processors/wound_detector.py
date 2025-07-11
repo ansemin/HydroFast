@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import logging
 
+import cv2
+import numpy as np
+from ultralytics import YOLO
+
 from .base import BaseProcessor
 
 logger = logging.getLogger(__name__)
@@ -35,29 +39,31 @@ class WoundDetector(BaseProcessor):
             default_config.update(config)
         
         super().__init__(default_config)
-        self.model_path = Path(self.config['model_path'])
+        self.model = self.load_model()
     
-    def load_model(self) -> None:
+    def load_model(self, model_path='weights/best.pt'):
         """Load the YOLO wound detection model."""
         try:
-            # TODO: Implement YOLO model loading
-            # from ultralytics import YOLO
-            # self.model = YOLO(self.model_path)
+            # Check if the model file exists
+            if not os.path.exists(model_path):
+                logger.warning(f"Model file not found at {model_path}, attempting to download YOLOv8 pretrained model")
+                # Fall back to a pretrained model if custom weights don't exist
+                model_path = 'yolov8n-seg.pt'  # This will auto-download if not present
             
-            # For now, simulate model loading
-            logger.info(f"Loading wound detection model from {self.model_path}")
-            
-            if not self.model_path.exists():
-                raise FileNotFoundError(f"Model file not found: {self.model_path}")
-            
-            # Simulate successful loading
-            self.model = "YOLO_MODEL_PLACEHOLDER"
-            self.is_loaded = True
-            logger.info("Wound detection model loaded successfully")
+            print(f"Loading YOLO model from {model_path}")
+            model = YOLO(model_path)
+            logger.info(f"Successfully loaded YOLO model from {model_path}")
+            return model
             
         except Exception as e:
-            logger.error(f"Failed to load wound detection model: {e}")
-            raise
+            logger.error(f"Failed to load YOLO model: {str(e)}")
+            logger.info("Falling back to YOLOv8 nano segmentation model")
+            try:
+                # Ultimate fallback to nano model
+                return YOLO('yolov8n-seg.pt')
+            except Exception as fallback_error:
+                logger.error(f"Failed to load fallback model: {str(fallback_error)}")
+                raise RuntimeError(f"Could not load any YOLO model. Original error: {str(e)}, Fallback error: {str(fallback_error)}")
     
     def process(self, image_path: str) -> Dict[str, Any]:
         """
@@ -69,40 +75,10 @@ class WoundDetector(BaseProcessor):
         Returns:
             Dictionary containing detection results
         """
-        if not self.is_loaded:
-            self.load_model()
-        
-        if not self.validate_input(image_path):
-            raise ValueError("Invalid image path provided")
-        
-        try:
-            # Preprocess the image
-            processed_image = self.preprocess(image_path)
-            
-            # TODO: Implement actual YOLO inference
-            # results = self.model(processed_image)
-            
-            # For now, return mock results
-            results = {
-                'detections': [
-                    {
-                        'class': 'wound',
-                        'confidence': 0.85,
-                        'bbox': [100, 100, 200, 150],  # x1, y1, x2, y2
-                        'segmentation': [[100, 100, 200, 100, 200, 150, 100, 150]]
-                    }
-                ],
-                'processed_image_path': processed_image,
-                'confidence_threshold': self.config['confidence_threshold'],
-                'model_version': 'best.pt'
-            }
-            
-            # Postprocess results
-            return self.postprocess(results)
-            
-        except Exception as e:
-            logger.error(f"Error during wound detection: {e}")
-            raise
+        self.validate_input(image_path)
+        preprocessed = self.preprocess(image_path)
+        results = self.model(image_path)  # Directly pass image_path to YOLO for inference
+        return self.postprocess(results, image_path)
     
     def validate_input(self, image_path: str) -> bool:
         """
@@ -148,23 +124,63 @@ class WoundDetector(BaseProcessor):
         logger.info(f"Preprocessing image: {image_path}")
         return image_path  # Return original for now
     
-    def postprocess(self, results: Dict[str, Any]) -> Dict[str, Any]:
+    def postprocess(self, results, original_image_path):
         """
         Postprocess detection results.
         
         Args:
-            results: Raw detection results
+            results: Raw detection results from YOLO
+            original_image_path: Path to the original image
             
         Returns:
-            Processed results with additional metadata
+            Relative path to the processed image for Django FileField
         """
-        # TODO: Implement postprocessing
-        # - Filter detections by confidence
-        # - Apply non-maximum suppression
-        # - Format results for API response
-        
-        processed_results = results.copy()
-        processed_results['timestamp'] = logger.handlers[0].formatter.formatTime if logger.handlers else None
-        processed_results['processor'] = 'WoundDetector'
-        
-        return processed_results 
+        try:
+            original_image = cv2.imread(original_image_path)
+            if original_image is None:
+                raise ValueError(f"Could not read original image from {original_image_path}")
+            
+            # Check if we have detection results with masks
+            if not results or len(results) == 0:
+                logger.warning("No detection results found, creating copy of original image")
+                processed_image = original_image.copy()
+            elif not hasattr(results[0], 'masks') or results[0].masks is None:
+                logger.warning("No segmentation masks detected, creating copy of original image")
+                processed_image = original_image.copy()
+            else:
+                # Process the segmentation mask
+                mask = results[0].masks.data[0].cpu().numpy()  # Get the first mask
+                mask = cv2.resize(mask, (original_image.shape[1], original_image.shape[0]))  # Resize to match original
+                mask = (mask > 0).astype(np.uint8) * 255  # Binarize
+                
+                # Apply mask to create segmented image
+                processed_image = cv2.bitwise_and(original_image, original_image, mask=mask)
+                logger.info("Successfully processed segmentation mask")
+            
+            # Create output path in processed_scans directory
+            import os
+            from django.conf import settings
+            
+            # Ensure processed_scans directory exists
+            processed_dir = os.path.join(settings.MEDIA_ROOT, 'processed_scans')
+            os.makedirs(processed_dir, exist_ok=True)
+            
+            # Generate filename based on original image
+            original_filename = os.path.basename(original_image_path)
+            name, ext = os.path.splitext(original_filename)
+            processed_filename = f"{name}_segmented{ext}"
+            
+            # Full path for saving
+            output_path = os.path.join(processed_dir, processed_filename)
+            
+            # Save the processed image
+            success = cv2.imwrite(output_path, processed_image)
+            if not success:
+                raise RuntimeError(f"Failed to save processed image to {output_path}")
+            
+            logger.info(f"Successfully saved processed image to {output_path}")
+            return output_path
+            
+        except Exception as e:
+            logger.error(f"Error in postprocessing: {str(e)}")
+            raise 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -12,15 +12,36 @@ function BackArrowIcon() {
   );
 }
 
-// Assuming the image is located at src/assets/images/0138_segmented.png
-const woundImage = require('../../assets/images/0138_segmented.png');
+// Fallback image if no processed image is available
+const fallbackWoundImage = require('../../assets/images/0138_segmented.png');
 
 const WoundDetectionScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { scanId, scanData, patientId } = route.params || {};
   
   const handleProcess = () => {
     // Navigate to Processing screen, specifying step 2
-    navigation.navigate('Processing', { step: 2 }); 
+    navigation.navigate('Processing', { 
+      step: 2, 
+      scanId, 
+      scanData, 
+      patientId 
+    }); 
+  };
+
+  // Determine image source - use processed image if available, otherwise fallback
+  const getImageSource = () => {
+    if (scanData?.processed_image) {
+      // If we have a processed image URL from the backend
+      return { uri: scanData.processed_image };
+    } else if (scanData?.image) {
+      // If we have the original image URL
+      return { uri: scanData.image };
+    } else {
+      // Fallback to static image
+      return fallbackWoundImage;
+    }
   };
 
   return (
@@ -41,8 +62,7 @@ const WoundDetectionScreen = () => {
         {/* Image Preview - Using fixed dimensions */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            {/* Use the required local image */}
-            <Image source={woundImage} style={styles.image} />
+            <Image source={getImageSource()} style={styles.image} />
           </View>
         </View>
         

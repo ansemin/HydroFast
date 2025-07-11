@@ -10,7 +10,7 @@ import {
   SafeAreaView, 
   Alert 
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -34,6 +34,8 @@ const rightDownloadIcon = require('../../assets/images/download_icon_white_right
 
 const DownloadFilesScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { scanId, scanData, patientId } = route.params || {};
 
   /*
   const handleDownload = async () => {
@@ -95,7 +97,14 @@ const DownloadFilesScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => navigation.navigate('Patients List')}
+            onPress={() => {
+              // Navigate back to scan results if we have patientId, otherwise to patients list
+              if (patientId) {
+                navigation.navigate('Scan Results', { patientId });
+              } else {
+                navigation.navigate('Patients List');
+              }
+            }}
           >
             <BackArrowIcon />
           </TouchableOpacity>

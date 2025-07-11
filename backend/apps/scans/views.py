@@ -38,11 +38,30 @@ class ScanViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def process_scan(self, request, pk=None):
         scan = self.get_object()
-        # Placeholder for AI processing logic
-        # After processing, save the processed image file and update is_processed
-        scan.is_processed = True
-        scan.save()
-        return Response({'status': 'Processing complete'})
+        try:
+            from apps.ai_processing.processors.wound_detector import WoundDetector
+            detector = WoundDetector()
+            output_path = detector.process(scan.image.path)
+            
+            # Convert absolute path to relative path for Django FileField
+            import os
+            from django.conf import settings
+            
+            # Get relative path from MEDIA_ROOT
+            relative_path = os.path.relpath(output_path, settings.MEDIA_ROOT)
+            scan.processed_image = relative_path
+            scan.is_processed = True
+            scan.save()
+            
+            # Build full URL for the processed image
+            processed_image_url = request.build_absolute_uri(scan.processed_image.url) if scan.processed_image else None
+            
+            return Response({
+                'status': 'Processing complete', 
+                'processed_image': processed_image_url
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def upload_image(self, request):

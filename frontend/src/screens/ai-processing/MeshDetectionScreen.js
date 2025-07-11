@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -17,10 +17,17 @@ const meshImage = require('../../assets/images/0138_mesh_consistent_z05.png');
 
 const MeshDetectionScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { scanId, scanData, patientId } = route.params || {};
   
   const handleProcess = () => {
     // Navigate to Processing screen, specifying step 4
-    navigation.navigate('Processing', { step: 4 }); 
+    navigation.navigate('Processing', { 
+      step: 4, 
+      scanId, 
+      scanData, 
+      patientId 
+    }); 
   };
 
   return (
