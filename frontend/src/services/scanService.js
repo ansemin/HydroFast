@@ -20,16 +20,8 @@ const getPatientScans = async (patientId) => {
   }
 };
 
-const uploadImage = async (patientId, imageUri) => {
+const createScan = async (formData) => {
   try {
-    const formData = new FormData();
-    formData.append('image', {
-      uri: imageUri,
-      type: 'image/jpeg',
-      name: 'scan.jpg',
-    });
-    formData.append('patient', patientId);
-
     const response = await api.post('/scans/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -37,7 +29,7 @@ const uploadImage = async (patientId, imageUri) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error('Error creating scan:', error);
     throw error;
   }
 };
@@ -45,5 +37,5 @@ const uploadImage = async (patientId, imageUri) => {
 export const scanService = {
   getAllScans,
   getPatientScans,
-  uploadImage,
+  createScan,
 }; 

@@ -1,6 +1,16 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Svg, { Path } from 'react-native-svg';
+
+// Back Arrow SVG Component
+function BackArrowIcon() {
+  return (
+    <Svg width="18" height="16" viewBox="0 0 18 16" fill="none">
+      <Path d="M16 9.01626C16.5613 9.01626 17.0163 8.56126 17.0163 8C17.0163 7.43874 16.5613 6.98374 16 6.98374L16 9.01626ZM1.2814 7.2814C0.884525 7.67827 0.884525 8.32173 1.2814 8.7186L7.74882 15.186C8.14569 15.5829 8.78915 15.5829 9.18602 15.186C9.58289 14.7891 9.58289 14.1457 9.18602 13.7488L3.4372 8L9.18602 2.25118C9.58289 1.85431 9.58289 1.21085 9.18602 0.813981C8.78915 0.417108 8.14569 0.417108 7.74881 0.813981L1.2814 7.2814ZM16 6.98374L2 6.98375L2 9.01626L16 9.01626L16 6.98374Z" fill="black"/>
+    </Svg>
+  );
+}
 
 // Image for mesh detection
 const meshImage = require('../../assets/images/0138_mesh_consistent_z05.png');
@@ -17,6 +27,14 @@ const MeshDetectionScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.container}>
+        {/* Back Button */}
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <BackArrowIcon />
+        </TouchableOpacity>
+
         {/* Title */}
         <Text style={styles.title}>Mesh Detection</Text>
         
@@ -45,6 +63,13 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FCFFF8',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 25,
+    left: 18,
+    padding: 10,
+    zIndex: 1,
   },
   container: {
     flex: 1,

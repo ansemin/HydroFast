@@ -21,16 +21,13 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Authentication endpoints
-    path('api/auth/', include('apps.authentication.urls')),
-    # Business logic endpoints
+    path('api/', include('apps.authentication.urls')),
     path('api/', include('apps.patients.urls')),
     path('api/', include('apps.scans.urls')),
     path('api/', include('apps.ai_processing.urls')),
-    # Legacy endpoint (remove after migration)
     path('api/', include('coreViews.urls')),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
-# Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
