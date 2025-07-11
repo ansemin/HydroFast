@@ -297,9 +297,9 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 10,
     backgroundColor: '#000',
   },
   backButton: {
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   },
   patientSelection: {
     paddingHorizontal: 20,
-    paddingBottom: 15,
+    paddingBottom: 10,
     backgroundColor: '#000',
     position: 'relative',
     zIndex: 1000,

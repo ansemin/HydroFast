@@ -68,13 +68,13 @@ const PhotoPreviewScreen = () => {
       console.log('Uploading image to server for patient:', patientId);
       
       // Send the request using the scanService
-      const response = await scanService.uploadImage(formData);
+      const response = await scanService.createScan(formData);
       
       console.log('Upload successful', response);
       Alert.alert('Success', 'Image uploaded to server successfully');
       
       // Navigate to Processing screen instead of going back, indicating step 1
-      navigation.navigate('Processing', { step: 1 });
+      navigation.navigate('Scan Results', { patientId: patientId });
     } catch (error) {
       console.error('Error uploading image:', error);
       Alert.alert('Error', `Failed to upload image: ${error.message}`);
