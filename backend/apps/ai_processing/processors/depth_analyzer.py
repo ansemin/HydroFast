@@ -1,6 +1,6 @@
 """
-Depth Analysis Processor for wound depth estimation.
-Analyzes wound segmentation to estimate depth and volume.
+Depth Analysis Processor for wound depth estimation using ZoeDepth.
+Analyzes wound segmentation to estimate depth and volume using ZoeD_NK model.
 """
 import numpy as np
 from pathlib import Path
@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple
 import logging
 
 from .base import BaseProcessor
+from .zoedepth_processor import ZoeDepthProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -15,58 +16,61 @@ logger = logging.getLogger(__name__)
 class DepthAnalyzer(BaseProcessor):
     """
     Depth analysis processor for wound depth and volume estimation.
-    Takes segmented wound images and estimates depth characteristics.
+    Now powered by ZoeDepth for monocular depth estimation.
     """
     
     def __init__(self, config: Dict[str, Any] = None):
         """
-        Initialize the depth analyzer.
+        Initialize the depth analyzer with ZoeDepth processor.
         
         Args:
             config: Configuration dictionary with depth estimation parameters
         """
-        # Get the project root directory (parent of backend)
-        # Current file: backend/apps/ai_processing/processors/depth_analyzer.py
-        # Need to go up 5 levels to get to Project-2/
-        project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
-        depth_weights_path = project_root / 'weights' / 'depth_model.pt'
-        print(f"🎯 Looking for depth weights at: {depth_weights_path}")
-        print(f"🔍 Depth weights file exists: {depth_weights_path.exists()}")
-        
         default_config = {
-            'depth_model_path': str(depth_weights_path),
-            'reference_object_size': None,  # Size in mm for scale reference
-            'analysis_method': 'stereo_vision',  # 'stereo_vision', 'photometric', 'ml_based'
+            'model_type': 'ZoeD_NK',  # ZoeD_NK for better detail preservation
+            'contrast_alpha': 0.3,    # Contrast adjustment from research
+            'brightness_beta': -40,   # Brightness adjustment from research
+            'blur_kernel': 5,         # Gaussian blur kernel size
+            'mask_extraction_method': 'green_contour',  # 'green_contour' or 'auto_threshold'
+            'pixel_size_mm': 0.1,     # Pixel size in mm for volume calculation
+            'save_16bit': True,       # Save 16-bit depth maps for precision
+            'save_8bit': True,        # Save 8-bit depth maps for visualization
+            'save_metadata': True,    # Save processing metadata
+            'reference_object_size': None,  # Size in mm for scale reference (legacy)
+            'analysis_method': 'ZoeDepth_monocular',  # Updated method name
             'output_format': 'depth_map'  # 'depth_map', 'point_cloud', 'volume_estimate'
         }
+        
         if config:
             default_config.update(config)
         
         super().__init__(default_config)
+        
+        # Initialize ZoeDepth processor
+        self.zoedepth_processor = ZoeDepthProcessor(self.config)
     
     def load_model(self) -> None:
-        """Load the depth estimation model."""
+        """Load the ZoeDepth model."""
         try:
-            # TODO: Implement depth model loading
-            # This could be a stereo vision model, monocular depth estimation, or ML-based approach
+            logger.info("Loading ZoeDepth model for depth analysis")
             
-            logger.info("Loading depth analysis model")
+            # Load ZoeDepth model
+            self.zoedepth_processor.load_model()
             
-            # Simulate model loading
-            self.model = "DEPTH_MODEL_PLACEHOLDER"
+            self.model = self.zoedepth_processor.model
             self.is_loaded = True
-            logger.info("Depth analysis model loaded successfully")
+            logger.info("ZoeDepth model loaded successfully for depth analysis")
             
         except Exception as e:
-            logger.error(f"Failed to load depth analysis model: {e}")
+            logger.error(f"Failed to load ZoeDepth model: {e}")
             raise
     
-    def process(self, segmented_image_data: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, segmented_image_path: str) -> Dict[str, Any]:
         """
-        Analyze wound depth from segmented image data.
+        Analyze wound depth from segmented image using ZoeDepth.
         
         Args:
-            segmented_image_data: Dictionary containing segmented wound data from wound detector
+            segmented_image_path: Path to segmented wound image from wound detector
             
         Returns:
             Dictionary containing depth analysis results
@@ -74,90 +78,64 @@ class DepthAnalyzer(BaseProcessor):
         if not self.is_loaded:
             self.load_model()
         
-        if not self.validate_input(segmented_image_data):
-            raise ValueError("Invalid segmented image data provided")
+        if not self.validate_input(segmented_image_path):
+            raise ValueError("Invalid segmented image path provided")
         
         try:
-            # Preprocess the segmented data
-            processed_data = self.preprocess(segmented_image_data)
+            logger.info(f"Processing depth analysis for: {segmented_image_path}")
             
-            # TODO: Implement actual depth analysis
-            # This could involve:
-            # - Stereo vision analysis if multiple images available
-            # - Photometric stereo for single image depth estimation
-            # - ML-based depth prediction
+            # Use ZoeDepth processor to generate depth map
+            zoedepth_results = self.zoedepth_processor.process(segmented_image_path)
             
-            # For now, return mock depth analysis results
+            # Convert ZoeDepth results to legacy format for backward compatibility
             results = {
-                'depth_map': self._generate_mock_depth_map(processed_data),
-                'volume_estimate': {
-                    'total_volume': 1250.5,  # cubic mm
-                    'confidence': 0.78
-                },
-                'depth_statistics': {
-                    'max_depth': 8.5,  # mm
-                    'mean_depth': 3.2,  # mm
-                    'min_depth': 0.1,  # mm
-                    'std_depth': 1.8   # mm
-                },
-                'surface_area': 245.6,  # square mm
+                'depth_map_8bit_path': zoedepth_results.get('depth_map_8bit_path'),
+                'depth_map_16bit_path': zoedepth_results.get('depth_map_16bit_path'),
+                'volume_estimate': zoedepth_results.get('volume_estimate', {}),
+                'depth_statistics': zoedepth_results.get('depth_statistics', {}),
+                'surface_area': self._calculate_surface_area(zoedepth_results),
                 'analysis_method': self.config['analysis_method'],
-                'reference_scale': self.config.get('reference_object_size')
+                'reference_scale': self.config.get('reference_object_size'),
+                'wound_severity': zoedepth_results.get('wound_severity', 'unknown'),
+                'processing_confidence': zoedepth_results.get('processing_confidence', 0.0),
+                'wound_mask_extracted': zoedepth_results.get('wound_mask_extracted', False),
+                'processing_parameters': zoedepth_results.get('processing_parameters', {}),
+                'metadata_path': zoedepth_results.get('metadata_path')
             }
             
             # Postprocess results
             return self.postprocess(results)
             
         except Exception as e:
-            logger.error(f"Error during depth analysis: {e}")
+            logger.error(f"Error during ZoeDepth analysis: {e}")
             raise
     
-    def validate_input(self, segmented_data: Dict[str, Any]) -> bool:
+    def validate_input(self, segmented_image_path: str) -> bool:
         """
-        Validate the input segmented image data.
+        Validate the input segmented image path.
         
         Args:
-            segmented_data: Segmented wound data from wound detector
+            segmented_image_path: Path to segmented wound image
             
         Returns:
             True if valid, False otherwise
         """
-        if not isinstance(segmented_data, dict):
-            return False
-        
-        required_keys = ['detections', 'processed_image_path']
-        if not all(key in segmented_data for key in required_keys):
-            logger.warning("Missing required keys in segmented data")
-            return False
-        
-        if not segmented_data['detections']:
-            logger.warning("No wound detections found in input data")
-            return False
-        
-        return True
+        # Delegate to ZoeDepth processor validation
+        return self.zoedepth_processor.validate_input(segmented_image_path)
     
-    def preprocess(self, segmented_data: Dict[str, Any]) -> Dict[str, Any]:
+    def preprocess(self, segmented_image_path: str) -> str:
         """
-        Preprocess segmented data for depth analysis.
+        Preprocess segmented image for depth analysis (delegated to ZoeDepth processor).
         
         Args:
-            segmented_data: Raw segmented data
+            segmented_image_path: Path to segmented image
             
         Returns:
-            Preprocessed data ready for depth analysis
+            Preprocessed image path (unchanged for ZoeDepth)
         """
-        # TODO: Implement preprocessing
-        # - Extract wound regions from segmentation masks
-        # - Apply noise reduction
-        # - Normalize image intensities
-        # - Extract reference objects for scale
-        
-        logger.info("Preprocessing segmented data for depth analysis")
-        
-        processed_data = segmented_data.copy()
-        processed_data['wound_regions'] = self._extract_wound_regions(segmented_data)
-        
-        return processed_data
+        logger.info(f"Preprocessing for ZoeDepth analysis: {segmented_image_path}")
+        # ZoeDepth processor handles preprocessing internally
+        return segmented_image_path
     
     def postprocess(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -173,69 +151,43 @@ class DepthAnalyzer(BaseProcessor):
         processed_results['timestamp'] = logger.handlers[0].formatter.formatTime if logger.handlers else None
         processed_results['processor'] = 'DepthAnalyzer'
         processed_results['units'] = {
-            'depth': 'mm',
+            'depth': 'normalized_units',
             'volume': 'cubic_mm',
             'area': 'square_mm'
         }
         
-        # Add severity classification based on depth
-        max_depth = results['depth_statistics']['max_depth']
-        if max_depth < 2.0:
-            severity = 'superficial'
-        elif max_depth < 5.0:
-            severity = 'moderate'
-        else:
-            severity = 'deep'
-        
-        processed_results['wound_severity'] = severity
+        # Surface area calculation
+        if 'surface_area' not in processed_results:
+            processed_results['surface_area'] = self._calculate_surface_area(results)
         
         return processed_results
     
-    def _extract_wound_regions(self, segmented_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _calculate_surface_area(self, results: Dict[str, Any]) -> float:
         """
-        Extract individual wound regions from segmentation data.
+        Calculate surface area from depth analysis results.
         
         Args:
-            segmented_data: Segmented wound data
+            results: ZoeDepth processing results
             
         Returns:
-            List of wound region dictionaries
+            Surface area in square mm
         """
-        # TODO: Implement actual wound region extraction
-        
-        regions = []
-        for detection in segmented_data['detections']:
-            region = {
-                'bbox': detection['bbox'],
-                'segmentation': detection['segmentation'],
-                'confidence': detection['confidence']
-            }
-            regions.append(region)
-        
-        return regions
-    
-    def _generate_mock_depth_map(self, processed_data: Dict[str, Any]) -> List[List[float]]:
-        """
-        Generate a mock depth map for demonstration purposes.
-        
-        Args:
-            processed_data: Processed segmentation data
+        try:
+            # Extract depth statistics
+            depth_stats = results.get('depth_statistics', {})
+            valid_pixel_count = depth_stats.get('valid_pixel_count', 0)
             
-        Returns:
-            2D depth map as nested lists
-        """
-        # Generate a simple mock depth map
-        # In reality, this would be computed from stereo vision or ML models
-        
-        depth_map = []
-        for i in range(50):  # 50x50 depth map
-            row = []
-            for j in range(50):
-                # Create a simple bowl-shaped depth pattern
-                center_x, center_y = 25, 25
-                distance = ((i - center_x) ** 2 + (j - center_y) ** 2) ** 0.5
-                depth = max(0, 5 - distance * 0.2)  # Bowl shape, max 5mm depth
-                row.append(round(depth, 2))
-            depth_map.append(row)
-        
-        return depth_map 
+            # Get pixel size from processing parameters
+            processing_params = results.get('processing_parameters', {})
+            pixel_size_mm = processing_params.get('pixel_size_mm', 0.1)
+            
+            # Calculate surface area
+            pixel_area_mm2 = pixel_size_mm ** 2
+            surface_area = valid_pixel_count * pixel_area_mm2
+            
+            logger.info(f"Calculated surface area: {surface_area} mm²")
+            return surface_area
+            
+        except Exception as e:
+            logger.error(f"Error calculating surface area: {e}")
+            return 0.0 

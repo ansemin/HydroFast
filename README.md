@@ -7,7 +7,7 @@ A Django backend with React Native (Expo) frontend application for wound scannin
 ```
 Project-2/
 ├── .env.example            # Backend environment template (Gemini API key)
-├── requirements.txt        # Root Python dependencies (legacy - use backend/requirements/)
+├── requirements.txt        # Complete ZoeDepth project dependencies (all 62 packages)
 ├── weights/               # AI model files (YOLO, depth estimation models)
 ├── backend/                 # Django REST API backend
 │   ├── apps/               # Django applications (modular architecture)
@@ -238,7 +238,7 @@ These files will be created during setup and development but should never be com
 
 #### **Configuration Files**
 - **`.env.example`** - Template for backend environment variables (Gemini API key)
-- **`requirements.txt`** - Legacy root-level Python dependencies (⚠️ use `backend/requirements/` instead)
+- **`requirements.txt`** - Complete ZoeDepth project dependencies (62 packages, matches current installation)
 
 #### **Documentation**
 - **`README.md`** - Main project documentation (this file)
@@ -572,13 +572,37 @@ source .venv/bin/activate
 
 ### 1. Install Dependencies
 
-        ```bash
+**Choose One Installation Method:**
+
+**Option A: Simple Setup (Recommended for Quick Start)**
+```bash
+# Install all dependencies from root requirements.txt
+pip install -r requirements.txt
+```
+
+**Option B: Structured Setup (Recommended for Development)**
+```bash
 # Navigate to backend directory
-        cd backend
+cd backend
 
 # Install development dependencies (includes all base requirements)
 pip install -r requirements/development.txt
-        ```
+```
+
+**Option C: Production Setup**
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install production dependencies
+pip install -r requirements/production.txt
+```
+
+**Dependency Files Explained:**
+- **`requirements.txt`** - Complete working installation (all 62 packages)
+- **`backend/requirements/development.txt`** - Development tools + base dependencies
+- **`backend/requirements/base.txt`** - Core dependencies only
+- **`backend/requirements/production.txt`** - Production optimizations + base dependencies
 
 ### 2. Database Setup
 

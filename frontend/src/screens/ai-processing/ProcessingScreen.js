@@ -41,26 +41,46 @@ const ProcessingScreen = () => {
     const processStep = async () => {
       try {
         if (step === 1 && scanId) {
-          // Call the backend API to process the scan
-          console.log('Processing scan with backend API for scanId:', scanId);
-          const response = await api.post(`/scans/${scanId}/process_scan/`);
+          // Call the comprehensive backend API to process the scan
+          console.log('🚀 Starting comprehensive processing for scanId:', scanId);
+          console.log('Pipeline: WoundDetector → ZoeDepth → DepthAnalyzer');
           
-          console.log('Backend processing result:', response.data);
+          const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
+            timeout: 180000, // 3 minutes timeout for ZoeDepth processing
+          });
           
-          // Update scanData with processed image URL if available
-          if (response.data.processed_image) {
+          console.log('✅ Comprehensive processing completed:', response.data);
+          
+          // Update scanData with comprehensive processing results
+          if (response.data) {
+            // Store all processing results in scanData
             scanData.processed_image = response.data.processed_image;
+            scanData.depth_map_8bit = response.data.depth_map_8bit;
+            scanData.depth_map_16bit = response.data.depth_map_16bit;
+            scanData.depth_metadata = response.data.depth_metadata;
+            scanData.processing_pipeline = response.data.processing_pipeline;
+            scanData.scan_id = response.data.scan_id;
+            
+            // Log key results
+            if (response.data.depth_metadata) {
+              console.log('📊 Depth Analysis Results:');
+              console.log(`   • Wound Severity: ${response.data.depth_metadata.wound_severity}`);
+              console.log(`   • Volume: ${response.data.depth_metadata.volume_estimate?.total_volume || 'N/A'} cubic mm`);
+              console.log(`   • Confidence: ${(response.data.depth_metadata.processing_confidence * 100).toFixed(1)}%`);
+              console.log(`   • Surface Area: ${response.data.depth_metadata.surface_area} mm²`);
+              console.log(`   • Mask Extracted: ${response.data.depth_metadata.wound_mask_extracted ? 'Yes' : 'No'}`);
+            }
           }
         }
         
-        // Wait for the specified duration
-        await new Promise(resolve => setTimeout(resolve, timeoutDurationSeconds * 1000));
+        // Wait for the specified duration (reduced since actual processing is done)
+        await new Promise(resolve => setTimeout(resolve, Math.min(timeoutDurationSeconds * 1000, 2000)));
         
         setIsProcessing(false);
         
         if (nextScreen) {
           console.log(`Processing complete for step ${step}. Navigating to ${nextScreen}...`);
-          // Pass along scan data to next screen
+          // Pass along enhanced scan data to next screen
           navigation.replace(nextScreen, { 
             scanId, 
             scanData, 
@@ -71,7 +91,17 @@ const ProcessingScreen = () => {
           console.error(`Processing finished for step ${step}, but nextScreen is null.`);
         }
       } catch (error) {
-        console.error('Error during processing:', error);
+        console.error('❌ Error during processing:', error);
+        
+        // Enhanced error handling
+        if (error.code === 'ECONNABORTED') {
+          console.error('⏱️ Request timed out - ZoeDepth processing took longer than expected');
+        } else if (error.response) {
+          console.error('🔧 Server error:', error.response.status, error.response.data);
+        } else {
+          console.error('🌐 Network error:', error.message);
+        }
+        
         setIsProcessing(false);
         // Navigate to error state or back to previous screen
         navigation.goBack();
@@ -92,7 +122,16 @@ const ProcessingScreen = () => {
         <View style={styles.indicatorContainer}>
           <ActivityIndicator size="large" color="#27CFA0" />
           <Text style={styles.subText}>
-            {step === 1 ? 'Detecting wounds...' : 'Please kindly wait while processing'}
+            {step === 1 
+              ? 'Processing: Wound Detection → ZoeDepth → Analysis...' 
+              : step === 2
+              ? 'Analyzing depth results...'
+              : step === 3
+              ? 'Generating 3D mesh...'
+              : step === 4
+              ? 'Preparing downloads...'
+              : 'Please kindly wait while processing'
+            }
           </Text>
         </View>
       </View>

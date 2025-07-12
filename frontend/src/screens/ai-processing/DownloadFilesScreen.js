@@ -37,6 +37,29 @@ const DownloadFilesScreen = () => {
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
 
+  // Download functionality for depth maps
+  const downloadDepthMap = async (url, filename) => {
+    try {
+      if (!url) {
+        Alert.alert('Error', 'Depth map URL not available');
+        return;
+      }
+
+      console.log(`Downloading depth map: ${filename}`);
+      
+      // For now, show download initiated message
+      Alert.alert(
+        'Download Started', 
+        `Downloading ${filename}...\n\nNote: Full download functionality will be implemented in the next phase.`,
+        [{ text: 'OK' }]
+      );
+      
+    } catch (error) {
+      console.error('Error downloading depth map:', error);
+      Alert.alert('Download Error', `Failed to download ${filename}: ${error.message}`);
+    }
+  };
+
   /*
   const handleDownload = async () => {
     console.log('Download initiated using FileSystem.downloadAsync...');
@@ -119,14 +142,56 @@ const DownloadFilesScreen = () => {
         <View style={styles.contentContainer}>
           <Text style={styles.subTitle}>Your Files Are Ready</Text>
 
-          {/* File Info Box */} 
+          {/* Segmented Image */}
+          {scanData?.processed_image && (
+            <View style={styles.fileBox}>
+              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
+              <View style={styles.fileInfoTextContainer}>
+                <Text style={styles.fileName}>Segmented Image</Text>
+                <Text style={styles.fileDetails}>PNG Image • Wound Detection Result</Text> 
+              </View>
+              <TouchableOpacity onPress={() => downloadDepthMap(scanData.processed_image, 'segmented_wound.png')}>
+                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* 8-bit Depth Map */}
+          {scanData?.depth_map_8bit && (
+            <View style={styles.fileBox}>
+              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
+              <View style={styles.fileInfoTextContainer}>
+                <Text style={styles.fileName}>Depth Map (8-bit)</Text>
+                <Text style={styles.fileDetails}>PNG Image • ZoeDepth Visualization</Text> 
+              </View>
+              <TouchableOpacity onPress={() => downloadDepthMap(scanData.depth_map_8bit, 'depth_map_8bit.png')}>
+                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* 16-bit Depth Map */}
+          {scanData?.depth_map_16bit && (
+            <View style={styles.fileBox}>
+              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
+              <View style={styles.fileInfoTextContainer}>
+                <Text style={styles.fileName}>Depth Map (16-bit)</Text>
+                <Text style={styles.fileDetails}>PNG Image • High Precision Depth Data</Text> 
+              </View>
+              <TouchableOpacity onPress={() => downloadDepthMap(scanData.depth_map_16bit, 'depth_map_16bit.png')}>
+                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* STL File (Future Implementation) */}
           <View style={styles.fileBox}>
             <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
             <View style={styles.fileInfoTextContainer}>
               <Text style={styles.fileName}>STL result.zip</Text>
-              <Text style={styles.fileDetails}>ZIP Archive 14.2 MB</Text> 
+              <Text style={styles.fileDetails}>ZIP Archive • 3D Mesh (Coming Soon)</Text> 
             </View>
-            <TouchableOpacity onPress={() => Alert.alert("Download Disabled", "This feature is temporarily disabled.")}>
+            <TouchableOpacity onPress={() => Alert.alert("Coming Soon", "3D mesh generation will be available in the next phase.")}>
               <Image source={rightDownloadIcon} style={styles.fileIconRight} />
             </TouchableOpacity>
           </View>
@@ -190,6 +255,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 10, // Add spacing between file boxes
   },
   fileIconLeft: {
     width: 45,
