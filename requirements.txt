@@ -1,8 +1,71 @@
-asgiref==3.8.1
+# Complete ZoeDepth Project Dependencies
+# Generated from current working installation
+
+# Core Django and API dependencies
 Django==5.1.3
-django-cors-headers==4.3.1
 djangorestframework==3.15.0
-pillow==10.3.0
-psycopg2-binary==2.9.10
+django-cors-headers==4.3.1
+asgiref==3.8.1
 sqlparse==0.5.2
 tzdata==2024.2
+
+# Image processing
+Pillow==10.3.0
+
+# ZoeDepth and AI Processing Dependencies
+torch==2.7.1
+torchvision==0.22.1
+opencv-python==4.8.1.78
+numpy==1.26.4
+timm==0.6.7
+transformers==4.53.2
+
+# YOLO for wound detection
+ultralytics==8.3.163
+ultralytics-thop==2.0.14
+
+# Database
+psycopg2-binary==2.9.10
+
+# Scientific computing
+matplotlib==3.10.3
+pandas==2.3.1
+scipy==1.16.0
+
+# Utilities
+requests==2.32.4
+urllib3==2.5.0
+PyYAML==6.0.2
+tqdm==4.67.1
+packaging==25.0
+filelock==3.18.0
+fsspec==2025.5.1
+networkx==3.5
+sympy==1.14.0
+mpmath==1.3.0
+typing_extensions==4.14.1
+
+# Hugging Face and tokenizers
+huggingface-hub==0.33.4
+tokenizers==0.21.2
+safetensors==0.5.3
+regex==2024.11.6
+
+# Additional dependencies
+certifi==2025.7.9
+charset-normalizer==3.4.2
+colorama==0.4.6
+contourpy==1.3.2
+cycler==0.12.1
+fonttools==4.58.5
+idna==3.10
+Jinja2==3.1.6
+kiwisolver==1.4.8
+MarkupSafe==3.0.2
+psutil==7.0.0
+py-cpuinfo==9.0.0
+pyparsing==3.2.3
+python-dateutil==2.9.0.post0
+pytz==2025.2
+setuptools==80.9.0
+six==1.17.0

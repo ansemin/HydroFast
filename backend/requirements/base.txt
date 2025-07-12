@@ -6,6 +6,17 @@ django-cors-headers==4.3.1
 # Image processing
 Pillow==10.3.0
 
+# ZoeDepth and AI Processing Dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+opencv-python==4.8.1.78
+numpy>=1.21.0,<2.0.0
+timm==0.6.7
+transformers>=4.20.0
+
+# YOLO for wound detection
+ultralytics>=8.0.0
+
 # Database and utilities
 sqlparse==0.5.2
 asgiref==3.8.1

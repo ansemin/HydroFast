@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -12,8 +12,8 @@ function BackArrowIcon() {
   );
 }
 
-// Image for depth detection
-const depthImage = require('../../assets/images/0138_depth_grayscale_zd.png');
+// Fallback image for depth detection
+const fallbackDepthImage = require('../../assets/images/0138_depth_grayscale_zd.png');
 
 const DepthDetectionScreen = () => {
   const navigation = useNavigation();
@@ -30,10 +30,36 @@ const DepthDetectionScreen = () => {
     }); 
   };
 
+  // Get depth image source
+  const getDepthImageSource = () => {
+    if (scanData?.depth_map_8bit) {
+      return { uri: scanData.depth_map_8bit };
+    } else {
+      return fallbackDepthImage;
+    }
+  };
+
+  // Format depth statistics for display
+  const formatDepthStats = (stats) => {
+    if (!stats) return null;
+    
+    return {
+      maxDepth: stats.max_depth ? stats.max_depth.toFixed(3) : 'N/A',
+      meanDepth: stats.mean_depth ? stats.mean_depth.toFixed(3) : 'N/A',
+      validPixels: stats.valid_pixel_count || 0
+    };
+  };
+
+  const depthMetadata = scanData?.depth_metadata;
+  const depthStats = formatDepthStats(depthMetadata?.depth_statistics);
+  const volumeEstimate = depthMetadata?.volume_estimate?.total_volume || 0;
+  const woundSeverity = depthMetadata?.wound_severity || 'unknown';
+  const processingConfidence = depthMetadata?.processing_confidence || 0;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Back Button */}
         <TouchableOpacity 
           style={styles.backButton}
@@ -45,27 +71,91 @@ const DepthDetectionScreen = () => {
         {/* Title */}
         <Text style={styles.title}>Depth Detection</Text>
         
-        {/* Image Preview - Using fixed dimensions */}
+        {/* Image Preview */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            {/* Use the required local depth image */}
-            <Image source={depthImage} style={styles.image} />
+            <Image source={getDepthImageSource()} style={styles.image} />
           </View>
         </View>
         
+        {/* Depth Metadata */}
+        {depthMetadata && (
+          <View style={styles.metadataContainer}>
+            <Text style={styles.metadataTitle}>ZoeDepth Analysis Results</Text>
+            
+            {/* Wound Severity */}
+            <View style={styles.metadataRow}>
+              <Text style={styles.metadataLabel}>Wound Severity:</Text>
+              <Text style={[styles.metadataValue, getSeverityStyle(woundSeverity)]}>{woundSeverity.toUpperCase()}</Text>
+            </View>
+            
+            {/* Volume Estimate */}
+            <View style={styles.metadataRow}>
+              <Text style={styles.metadataLabel}>Volume Estimate:</Text>
+              <Text style={styles.metadataValue}>{volumeEstimate.toFixed(1)} mm³</Text>
+            </View>
+            
+            {/* Processing Confidence */}
+            <View style={styles.metadataRow}>
+              <Text style={styles.metadataLabel}>Confidence:</Text>
+              <Text style={styles.metadataValue}>{(processingConfidence * 100).toFixed(1)}%</Text>
+            </View>
+            
+            {/* Surface Area */}
+            {depthMetadata.surface_area && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Surface Area:</Text>
+                <Text style={styles.metadataValue}>{depthMetadata.surface_area.toFixed(1)} mm²</Text>
+              </View>
+            )}
+            
+            {/* Depth Statistics */}
+            {depthStats && (
+              <>
+                <Text style={styles.subMetadataTitle}>Depth Statistics</Text>
+                <View style={styles.metadataRow}>
+                  <Text style={styles.metadataLabel}>Max Depth:</Text>
+                  <Text style={styles.metadataValue}>{depthStats.maxDepth}</Text>
+                </View>
+                <View style={styles.metadataRow}>
+                  <Text style={styles.metadataLabel}>Mean Depth:</Text>
+                  <Text style={styles.metadataValue}>{depthStats.meanDepth}</Text>
+                </View>
+                <View style={styles.metadataRow}>
+                  <Text style={styles.metadataLabel}>Valid Pixels:</Text>
+                  <Text style={styles.metadataValue}>{depthStats.validPixels.toLocaleString()}</Text>
+                </View>
+              </>
+            )}
+          </View>
+        )}
+        
         {/* Action Button */}
         <View style={styles.buttonWrapper}>
-          {/* Single centered button */}
           <TouchableOpacity style={styles.processButton} onPress={handleProcess}>
             <Text style={styles.buttonText}>Process</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
+
+  // Helper function for severity styling
+  function getSeverityStyle(severity) {
+    switch (severity) {
+      case 'superficial':
+        return { color: '#27CFA0' }; // Green
+      case 'moderate':
+        return { color: '#FFA500' }; // Orange
+      case 'deep':
+        return { color: '#FF6B6B' }; // Red
+      default:
+        return { color: '#666666' }; // Gray
+    }
+  }
 };
 
-// Styles adapted from WoundDetectionScreen/PhotoPreviewScreen
+// Styles adapted from WoundDetectionScreen/PhotoPreviewScreen with metadata styling
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -81,10 +171,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FCFFF8',
+  },
+  scrollContent: {
     padding: 10,
-    display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
+    paddingBottom: 40,
   },
   title: {
     fontSize: 20,
@@ -101,13 +192,13 @@ const styles = StyleSheet.create({
   },
   imageOuterContainer: {
     width: '100%',
-    height: 420,
+    height: 350, // Reduced to make room for metadata
     justifyContent: 'center',
     alignItems: 'center',
   },
   imageContainer: {
     width: '90%',
-    height: 390,
+    height: 320,
     borderRadius: 13,
     overflow: 'hidden', 
     backgroundColor: '#000000',
@@ -117,10 +208,66 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'contain', 
   },
+  metadataContainer: {
+    width: '90%',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 13,
+    padding: 15,
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  metadataTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  subMetadataTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginTop: 10,
+    marginBottom: 5,
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  metadataRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  metadataLabel: {
+    fontSize: 14,
+    color: '#666666',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  metadataValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000000',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
   buttonWrapper: {
     width: '100%',
     marginTop: 20, 
-    paddingBottom: 25,
     alignItems: 'center',
   },
   processButton: {

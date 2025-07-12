@@ -39,8 +39,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'coreViews',
     'corsheaders',
+    'apps.authentication',
+    'apps.patients', 
+    'apps.scans',
+    'apps.ai_processing',  # Added for ZoeDepth functionality
+    'coreViews',  # Legacy app - will be removed after migration
 ]
 
 MIDDLEWARE = [
@@ -54,7 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'backend.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {

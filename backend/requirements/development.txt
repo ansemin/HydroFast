@@ -20,4 +20,9 @@ isort==5.13.2
 Sphinx==7.2.6
 
 # Development server enhancements
-watchdog==3.0.0 
+watchdog==3.0.0
+
+# AI Development Tools
+jupyter>=1.0.0
+matplotlib>=3.5.0
+scikit-learn>=1.0.0 
