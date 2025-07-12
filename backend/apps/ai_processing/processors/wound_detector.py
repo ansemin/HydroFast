@@ -165,7 +165,7 @@ class WoundDetector(BaseProcessor):
                 mask = cv2.resize(mask, (original_image.shape[1], original_image.shape[0]))  # Resize to match original
                 mask = (mask > 0).astype(np.uint8) * 255  # Binarize
                 
-                # Apply mask to create segmented image
+                # Apply mask to create segmented image (keep wound against black background)
                 processed_image = cv2.bitwise_and(original_image, original_image, mask=mask)
                 logger.info("Successfully processed segmentation mask")
             
@@ -195,4 +195,5 @@ class WoundDetector(BaseProcessor):
             
         except Exception as e:
             logger.error(f"Error in postprocessing: {str(e)}")
-            raise 
+            raise
+ 

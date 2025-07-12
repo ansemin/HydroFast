@@ -36,7 +36,151 @@ class ScanViewSet(viewsets.ModelViewSet):
             serializer.save(user=self.request.user)
     
     @action(detail=True, methods=['post'])
+    def process_wound_detection(self, request, pk=None):
+        """Step 1: Process wound detection only"""
+        scan = self.get_object()
+        try:
+            import os
+            from django.conf import settings
+            from apps.ai_processing.processors.wound_detector import WoundDetector
+            
+            # Step 1: Wound Detection only
+            detector = WoundDetector()
+            segmented_image_path = detector.process(scan.image.path)
+            
+            # Convert absolute path to relative path for Django FileField
+            relative_path = os.path.relpath(segmented_image_path, settings.MEDIA_ROOT)
+            scan.processed_image = relative_path
+            scan.save()
+            
+            # Build full URL for the processed image
+            processed_image_url = request.build_absolute_uri(scan.processed_image.url) if scan.processed_image else None
+            
+            response_data = {
+                'status': 'Wound detection complete',
+                'processed_image': processed_image_url,
+                'scan_id': scan.id,
+                'step': 'wound_detection'
+            }
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            import traceback
+            error_details = {
+                'error': str(e),
+                'traceback': traceback.format_exc(),
+                'scan_id': scan.id if 'scan' in locals() else None,
+                'step': 'wound_detection'
+            }
+            return Response(error_details, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def process_depth_analysis(self, request, pk=None):
+        """Step 2: Process depth analysis using ZoeDepth"""
+        scan = self.get_object()
+        try:
+            import os
+            from django.conf import settings
+            from apps.ai_processing.processors.depth_analyzer import DepthAnalyzer
+            
+            # Check if wound detection was done first
+            if not scan.processed_image:
+                return Response(
+                    {'error': 'Wound detection must be completed first'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get the segmented image path
+            segmented_image_path = scan.processed_image.path
+            
+            # Step 2: ZoeDepth Processing
+            depth_analyzer = DepthAnalyzer()
+            depth_results = depth_analyzer.process(segmented_image_path)
+            
+            # Build URLs for depth maps
+            depth_8bit_url = None
+            depth_16bit_url = None
+            
+            if depth_results.get('depth_map_8bit_path'):
+                depth_8bit_relative = os.path.relpath(depth_results['depth_map_8bit_path'], settings.MEDIA_ROOT)
+                depth_8bit_url = request.build_absolute_uri(settings.MEDIA_URL + depth_8bit_relative)
+            
+            if depth_results.get('depth_map_16bit_path'):
+                depth_16bit_relative = os.path.relpath(depth_results['depth_map_16bit_path'], settings.MEDIA_ROOT)
+                depth_16bit_url = request.build_absolute_uri(settings.MEDIA_URL + depth_16bit_relative)
+            
+            response_data = {
+                'status': 'Depth analysis complete',
+                'depth_map_8bit': depth_8bit_url,
+                'depth_map_16bit': depth_16bit_url,
+                'depth_metadata': {
+                    'depth_statistics': depth_results.get('depth_statistics', {}),
+                    'volume_estimate': depth_results.get('volume_estimate', {}),
+                    'wound_severity': depth_results.get('wound_severity', 'unknown'),
+                    'processing_confidence': depth_results.get('processing_confidence', 0.0),
+                    'surface_area': depth_results.get('surface_area', 0.0),
+                    'wound_mask_extracted': depth_results.get('wound_mask_extracted', False),
+                    'analysis_method': depth_results.get('analysis_method', 'ZoeDepth_monocular'),
+                    'processor': depth_results.get('processor', 'DepthAnalyzer'),
+                    'timestamp': depth_results.get('timestamp'),
+                    'units': depth_results.get('units', {})
+                },
+                'scan_id': scan.id,
+                'step': 'depth_analysis'
+            }
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            import traceback
+            error_details = {
+                'error': str(e),
+                'traceback': traceback.format_exc(),
+                'scan_id': scan.id if 'scan' in locals() else None,
+                'step': 'depth_analysis'
+            }
+            return Response(error_details, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def process_mesh_generation(self, request, pk=None):
+        """Step 3: Process mesh generation (placeholder)"""
+        scan = self.get_object()
+        try:
+            # Check if depth analysis was done first
+            # For now, we'll skip this check but it can be added later
+            
+            # TODO: Implement actual mesh generation in future phase
+            # This will include:
+            # 1. Loading depth maps from previous step
+            # 2. Generating 3D mesh using depth data
+            # 3. Creating mesh file (PLY, OBJ, etc.)
+            # 4. Saving mesh file to media storage
+            
+            response_data = {
+                'status': 'Mesh generation complete',
+                'mesh_file_url': None,  # Will be implemented later
+                'scan_id': scan.id,
+                'step': 'mesh_generation',
+                'note': 'Mesh generation placeholder - will be implemented in future phase',
+                'ready_for_implementation': True
+            }
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            import traceback
+            error_details = {
+                'error': str(e),
+                'traceback': traceback.format_exc(),
+                'scan_id': scan.id if 'scan' in locals() else None,
+                'step': 'mesh_generation'
+            }
+            return Response(error_details, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
     def process_scan(self, request, pk=None):
+        """Legacy endpoint: Complete processing pipeline (for backwards compatibility)"""
         scan = self.get_object()
         try:
             import os

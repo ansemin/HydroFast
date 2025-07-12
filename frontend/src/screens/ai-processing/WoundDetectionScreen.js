@@ -44,8 +44,7 @@ const WoundDetectionScreen = () => {
     }
   };
 
-  // Check if we have processing results
-  const hasProcessingResults = scanData?.depth_metadata || scanData?.processed_image;
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -61,13 +60,6 @@ const WoundDetectionScreen = () => {
 
         {/* Title */}
         <Text style={styles.title}>Wound Detection</Text>
-        
-        {/* Processing Status */}
-        {hasProcessingResults && (
-          <View style={styles.statusContainer}>
-            <Text style={styles.statusText}>✅ Wound Detection Complete</Text>
-          </View>
-        )}
 
         {/* Image Preview - Using fixed dimensions */}
         <View style={styles.imageOuterContainer}>
@@ -122,24 +114,7 @@ const styles = StyleSheet.create({
       default: 'sans-serif',
     }),
   },
-  statusContainer: {
-    backgroundColor: '#E8F5E8',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginBottom: 10,
-  },
-  statusText: {
-    fontSize: 14,
-    color: '#27CFA0',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
-  },
+
   imageOuterContainer: {
     width: '100%',
     height: 420, // Keep same height as photo preview for consistency

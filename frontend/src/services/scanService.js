@@ -40,7 +40,7 @@ const processWoundDetection = async (scanId) => {
     console.log('Pipeline: WoundDetector → ZoeDepth → DepthAnalyzer');
     
     const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
-      timeout: 180000, // 3 minutes timeout for AI processing (increased for ZoeDepth)
+      timeout: 300000, // 5 minutes timeout for AI processing (increased for ZoeDepth)
     });
     
     console.log('✅ Comprehensive scan processing completed successfully');
@@ -72,7 +72,7 @@ const processDepthAnalysis = async (scanId) => {
     console.log(`Starting depth analysis for scan ${scanId}`);
     
     const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
-      timeout: 180000, // 3 minutes timeout for ZoeDepth processing
+      timeout: 300000, // 5 minutes timeout for ZoeDepth processing
     });
     
     console.log('✅ Depth analysis completed successfully');

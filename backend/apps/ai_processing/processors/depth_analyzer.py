@@ -30,8 +30,8 @@ class DepthAnalyzer(BaseProcessor):
             'model_type': 'ZoeD_NK',  # ZoeD_NK for better detail preservation
             'contrast_alpha': 0.3,    # Contrast adjustment from research
             'brightness_beta': -40,   # Brightness adjustment from research
-            'blur_kernel': 5,         # Gaussian blur kernel size
-            'mask_extraction_method': 'green_contour',  # 'green_contour' or 'auto_threshold'
+            'blur_kernel': 9,         # Gaussian blur kernel size (improved from notebook)
+            'mask_extraction_method': 'non_black_regions',  # 'non_black_regions' or 'auto_threshold'
             'pixel_size_mm': 0.1,     # Pixel size in mm for volume calculation
             'save_16bit': True,       # Save 16-bit depth maps for precision
             'save_8bit': True,        # Save 8-bit depth maps for visualization
