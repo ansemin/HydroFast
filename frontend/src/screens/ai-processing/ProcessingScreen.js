@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import api from '../../services/api';
 
 const ProcessingScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const step = route.params?.step; // Get step parameter
+  const { step, scanId, scanData, patientId } = route.params || {};
+  const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
     let timeoutDurationSeconds = 5; // Default/fallback duration
@@ -13,51 +15,71 @@ const ProcessingScreen = () => {
 
     // Determine duration and next screen based on the step
     switch (step) {
-      case 1: // From PhotoPreviewScreen
-        timeoutDurationSeconds = 23;
+      case 1: // From PhotoPreviewScreen - Process wound detection
+        timeoutDurationSeconds = 5; // Reduced to 5 seconds for actual processing
         nextScreen = 'Wound Detection';
         break;
       case 2: // From WoundDetectionScreen
-        timeoutDurationSeconds = 59;
+        timeoutDurationSeconds = 3;
         nextScreen = 'Depth Detection';
         break;
       case 3: // From DepthDetectionScreen
-        timeoutDurationSeconds = 32;
+        timeoutDurationSeconds = 3;
         nextScreen = 'Mesh Detection';
         break;
       case 4: // From MeshDetectionScreen
-        timeoutDurationSeconds = 10;
+        timeoutDurationSeconds = 2;
         nextScreen = 'Download Files';
         break;
       default:
-        // If step is missing or invalid, maybe navigate back or to an error screen?
-        // For now, just log an error and use default short timeout.
         console.error(`ProcessingScreen received invalid or missing step parameter: ${step}`);
-        timeoutDurationSeconds = 3; // Short timeout for error case
-        nextScreen = 'Patients List'; // Go back to list on error
+        timeoutDurationSeconds = 3;
+        nextScreen = 'Patients List';
         break;
     }
 
-    const timeoutDurationMs = timeoutDurationSeconds * 1000;
-    
-    console.log(`Processing step ${step || 'unknown'}: ${timeoutDurationSeconds} seconds... Target: ${nextScreen || 'Error/Fallback'}`);
-
-    const timer = setTimeout(() => {
-      if (nextScreen) {
-        console.log(`Timer finished for step ${step}. Navigating to ${nextScreen}...`);
-        // Use replace to prevent user going back to the finished processing screen
-        navigation.replace(nextScreen);
-      } else {
-         // This case should ideally not be reached with the switch logic
-         console.error(`Timer finished for step ${step}, but nextScreen is null.`);
+    const processStep = async () => {
+      try {
+        if (step === 1 && scanId) {
+          // Call the backend API to process the scan
+          console.log('Processing scan with backend API for scanId:', scanId);
+          const response = await api.post(`/scans/${scanId}/process_scan/`);
+          
+          console.log('Backend processing result:', response.data);
+          
+          // Update scanData with processed image URL if available
+          if (response.data.processed_image) {
+            scanData.processed_image = response.data.processed_image;
+          }
+        }
+        
+        // Wait for the specified duration
+        await new Promise(resolve => setTimeout(resolve, timeoutDurationSeconds * 1000));
+        
+        setIsProcessing(false);
+        
+        if (nextScreen) {
+          console.log(`Processing complete for step ${step}. Navigating to ${nextScreen}...`);
+          // Pass along scan data to next screen
+          navigation.replace(nextScreen, { 
+            scanId, 
+            scanData, 
+            patientId,
+            step: step + 1 
+          });
+        } else {
+          console.error(`Processing finished for step ${step}, but nextScreen is null.`);
+        }
+      } catch (error) {
+        console.error('Error during processing:', error);
+        setIsProcessing(false);
+        // Navigate to error state or back to previous screen
+        navigation.goBack();
       }
-    }, timeoutDurationMs);
+    };
 
-    // Cleanup function
-    return () => clearTimeout(timer);
-    
-  // Rerun effect if the step parameter changes (though it usually shouldn't mid-screen)
-  }, [navigation, step]); 
+    processStep();
+  }, [navigation, step, scanId]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -69,7 +91,9 @@ const ProcessingScreen = () => {
         {/* Loading Indicator */}
         <View style={styles.indicatorContainer}>
           <ActivityIndicator size="large" color="#27CFA0" />
-          <Text style={styles.subText}>Please kindly wait while processing</Text>
+          <Text style={styles.subText}>
+            {step === 1 ? 'Detecting wounds...' : 'Please kindly wait while processing'}
+          </Text>
         </View>
       </View>
     </SafeAreaView>

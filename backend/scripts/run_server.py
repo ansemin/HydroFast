@@ -12,6 +12,28 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
+def read_env_file():
+    """Read the .env file from the frontend directory."""
+    frontend_dir = BASE_DIR.parent / "frontend"
+    env_file = frontend_dir / ".env"
+    
+    if not env_file.exists():
+        return None
+    
+    env_vars = {}
+    try:
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    env_vars[key.strip()] = value.strip()
+    except Exception as e:
+        print(f"Error reading .env file: {e}")
+        return None
+    
+    return env_vars
+
 def get_local_ip_addresses():
     """Get all local IP addresses for this machine."""
     ip_addresses = []
@@ -39,24 +61,29 @@ def display_network_info():
     print("NETWORK CONFIGURATION FOR MOBILE APP")
     print("="*60)
     
-    ip_addresses = get_local_ip_addresses()
+    # Read IP address from .env file
+    env_vars = read_env_file()
+    target_ip = None
     
-    # Prioritize the preferred IP address
-    preferred_ip = "172.28.96.144"
-    target_ip = preferred_ip if preferred_ip in ip_addresses else (ip_addresses[0] if ip_addresses else None)
-    
-    if target_ip:
-        print(f"\nUsing IP address: {target_ip}")
+    if env_vars and 'API_BASE_URL' in env_vars:
+        target_ip = env_vars['API_BASE_URL']
+        print(f"\nUsing IP address from .env file: {target_ip}")
         print(f"Mobile app API URL: http://{target_ip}:8000/api")
         
         print(f"\nCurrent frontend/.env configuration:")
         print(f"API_BASE_URL={target_ip}")
         
-        if target_ip != preferred_ip:
-            print(f"\nNote: Preferred IP {preferred_ip} not available, using {target_ip}")
+        # Verify the IP is accessible
+        ip_addresses = get_local_ip_addresses()
+        if target_ip not in ip_addresses:
+            print(f"\nWarning: IP {target_ip} from .env file is not currently available")
+            print("Available IP addresses:", ", ".join(ip_addresses) if ip_addresses else "None")
+        else:
+            print(f"\n✓ IP address {target_ip} is available and accessible")
     else:
-        print("\nNo network IP addresses found.")
-        print("Make sure you're connected to a network.")
+        print("\nNo .env file found or API_BASE_URL not configured.")
+        print("Available IP addresses:", ", ".join(get_local_ip_addresses()))
+        print("Please create frontend/.env with API_BASE_URL=<your_ip_address>")
     
     print("\n" + "="*60)
     print("Starting Django development server...")

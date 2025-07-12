@@ -159,6 +159,7 @@ const CameraScreen = () => {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
+      legacy: true,  // Enables legacy picker on Android - allows access to more photo sources
     });
 
     if (!result.canceled && result.assets[0]) {

@@ -73,8 +73,13 @@ const PhotoPreviewScreen = () => {
       console.log('Upload successful', response);
       Alert.alert('Success', 'Image uploaded to server successfully');
       
-      // Navigate to Processing screen instead of going back, indicating step 1
-      navigation.navigate('Scan Results', { patientId: patientId });
+      // Navigate to Processing screen with step 1 and pass scan data
+      navigation.navigate('Processing', { 
+        step: 1, 
+        scanId: response.id,
+        scanData: response,
+        patientId: patientId 
+      });
     } catch (error) {
       console.error('Error uploading image:', error);
       Alert.alert('Error', `Failed to upload image: ${error.message}`);

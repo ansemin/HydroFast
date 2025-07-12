@@ -38,7 +38,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // Add a timeout of 10 seconds
+  timeout: 60000, // Increased timeout to 60 seconds for AI processing
 });
 
 // Add a request interceptor to include the auth token in requests
@@ -63,16 +63,28 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Error:', {
+    // Enhanced error logging
+    const errorDetails = {
       message: error.message,
       code: error.code,
       url: error.config?.url,
       method: error.config?.method,
-      data: error.config?.data,
       status: error.response?.status,
       statusText: error.response?.statusText,
       responseData: error.response?.data
-    });
+    };
+    
+    console.error('🚨 API Error Details:', errorDetails);
+    
+    // Log specific error types
+    if (error.code === 'ECONNABORTED') {
+      console.error('⏱️ Request timed out - this usually happens during AI processing');
+    } else if (error.code === 'ERR_NETWORK') {
+      console.error('🌐 Network error - check your connection and server status');
+    } else if (error.response?.status >= 500) {
+      console.error('🔧 Server error - check backend logs');
+    }
+    
     return Promise.reject(error);
   }
 );

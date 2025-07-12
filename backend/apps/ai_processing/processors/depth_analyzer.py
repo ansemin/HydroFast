@@ -25,8 +25,16 @@ class DepthAnalyzer(BaseProcessor):
         Args:
             config: Configuration dictionary with depth estimation parameters
         """
+        # Get the project root directory (parent of backend)
+        # Current file: backend/apps/ai_processing/processors/depth_analyzer.py
+        # Need to go up 5 levels to get to Project-2/
+        project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+        depth_weights_path = project_root / 'weights' / 'depth_model.pt'
+        print(f"🎯 Looking for depth weights at: {depth_weights_path}")
+        print(f"🔍 Depth weights file exists: {depth_weights_path.exists()}")
+        
         default_config = {
-            'depth_model_path': 'weights/depth_model.pt',
+            'depth_model_path': str(depth_weights_path),
             'reference_object_size': None,  # Size in mm for scale reference
             'analysis_method': 'stereo_vision',  # 'stereo_vision', 'photometric', 'ml_based'
             'output_format': 'depth_map'  # 'depth_map', 'point_cloud', 'volume_estimate'

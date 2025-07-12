@@ -1,5 +1,3 @@
-readme update 
-
 # Wound Analysis Application User Guide
 
 A Django backend with React Native (Expo) frontend application for wound scanning and analysis using AI processing.
