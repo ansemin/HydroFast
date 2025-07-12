@@ -62,3 +62,6 @@ backend/backup/
 backend/media/scans/*.png
 backend/media/scans/*.jpg
 backend/media/scans/*.jpeg
+backend/media/processed_scans/*.png
+backend/media/processed_scans/*.jpg
+backend/media/processed_scans/*.jpeg    
