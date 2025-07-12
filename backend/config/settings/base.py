@@ -112,6 +112,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
     "http://127.0.0.1:8081",
     "http://172.28.96.144:8081",
+    "http://172.29.104.185:8081",  # Added IP from .env file
+    "http://172.29.104.185:8082",  # Alternative port for Expo
+    "http://172.29.104.185:19000", # Default Expo port
+    "http://172.29.104.185:19001", # Alternative Expo port
     # Add other origins as needed, e.g., your frontend's production URL
 ]
 CORS_ALLOW_CREDENTIALS = True

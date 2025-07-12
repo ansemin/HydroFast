@@ -29,8 +29,16 @@ class WoundDetector(BaseProcessor):
         Args:
             config: Configuration dictionary with model_path, confidence_threshold, etc.
         """
+        # Get the project root directory (parent of backend)
+        # Current file: backend/apps/ai_processing/processors/wound_detector.py
+        # Need to go up 5 levels to get to Project-2/
+        project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+        weights_path = project_root / 'weights' / 'best.pt'
+        print(f"🎯 Looking for weights at: {weights_path}")
+        print(f"🔍 Weights file exists: {weights_path.exists()}")
+        
         default_config = {
-            'model_path': 'weights/best.pt',
+            'model_path': str(weights_path),
             'confidence_threshold': 0.5,
             'iou_threshold': 0.45,
             'image_size': 640
@@ -41,8 +49,12 @@ class WoundDetector(BaseProcessor):
         super().__init__(default_config)
         self.model = self.load_model()
     
-    def load_model(self, model_path='weights/best.pt'):
+    def load_model(self, model_path=None):
         """Load the YOLO wound detection model."""
+        # Use the configured model path if not provided
+        if model_path is None:
+            model_path = self.config.get('model_path', 'weights/best.pt')
+        
         try:
             # Check if the model file exists
             if not os.path.exists(model_path):

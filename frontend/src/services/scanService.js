@@ -36,10 +36,17 @@ const createScan = async (formData) => {
 
 const processWoundDetection = async (scanId) => {
   try {
-    const response = await api.post(`/scans/${scanId}/process_scan/`);
+    console.log(`Starting wound detection processing for scan ${scanId}`);
+    const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
+      timeout: 120000, // 2 minutes timeout for AI processing
+    });
+    console.log('Wound detection processing completed successfully');
     return response.data;
   } catch (error) {
     console.error('Error processing wound detection:', error);
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out - AI processing is taking longer than expected');
+    }
     throw error;
   }
 };
