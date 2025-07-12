@@ -53,6 +53,9 @@ MLIntegration/
 # Cursor editor files
 .cursor/
 
+# IDE files
+.idea/
+
 # Gemini-specific files
 GEMINI.md
 db.sqlite3
