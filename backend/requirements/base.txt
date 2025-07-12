@@ -5,6 +5,7 @@ django-cors-headers==4.3.1
 
 # Image processing
 Pillow==10.3.0
+scikit-image>=0.18.0
 
 # ZoeDepth and AI Processing Dependencies
 torch>=2.0.0

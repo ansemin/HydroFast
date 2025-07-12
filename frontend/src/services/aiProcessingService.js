@@ -7,7 +7,7 @@ export const aiProcessingService = {
     try {
       console.log(`Starting comprehensive AI processing for scan ${scanId}`);
       const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
-        timeout: 180000, // 3 minutes timeout for ZoeDepth processing
+        timeout: 300000, // 5 minutes timeout for ZoeDepth processing
       });
       
       console.log('✅ Comprehensive AI processing completed');
@@ -22,7 +22,7 @@ export const aiProcessingService = {
   processWoundDetection: async (scanId) => {
     try {
       const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
-        timeout: 180000, // 3 minutes timeout for ZoeDepth processing
+        timeout: 300000, // 5 minutes timeout for ZoeDepth processing
       });
       return response.data;
     } catch (error) {
@@ -35,7 +35,7 @@ export const aiProcessingService = {
   processDepthAnalysis: async (scanId) => {
     try {
       const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
-        timeout: 180000, // 3 minutes timeout for ZoeDepth processing
+        timeout: 300000, // 5 minutes timeout for ZoeDepth processing
       });
       return response.data;
     } catch (error) {

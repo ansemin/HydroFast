@@ -67,4 +67,8 @@ backend/media/scans/*.jpg
 backend/media/scans/*.jpeg
 backend/media/processed_scans/*.png
 backend/media/processed_scans/*.jpg
-backend/media/processed_scans/*.jpeg    
+backend/media/processed_scans/*.jpeg  
+backend/media/depth_maps/*.png
+backend/media/depth_maps/*.jpg
+backend/media/depth_maps/*.jpeg
+backend/media/depth_maps/*.json

@@ -40,30 +40,43 @@ const ProcessingScreen = () => {
 
     const processStep = async () => {
       try {
+        let response = null;
+        
         if (step === 1 && scanId) {
-          // Call the comprehensive backend API to process the scan
-          console.log('🚀 Starting comprehensive processing for scanId:', scanId);
-          console.log('Pipeline: WoundDetector → ZoeDepth → DepthAnalyzer');
+          // Step 1: Process wound detection only
+          console.log('🎯 Processing Step 1: Wound Detection for scanId:', scanId);
           
-          const response = await api.post(`/scans/${scanId}/process_scan/`, {}, {
-            timeout: 180000, // 3 minutes timeout for ZoeDepth processing
+          response = await api.post(`/scans/${scanId}/process_wound_detection/`, {}, {
+            timeout: 60000, // 1 minute timeout for wound detection
           });
           
-          console.log('✅ Comprehensive processing completed:', response.data);
+          console.log('✅ Wound detection completed:', response.data);
           
-          // Update scanData with comprehensive processing results
+          // Update scanData with wound detection results
           if (response.data) {
-            // Store all processing results in scanData
             scanData.processed_image = response.data.processed_image;
+            scanData.scan_id = response.data.scan_id;
+          }
+          
+        } else if (step === 2 && scanId) {
+          // Step 2: Process depth analysis using ZoeDepth
+          console.log('🎯 Processing Step 2: ZoeDepth Analysis for scanId:', scanId);
+          
+          response = await api.post(`/scans/${scanId}/process_depth_analysis/`, {}, {
+            timeout: 300000, // 5 minutes timeout for ZoeDepth processing
+          });
+          
+          console.log('✅ ZoeDepth analysis completed:', response.data);
+          
+          // Update scanData with depth analysis results
+          if (response.data) {
             scanData.depth_map_8bit = response.data.depth_map_8bit;
             scanData.depth_map_16bit = response.data.depth_map_16bit;
             scanData.depth_metadata = response.data.depth_metadata;
-            scanData.processing_pipeline = response.data.processing_pipeline;
-            scanData.scan_id = response.data.scan_id;
             
-            // Log key results
+            // Log key ZoeDepth results
             if (response.data.depth_metadata) {
-              console.log('📊 Depth Analysis Results:');
+              console.log('📊 ZoeDepth Analysis Results:');
               console.log(`   • Wound Severity: ${response.data.depth_metadata.wound_severity}`);
               console.log(`   • Volume: ${response.data.depth_metadata.volume_estimate?.total_volume || 'N/A'} cubic mm`);
               console.log(`   • Confidence: ${(response.data.depth_metadata.processing_confidence * 100).toFixed(1)}%`);
@@ -71,16 +84,31 @@ const ProcessingScreen = () => {
               console.log(`   • Mask Extracted: ${response.data.depth_metadata.wound_mask_extracted ? 'Yes' : 'No'}`);
             }
           }
+          
+        } else if (step === 3 && scanId) {
+          // Step 3: Process mesh generation (placeholder)
+          console.log('🎯 Processing Step 3: Mesh Generation for scanId:', scanId);
+          
+          response = await api.post(`/scans/${scanId}/process_mesh_generation/`, {}, {
+            timeout: 30000, // 30 seconds timeout for mesh generation
+          });
+          
+          console.log('✅ Mesh generation completed:', response.data);
+          
+        } else if (step === 4) {
+          // Step 4: No processing needed, just prepare download files
+          console.log('🎯 Step 4: Preparing download files');
+          // No API call needed, just simulate processing time
         }
         
-        // Wait for the specified duration (reduced since actual processing is done)
+        // Wait for the specified duration for UI consistency
         await new Promise(resolve => setTimeout(resolve, Math.min(timeoutDurationSeconds * 1000, 2000)));
         
         setIsProcessing(false);
         
         if (nextScreen) {
           console.log(`Processing complete for step ${step}. Navigating to ${nextScreen}...`);
-          // Pass along enhanced scan data to next screen
+          // Pass along updated scan data to next screen
           navigation.replace(nextScreen, { 
             scanId, 
             scanData, 
@@ -95,7 +123,7 @@ const ProcessingScreen = () => {
         
         // Enhanced error handling
         if (error.code === 'ECONNABORTED') {
-          console.error('⏱️ Request timed out - ZoeDepth processing took longer than expected');
+          console.error('⏱️ Request timed out - Processing took longer than expected');
         } else if (error.response) {
           console.error('🔧 Server error:', error.response.status, error.response.data);
         } else {
@@ -123,9 +151,9 @@ const ProcessingScreen = () => {
           <ActivityIndicator size="large" color="#27CFA0" />
           <Text style={styles.subText}>
             {step === 1 
-              ? 'Processing: Wound Detection → ZoeDepth → Analysis...' 
+              ? 'Processing wound detection...' 
               : step === 2
-              ? 'Analyzing depth results...'
+              ? 'Analyzing depth with ZoeDepth...'
               : step === 3
               ? 'Generating 3D mesh...'
               : step === 4

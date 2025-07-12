@@ -45,8 +45,8 @@ class ZoeDepthProcessor(BaseProcessor):
             'output_size': None,        # If None, uses input image size
             'contrast_alpha': 0.3,      # Contrast adjustment from research
             'brightness_beta': -40,     # Brightness adjustment from research
-            'blur_kernel': 5,           # Gaussian blur kernel size
-            'mask_extraction_method': 'green_contour',  # 'green_contour' or 'auto_threshold'
+            'blur_kernel': 9,           # Gaussian blur kernel size (improved from notebook)
+            'mask_extraction_method': 'non_black_regions',  # 'non_black_regions' or 'auto_threshold'
             'pixel_size_mm': 0.1,      # Pixel size in mm for volume calculation
             'save_16bit': True,         # Save 16-bit depth maps for precision
             'save_8bit': True,          # Save 8-bit depth maps for visualization
@@ -138,27 +138,20 @@ class ZoeDepthProcessor(BaseProcessor):
                 method=self.config['mask_extraction_method']
             )
             
-            # Apply depth processing (Algorithm 1)
+            # Apply depth processing (improved algorithm with wound mask)
             processed_depth_map = apply_depth_processing(
                 raw_depth_map,
+                mask=wound_mask,
                 contrast_alpha=self.config['contrast_alpha'],
                 brightness_beta=self.config['brightness_beta'],
                 blur_kernel=self.config['blur_kernel']
             )
             
-            # Apply wound mask to depth map if mask extraction was successful
+            # Note: Wound mask is now applied inside the improved apply_depth_processing function
             if wound_mask is not None:
-                # Ensure mask is same size as depth map
-                if wound_mask.shape[:2] != processed_depth_map.shape[:2]:
-                    wound_mask = cv2.resize(wound_mask, processed_depth_map.shape[:2][::-1])
-                
-                # Apply mask to depth map
-                mask_binary = (wound_mask > 0).astype(np.float32)
-                processed_depth_map = processed_depth_map * mask_binary
-                
-                logger.info("Successfully applied wound mask to depth map")
+                logger.info("Successfully extracted wound mask for depth processing")
             else:
-                logger.warning("Could not extract wound mask, using full depth map")
+                logger.warning("Could not extract wound mask from non-black regions, using full depth map")
             
             # Calculate depth statistics
             depth_stats = calculate_depth_statistics(processed_depth_map, wound_mask)
@@ -298,8 +291,24 @@ class ZoeDepthProcessor(BaseProcessor):
         """
         try:
             with torch.no_grad():
-                # Generate depth map
-                depth_tensor = self.model(image_tensor)
+                # Generate depth map using infer method for better results
+                model_output = self.model.infer(image_tensor)
+                
+                # Handle different output formats from ZoeDepth
+                if isinstance(model_output, dict):
+                    # ZoeDepth returns a dict with 'metric_depth' key
+                    if 'metric_depth' in model_output:
+                        depth_tensor = model_output['metric_depth']
+                    elif 'depth' in model_output:
+                        depth_tensor = model_output['depth']
+                    else:
+                        # Take the first value if no known keys
+                        depth_tensor = list(model_output.values())[0]
+                        logger.warning("Unknown ZoeDepth output format, using first value")
+                elif isinstance(model_output, torch.Tensor):
+                    depth_tensor = model_output
+                else:
+                    raise ValueError(f"Unexpected model output type: {type(model_output)}")
                 
                 # Convert to numpy array
                 depth_map = depth_tensor.squeeze().cpu().numpy()
@@ -308,11 +317,15 @@ class ZoeDepthProcessor(BaseProcessor):
                 depth_map = depth_map.astype(np.float32)
                 
                 logger.info(f"Generated depth map with shape: {depth_map.shape}")
+                logger.info(f"Model output type: {type(model_output)}")
                 
                 return depth_map
                 
         except Exception as e:
             logger.error(f"Error generating depth map: {e}")
+            logger.error(f"Model output type: {type(model_output) if 'model_output' in locals() else 'Unknown'}")
+            if 'model_output' in locals() and isinstance(model_output, dict):
+                logger.error(f"Dict keys: {list(model_output.keys())}")
             raise
     
     def _save_depth_maps(self, depth_map: np.ndarray, original_image_path: str) -> Dict[str, str]:

@@ -4,12 +4,18 @@ A Django backend with React Native (Expo) frontend application for wound scannin
 
 ## Project Structure
 
+**🎯 ZoeDepth Integration Status: COMPLETE ✅
+- **Pipeline**: WoundDetector → ZoeDepth (ZoeD_NK) → DepthAnalyzer  
+- **Endpoint**: `/api/scans/{id}/process_scan/` (180s timeout)
+- **Output**: 8-bit & 16-bit depth maps + comprehensive metadata
+- **Frontend**: Depth visualization, volume estimates, downloads ready
+
 ```
 Project-2/
 ├── .env.example            # Backend environment template (Gemini API key)
-├── requirements.txt        # Complete ZoeDepth project dependencies (all 62 packages)
-├── weights/               # AI model files (YOLO, depth estimation models)
-├── backend/                 # Django REST API backend
+├── requirements.txt        # Complete ZoeDepth project dependencies (62 packages) 🔥 UPDATED
+├── weights/               # AI model weights (ZoeDepth models: ZoeD_NK 1.35GB, ZoeD_N 1.34GB)
+├── backend/                 # Django REST API backend (ZoeDepth pipeline COMPLETE ✅)
 │   ├── apps/               # Django applications (modular architecture)
 │   │   ├── authentication/ # User authentication & authorization
 │   │   │   ├── models.py   # UserProfile model with admin roles
@@ -26,22 +32,24 @@ Project-2/
 │   │   │       ├── generate_patients.py    # Generate test patient data
 │   │   │       ├── load_sample_patients.py # Load sample patient records
 │   │   │       └── delete_patients.py      # Bulk delete patients
-│   │   ├── scans/          # Medical scan data handling & storage
+│   │   ├── scans/          # Medical scan data & ZoeDepth processing endpoint
 │   │   │   ├── models.py   # Scan model (image, processed_image, patient relation)
-│   │   │   ├── views.py    # ScanViewSet with file upload support
-│   │   │   ├── urls.py     # RESTful API: /api/scans/ (CRUD + file upload)
+│   │   │   ├── views.py    # ScanViewSet + /process_scan/ endpoint (180s timeout)
+│   │   │   ├── urls.py     # RESTful API: /api/scans/ (CRUD + ZoeDepth processing)
 │   │   │   ├── serializers.py # Scan data serialization
 │   │   │   └── management/commands/create_scans.py # Generate test scan data
-│   │   ├── ai_processing/  # AI model integration & processing pipeline
+│   │   ├── ai_processing/  # AI model integration & ZoeDepth pipeline (COMPLETE)
 │   │   │   ├── models.py   # AIModel model for storing AI model metadata
-│   │   │   ├── views.py    # AIModelViewSet for model management
+│   │   │   ├── views.py    # AIModelViewSet for model management  
 │   │   │   ├── urls.py     # API endpoints: /api/aimodels/
 │   │   │   ├── serializers.py # AI model data serialization
-│   │   │   └── processors/ # AI processing pipeline components
-│   │   │       ├── base.py         # BaseProcessor abstract class
-│   │   │       ├── wound_detector.py    # YOLO-based wound detection
-│   │   │       ├── depth_analyzer.py    # Depth map analysis
-│   │   │       └── mesh_generator.py    # 3D mesh generation
+│   │   │   └── processors/ # AI processing pipeline components (ZoeDepth integrated)
+│   │   │       ├── base.py              # BaseProcessor abstract class
+│   │   │       ├── wound_detector.py    # YOLO-based wound detection (segmentation)
+│   │   │       ├── zoedepth_processor.py # ZoeDepth monocular depth estimation (ZoeD_NK)
+│   │   │       ├── depth_utils.py       # ZoeDepth utilities (Algorithm 1 processing)
+│   │   │       ├── depth_analyzer.py    # Depth analysis wrapper (uses ZoeDepth)
+│   │   │       └── mesh_generator.py    # 3D mesh generation from depth maps
 │   │   ├── common/         # Shared utilities and mixins
 │   │   └── __init__.py
 │   ├── config/             # Django configuration & settings
@@ -53,10 +61,11 @@ Project-2/
 │   │   ├── urls.py         # Main URL configuration
 │   │   ├── wsgi.py         # WSGI application
 │   │   └── asgi.py         # ASGI application
-│   ├── coreViews/          # Legacy app (migration in progress)
+│   ├── coreViews/          # Legacy app (kept for backwards compatibility)
 │   │   ├── models.py       # Legacy Patient, Scan, AIModel, UserProfile models
-│   │   ├── views.py        # Legacy API views and authentication
-│   │   └── urls.py         # Legacy API endpoints
+│   │   ├── views.py        # Legacy API views and authentication  
+│   │   ├── urls.py         # Legacy API endpoints
+│   │   └── management/commands/ # Legacy management commands
 │   ├── requirements/       # Environment-specific dependencies
 │   │   ├── base.txt        # Core dependencies (Django, DRF, Pillow)
 │   │   ├── development.txt # Dev tools (debug toolbar, pytest, black)
@@ -64,25 +73,28 @@ Project-2/
 │   │   └── testing.txt     # Testing framework dependencies
 │   ├── scripts/            # Server startup & utility scripts
 │   │   ├── run_server.py   # Production server runner with network detection
-│   │   ├── run_server.bat  # Windows batch file for server startup
-│   │   └── yolov8n-seg.pt  # YOLO segmentation model weights
-│   ├── media/              # Uploaded files & processed images
+│   │   ├── run_server.bat  # Windows batch file for server startup  
+│   │   └── yolov8n-seg.pt  # YOLO segmentation model weights (6.7MB)
+│   ├── media/              # Uploaded files & processed images  
 │   │   ├── scans/          # Original medical scan images
-│   │   ├── processed_scans/ # AI-processed scan results
-│   │   └── ai_models/      # Uploaded AI model files
+│   │   ├── processed_scans/ # YOLO-segmented wound images
+│   │   ├── depth_maps/     # ZoeDepth-generated depth maps (8-bit & 16-bit)
+│   │   ├── ai_models/      # Uploaded AI model files
+│   │   └── info.txt        # Media directory information
 │   ├── static/             # Static files (CSS, JS, images)
 │   ├── logs/               # Application logs
 │   │   └── django.log      # Django application logs
+│   ├── db.sqlite3          # SQLite database file
 │   └── manage.py           # Django management script
 ├── frontend/               # React Native (Expo) mobile app
-│   ├── src/                # Source code directory
+│   ├── src/                # Source code directory (cleaned up - unused files removed)
 │   │   ├── screens/        # App screens (13 total - complete workflow)
 │   │   │   ├── auth/       # Authentication screens
 │   │   │   │   ├── LoginScreen.js     # User login with token authentication
 │   │   │   │   ├── SignUpScreen.js    # User registration
 │   │   │   │   └── index.js           # Auth screens export
 │   │   │   ├── patients/   # Patient management screens (4 screens)
-│   │   │   │   ├── PatientsListScreen.js    # Patient list with search & logout
+│   │   │   │   ├── PatientsListScreen.js    # Patient list with search & logout (uses PatientListItem)
 │   │   │   │   ├── NewPatientFormScreen.js  # Patient creation form (NRIC, DOB, etc.)
 │   │   │   │   ├── PatientDetailScreen.js   # Patient details, edit, delete, scan access
 │   │   │   │   ├── ScanResultsScreen.js     # View patient scan history & results
@@ -99,18 +111,16 @@ Project-2/
 │   │   │   │   ├── DownloadFilesScreen.js   # Download processed files (STL, images)
 │   │   │   │   └── index.js                 # AI processing screens export
 │   │   │   └── index.js    # Main screens export
-│   │   ├── components/     # Reusable UI components
-│   │   │   ├── ui/         # Core UI components
+│   │   ├── components/     # Reusable UI components (architecture cleaned up)
+│   │   │   ├── ui/         # Core UI components (active components)
 │   │   │   │   ├── LogoHeader.js        # App logo header component
-│   │   │   │   ├── PatientCard.js       # Patient list item component
 │   │   │   │   ├── NavigationButton.js  # Styled navigation buttons
-│   │   │   │   ├── Icons.js             # SVG icon components (Camera, Back)
+│   │   │   │   ├── Icons.js             # SVG icon components (Camera, Back - available)
 │   │   │   │   └── index.js             # UI components export
 │   │   │   ├── navigation/ # Navigation utilities
-│   │   │   │   └── index.js             # Navigation components export
-│   │   │   ├── NavigationButton.js      # Legacy navigation component
-│   │   │   ├── ProcessingScreen.js      # Legacy processing component
-│   │   │   └── Icons.js                 # Legacy icons component
+│   │   │   │   └── index.js             # Navigation components export (empty)
+│   │   │   ├── layout/     # Layout components directory (empty)
+│   │   │   └── index.js    # Main components export
 │   │   ├── services/       # API layer & backend integration (5 services)
 │   │   │   ├── api.js      # Base API configuration with axios
 │   │   │   │               # - Dynamic IP detection (.env support)
@@ -147,8 +157,6 @@ Project-2/
 │   │   │   │   └── DropDownIcon.png  # Dropdown menu icon
 │   │   │   ├── images/     # Sample images & branding
 │   │   │   │   ├── NUS_logo.jpg      # University branding
-│   │   │   │   ├── smallPaw.png      # App icon/mascot
-│   │   │   │   ├── screenshot.png    # App screenshot
 │   │   │   │   ├── download_icon_*.png # Download buttons
 │   │   │   │   ├── 0138_segmented.png    # Sample processed scan
 │   │   │   │   ├── 0138_depth_grayscale_zd.png # Sample depth map
