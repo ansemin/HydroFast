@@ -2,18 +2,16 @@ import React from 'react';
 import { 
   View, 
   Text, 
-  Image, 
   TouchableOpacity, 
   StyleSheet, 
+  ScrollView, 
+  Linking, 
+  Alert, 
   Platform, 
   StatusBar, 
-  SafeAreaView, 
-  Alert 
+  SafeAreaView 
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -25,240 +23,279 @@ function BackArrowIcon() {
   );
 }
 
-// --- Asset Imports ---
-const leftDownloadIcon = require('../../assets/images/download_icon_green_left.png');
-const rightDownloadIcon = require('../../assets/images/download_icon_white_right.png');
-
-// Reference the ZIP file asset
-// const zipAssetModule = require('../../Images/0138_z0.40_mesh.zip'); 
-
 const DownloadFilesScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
 
-  // Download functionality for depth maps
-  const downloadDepthMap = async (url, filename) => {
+  // Download a file by opening it in the browser
+  const downloadFile = async (url, filename) => {
     try {
       if (!url) {
-        Alert.alert('Error', 'Depth map URL not available');
+        Alert.alert('Error', 'File URL not available');
         return;
       }
 
-      console.log(`Downloading depth map: ${filename}`);
+      // Check if this is a simulation URL
+      if (url.startsWith('simulation://')) {
+        Alert.alert(
+          'Simulation Mode', 
+          `This is a demo. In the real app, ${filename} would be downloaded from the server.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+
+      console.log(`Downloading ${filename} from:`, url);
       
-      // For now, show download initiated message
-      Alert.alert(
-        'Download Started', 
-        `Downloading ${filename}...\n\nNote: Full download functionality will be implemented in the next phase.`,
-        [{ text: 'OK' }]
-      );
-      
+      // Open the URL in the browser/default app
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+        Alert.alert('Download Started', `${filename} download has been initiated`);
+      } else {
+        Alert.alert('Error', `Cannot open URL: ${url}`);
+      }
     } catch (error) {
-      console.error('Error downloading depth map:', error);
+      console.error(`Error downloading ${filename}:`, error);
       Alert.alert('Download Error', `Failed to download ${filename}: ${error.message}`);
     }
   };
 
-  // Download functionality for STL files
-  const downloadSTLFile = async (url, filename) => {
-    try {
-      if (!url) {
-        Alert.alert('Error', 'STL file URL not available');
-        return;
-      }
-
-      console.log(`Downloading STL file: ${filename}`);
-      
-      // For now, show download initiated message
-      Alert.alert(
-        'Download Started', 
-        `Downloading ${filename}...\n\nFile Size: ${scanData?.mesh_metadata?.file_size || 'Unknown'}\nFormat: STL (3D Model)`,
-        [{ text: 'OK' }]
-      );
-      
-    } catch (error) {
-      console.error('Error downloading STL file:', error);
-      Alert.alert('Download Error', `Failed to download ${filename}: ${error.message}`);
-    }
-  };
-
-  // Download all files
+  // Download all available files
   const downloadAllFiles = async () => {
     try {
-      const availableFiles = [];
-      
-      if (scanData?.processed_image) availableFiles.push('Segmented Image');
-      if (scanData?.depth_map_8bit) availableFiles.push('Depth Map (8-bit)');
-      if (scanData?.depth_map_16bit) availableFiles.push('Depth Map (16-bit)');
-      if (scanData?.stl_file) availableFiles.push('STL File');
-      
-      if (availableFiles.length === 0) {
-        Alert.alert('No Files', 'No files available for download');
+      const files = getAvailableFiles();
+      if (files.length === 0) {
+        Alert.alert('No Files', 'No files are available for download');
         return;
       }
+
+      // Check if we're in simulation mode
+      const isSimulation = files.some(file => file.url.startsWith('simulation://'));
       
-      Alert.alert(
-        'Download All Files', 
-        `Downloading ${availableFiles.length} files:\n• ${availableFiles.join('\n• ')}\n\nNote: Full download functionality will be implemented in the next phase.`,
-        [{ text: 'OK' }]
-      );
+      if (isSimulation) {
+        Alert.alert(
+          'Simulation Mode',
+          `This is a demo. In the real app, all ${files.length} files would be downloaded as a ZIP archive.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+
+      // Download each file with a small delay between them
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        await downloadFile(file.url, file.name);
+        
+        // Add a small delay between downloads
+        if (i < files.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
       
+      Alert.alert('Download All', `Started downloading ${files.length} files`);
     } catch (error) {
       console.error('Error downloading all files:', error);
       Alert.alert('Download Error', `Failed to download files: ${error.message}`);
     }
   };
 
-  /*
-  const handleDownload = async () => {
-    console.log('Download initiated using FileSystem.downloadAsync...');
-    try {
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert('Error', 'Sharing is not available on this device');
-        return;
-      }
+  // Get list of available files for download
+  const getAvailableFiles = () => {
+    const files = [];
 
-      // 1. Get the Asset object primarily to find its network URI
-      const asset = Asset.fromModule(zipAssetModule);
-      const networkUri = asset.uri;
-      console.log('Asset Network URI:', networkUri);
-
-      if (!networkUri) {
-        Alert.alert('Error', 'Could not resolve the asset network URI.');
-        console.error('Failed to get network uri for asset:', asset);
-        return;
-      }
-      
-      // 2. Define temporary path and filename for the download destination
-      const filename = "STL result.zip";
-      const localDestinationUri = FileSystem.cacheDirectory + filename; 
-      console.log('Local Download Destination:', localDestinationUri);
-
-      // 3. Download the file from the Metro server URI to the local destination
-      console.log(`Attempting download from ${networkUri} to ${localDestinationUri}`);
-      const downloadResult = await FileSystem.downloadAsync(
-        networkUri, 
-        localDestinationUri
-      );
-      console.log('Download complete:', downloadResult);
-
-      if (downloadResult.status !== 200) {
-        throw new Error(`Failed to download file: Server responded with status ${downloadResult.status}`);
-      }
-
-      // 4. Share the explicitly downloaded file (using the URI from the download result)
-      await Sharing.shareAsync(downloadResult.uri, { // Use downloadResult.uri
-        mimeType: 'application/zip', 
-        dialogTitle: 'Save or Share ZIP file', 
-        UTI: 'public.zip-archive' 
-      });
-      console.log('Sharing dialog prompted for downloaded ZIP.');
-
-    } catch (error) {
-      console.error('Error during FileSystem.downloadAsync/share process:', error);
-      Alert.alert('Download Error', `Failed to download or share the file: ${error.message}`);
+    // Check if we have scanData, otherwise use simulation data
+    const isSimulation = !scanData?.image;
+    
+    if (isSimulation) {
+      // Simulation mode - return mock file list for testing
+      return [
+        {
+          name: 'Original Image',
+          filename: 'original_image.jpg',
+          url: 'simulation://original_image.jpg',
+          type: 'Image',
+          description: 'Original wound photograph'
+        },
+        {
+          name: 'Segmented Image',
+          filename: 'segmented_wound.jpg',
+          url: 'simulation://segmented_wound.jpg',
+          type: 'Image',
+          description: 'Wound segmentation result'
+        },
+        {
+          name: '8-bit Depth Map',
+          filename: 'depth_map_8bit.png',
+          url: 'simulation://depth_map_8bit.png',
+          type: 'Image',
+          description: 'ZoeDepth analysis result (8-bit)'
+        },
+        {
+          name: '16-bit Depth Map',
+          filename: 'depth_map_16bit.png',
+          url: 'simulation://depth_map_16bit.png',
+          type: 'Image',
+          description: 'ZoeDepth analysis result (16-bit)'
+        },
+        {
+          name: 'STL 3D Model',
+          filename: 'wound_model.stl',
+          url: 'simulation://wound_model.stl',
+          type: '3D Model',
+          description: '3D printable mesh (2.4 MB)'
+        },
+        {
+          name: 'STL Preview',
+          filename: 'stl_preview.png',
+          url: 'simulation://stl_preview.png',
+          type: 'Image',
+          description: '3D mesh visualization'
+        },
+        {
+          name: 'G-code Print File',
+          filename: 'wound_model.gcode',
+          url: 'simulation://wound_model.gcode',
+          type: 'Print File',
+          description: 'Ready for 3D printing'
+        }
+      ];
     }
+
+    // Original image
+    if (scanData?.image) {
+      files.push({
+        name: 'Original Image',
+        filename: 'original_image.jpg',
+        url: scanData.image,
+        type: 'Image',
+        description: 'Original wound photograph'
+      });
+    }
+
+    // Segmented image (wound detection result)
+    if (scanData?.processed_image) {
+      files.push({
+        name: 'Segmented Image',
+        filename: 'segmented_wound.jpg',
+        url: scanData.processed_image,
+        type: 'Image',
+        description: 'Wound segmentation result'
+      });
+    }
+
+    // Depth map (8-bit)
+    if (scanData?.depth_map_8bit) {
+      files.push({
+        name: '8-bit Depth Map',
+        filename: 'depth_map_8bit.png',
+        url: scanData.depth_map_8bit,
+        type: 'Image',
+        description: 'ZoeDepth analysis result (8-bit)'
+      });
+    }
+
+    // Depth map (16-bit)
+    if (scanData?.depth_map_16bit) {
+      files.push({
+        name: '16-bit Depth Map',
+        filename: 'depth_map_16bit.png',
+        url: scanData.depth_map_16bit,
+        type: 'Image',
+        description: 'ZoeDepth analysis result (16-bit)'
+      });
+    }
+
+    // STL file
+    if (scanData?.stl_file_url) {
+      const fileSize = scanData?.mesh_metadata?.file_size_mb ? `${scanData.mesh_metadata.file_size_mb} MB` : '';
+      files.push({
+        name: 'STL 3D Model',
+        filename: 'wound_model.stl',
+        url: scanData.stl_file_url,
+        type: '3D Model',
+        description: `3D printable mesh ${fileSize}`.trim()
+      });
+    }
+
+    // STL preview image
+    if (scanData?.stl_preview_url) {
+      files.push({
+        name: 'STL Preview',
+        filename: 'stl_preview.png',
+        url: scanData.stl_preview_url,
+        type: 'Image',
+        description: '3D mesh visualization'
+      });
+    }
+
+    return files;
   };
-  */
+
+  const availableFiles = getAvailableFiles();
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.container}>
-        {/* Header */} 
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => {
-              // Navigate back to scan results if we have patientId, otherwise to patients list
-              if (patientId) {
-                navigation.navigate('Scan Results', { patientId });
-              } else {
-                navigation.navigate('Patients List');
-              }
-            }}
-          >
-            <BackArrowIcon />
-          </TouchableOpacity>
-          
-          <Text style={styles.headerTitle}>Download Files</Text>
-          
-          {/* Placeholder for alignment */}
-          <View style={{ width: 30 }} /> 
+        {/* Back Button */}
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Patients List')}
+        >
+          <BackArrowIcon />
+        </TouchableOpacity>
+
+        {/* Title */}
+        <Text style={styles.title}>Download Files</Text>
+
+        {/* Success Message */}
+        <View style={styles.successContainer}>
+          <Text style={styles.successTitle}>YOUR FILES ARE READY!</Text>
+          <Text style={styles.successSubtitle}>
+            Processing complete. {availableFiles.length} file{availableFiles.length !== 1 ? 's' : ''} available for download.
+          </Text>
         </View>
 
-        {/* Content Area */} 
-        <View style={styles.contentContainer}>
-          <Text style={styles.subTitle}>Your Files Are Ready</Text>
-
-          {/* Segmented Image */}
-          {scanData?.processed_image && (
-            <View style={styles.fileBox}>
-              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
-              <View style={styles.fileInfoTextContainer}>
-                <Text style={styles.fileName}>Segmented Image</Text>
-                <Text style={styles.fileDetails}>PNG Image • Wound Detection Result</Text> 
-              </View>
-              <TouchableOpacity onPress={() => downloadDepthMap(scanData.processed_image, 'segmented_wound.png')}>
-                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* 8-bit Depth Map */}
-          {scanData?.depth_map_8bit && (
-            <View style={styles.fileBox}>
-              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
-              <View style={styles.fileInfoTextContainer}>
-                <Text style={styles.fileName}>Depth Map (8-bit)</Text>
-                <Text style={styles.fileDetails}>PNG Image • ZoeDepth Visualization</Text> 
-              </View>
-              <TouchableOpacity onPress={() => downloadDepthMap(scanData.depth_map_8bit, 'depth_map_8bit.png')}>
-                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* 16-bit Depth Map */}
-          {scanData?.depth_map_16bit && (
-            <View style={styles.fileBox}>
-              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
-              <View style={styles.fileInfoTextContainer}>
-                <Text style={styles.fileName}>Depth Map (16-bit)</Text>
-                <Text style={styles.fileDetails}>PNG Image • High Precision Depth Data</Text> 
-              </View>
-              <TouchableOpacity onPress={() => downloadDepthMap(scanData.depth_map_16bit, 'depth_map_16bit.png')}>
-                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* STL File */}
-          {scanData?.stl_file && (
-            <View style={styles.fileBox}>
-              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
-              <View style={styles.fileInfoTextContainer}>
-                <Text style={styles.fileName}>
-                  {scanData.mesh_metadata?.filename || 'STL_Model.stl'}
+        {/* Files List */}
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={styles.filesContainer}>
+            {availableFiles.length > 0 ? (
+              availableFiles.map((file, index) => (
+                <View key={index} style={styles.fileItem}>
+                  <View style={styles.fileInfo}>
+                    <Text style={styles.fileName}>{file.name}</Text>
+                    <Text style={styles.fileType}>{file.type}</Text>
+                    <Text style={styles.fileDescription}>{file.description}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.downloadButton}
+                    onPress={() => downloadFile(file.url, file.filename)}
+                  >
+                    <Text style={styles.downloadButtonText}>Download</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            ) : (
+              <View style={styles.noFilesContainer}>
+                <Text style={styles.noFilesText}>No files available for download</Text>
+                <Text style={styles.noFilesSubtext}>
+                  Please ensure all processing steps have been completed.
                 </Text>
-                <Text style={styles.fileDetails}>
-                  STL File • 3D Mesh • {scanData.mesh_metadata?.file_size || 'Unknown size'}
-                </Text> 
               </View>
-              <TouchableOpacity onPress={() => downloadSTLFile(scanData.stl_file, scanData.mesh_metadata?.filename || 'STL_Model.stl')}>
-                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+            )}
+          </View>
+        </ScrollView>
 
-        {/* Footer Button */} 
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.downloadAllButton} onPress={downloadAllFiles}>
-            <Text style={styles.downloadAllButtonText}>Download All</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Download All Button */}
+        {availableFiles.length > 0 && (
+          <View style={styles.buttonWrapper}>
+            <TouchableOpacity style={styles.downloadAllButton} onPress={downloadAllFiles}>
+              <Text style={styles.downloadAllButtonText}>DOWNLOAD ALL</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -267,91 +304,175 @@ const DownloadFilesScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FCFFF8', 
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FCFFF8',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
   },
   backButton: {
-    padding: 5,
+    position: 'absolute',
+    left: 20,
+    top: Platform.OS === 'ios' ? 50 : 30,
+    zIndex: 1,
+    padding: 10,
   },
-
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000000', 
-    fontFamily: 'Urbanist',
-  },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  subTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000', 
-    fontFamily: 'Urbanist',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: Platform.OS === 'ios' ? 60 : 40,
     marginBottom: 20,
+    color: '#000000',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
-  fileBox: {
-    backgroundColor: '#EEEEEE', 
-    borderRadius: 15, 
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
+  successContainer: {
+    backgroundColor: '#E8F5E8',
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 20,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10, // Add spacing between file boxes
   },
-  fileIconLeft: {
-    width: 45,
-    height: 45,
-    resizeMode: 'contain', 
-    marginRight: 15,
+  successTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
-  fileInfoTextContainer: {
+  successSubtitle: {
+    fontSize: 14,
+    color: '#388E3C',
+    textAlign: 'center',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  scrollView: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  filesContainer: {
+    paddingBottom: 20,
+  },
+  fileItem: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  fileInfo: {
+    flex: 1,
+    marginRight: 15,
   },
   fileName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#000000', 
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 4,
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
-  fileDetails: {
-    fontSize: 14,
+  fileType: {
+    fontSize: 12,
     color: '#666666',
-    marginTop: 2,
+    marginBottom: 2,
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
-  fileIconRight: {
-    width: 45,
-    height: 45,
-    resizeMode: 'contain',
+  fileDescription: {
+    fontSize: 12,
+    color: '#888888',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
-  footer: {
+  downloadButton: {
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  downloadButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  noFilesContainer: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  noFilesText: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  noFilesSubtext: {
+    fontSize: 14,
+    color: '#888888',
+    textAlign: 'center',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  buttonWrapper: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
   downloadAllButton: {
-    backgroundColor: '#2864DA',
-    borderRadius: 15,
+    backgroundColor: '#2E7D32',
+    paddingHorizontal: 40,
     paddingVertical: 15,
+    borderRadius: 25,
+    minWidth: 200,
     alignItems: 'center',
   },
   downloadAllButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
     color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
 });
 

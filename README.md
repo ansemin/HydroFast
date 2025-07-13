@@ -15,7 +15,7 @@ Project-2/
 ├── .env.example            # Backend environment template (Gemini API key)
 ├── requirements.txt        # Complete ZoeDepth project dependencies (62 packages) 🔥 UPDATED
 ├── weights/               # AI model weights (ZoeDepth models: ZoeD_NK 1.35GB, ZoeD_N 1.34GB)
-├── backend/                 # Django REST API backend (ZoeDepth pipeline COMPLETE ✅)
+├── backend/                 # Django REST API backend (ZoeDepth pipeline with bbox crop workflow COMPLETE ✅)
 │   ├── apps/               # Django applications (modular architecture)
 │   │   ├── authentication/ # User authentication & authorization
 │   │   │   ├── models.py   # UserProfile model with admin roles
@@ -46,10 +46,11 @@ Project-2/
 │   │   │   └── processors/ # AI processing pipeline components (ZoeDepth integrated)
 │   │   │       ├── base.py              # BaseProcessor abstract class
 │   │   │       ├── wound_detector.py    # YOLO-based wound detection (segmentation)
-│   │   │       ├── zoedepth_processor.py # ZoeDepth monocular depth estimation (ZoeD_NK)
-│   │   │       ├── depth_utils.py       # ZoeDepth utilities (Algorithm 1 processing)
+│   │   │       ├── zoedepth_processor.py # ZoeDepth monocular depth estimation (ZoeD_NK + bbox crop)
+│   │   │       ├── depth_utils.py       # ZoeDepth utilities (bbox crop, Algorithm 1 processing)
 │   │   │       ├── depth_analyzer.py    # Depth analysis wrapper (uses ZoeDepth)
-│   │   │       └── mesh_generator.py    # 3D mesh generation from depth maps
+│   │   │       ├── mesh_generator.py    # 3D mesh generation from depth maps (STL.py algorithm)
+│   │   │       └── mesh_preview_generator.py # STL preview generation (vedo rendering)
 │   │   ├── common/         # Shared utilities and mixins
 │   │   └── __init__.py
 │   ├── config/             # Django configuration & settings
@@ -79,6 +80,8 @@ Project-2/
 │   │   ├── scans/          # Original medical scan images
 │   │   ├── processed_scans/ # YOLO-segmented wound images
 │   │   ├── depth_maps/     # ZoeDepth-generated depth maps (8-bit & 16-bit)
+│   │   ├── generated_stl/  # Generated STL files for 3D printing
+│   │   ├── stl_previews/   # STL mesh preview images (vedo rendering)
 │   │   ├── ai_models/      # Uploaded AI model files
 │   │   └── info.txt        # Media directory information
 │   ├── static/             # Static files (CSS, JS, images)
