@@ -64,7 +64,6 @@ class MeshPreviewGenerator(BaseProcessor):
             'compute_normals': True,          # Compute surface normals
             'smooth_mesh': False,             # Apply mesh smoothing
             'auto_orient': True,              # Auto-orient mesh for best view
-            'use_matplotlib_fallback': False, # Use matplotlib fallback for Windows
         }
         
         if config:
@@ -80,6 +79,17 @@ class MeshPreviewGenerator(BaseProcessor):
             
             logger.info("Loading vedo library for mesh preview generation")
             
+            # Configure vedo to suppress warnings
+            try:
+                vedo.settings.default_backend = 'vtk'
+                vedo.settings.allow_interaction = False
+                # Suppress deprecated warnings
+                if hasattr(vedo, 'core') and hasattr(vedo.core, 'warnings'):
+                    vedo.core.warnings['points_getter'] = False
+                    vedo.core.warnings['faces_getter'] = False
+            except:
+                pass  # Ignore if these settings don't exist in this vedo version
+            
             # Test vedo functionality
             test_mesh = vedo.Sphere(r=1.0)
             if test_mesh is None:
@@ -91,18 +101,24 @@ class MeshPreviewGenerator(BaseProcessor):
                     # Test offscreen rendering capability
                     import platform
                     if platform.system() == 'Windows':
-                        # Windows has issues with offscreen rendering, use alternative approach
-                        logger.warning("Windows detected: Using alternative rendering approach")
-                        self.config['offscreen'] = False
-                        self.config['use_matplotlib_fallback'] = True
+                        logger.info("Windows detected: Testing vedo offscreen rendering...")
+                        # Try vedo offscreen rendering on Windows
+                        try:
+                            test_plotter = Plotter(offscreen=True, size=(100, 100))
+                            test_plotter.close()
+                            logger.info("✓ Vedo offscreen rendering works on Windows!")
+                        except Exception as win_e:
+                            logger.warning(f"Vedo offscreen rendering failed on Windows: {win_e}")
+                            logger.info("Will try vedo with display mode instead")
+                            self.config['offscreen'] = False
                     else:
                         test_plotter = Plotter(offscreen=True, size=(100, 100))
                         test_plotter.close()
                         logger.info("Offscreen rendering available")
                 except Exception as e:
                     logger.warning(f"Offscreen rendering not available: {e}")
+                    logger.info("Will try vedo with display mode instead")
                     self.config['offscreen'] = False
-                    self.config['use_matplotlib_fallback'] = True
             
             self.model = "VEDO_MESH_PREVIEW_GENERATOR"
             self.is_loaded = True
@@ -272,47 +288,174 @@ class MeshPreviewGenerator(BaseProcessor):
         # Generate output file path
         preview_image_path = self._generate_preview_file_path(stl_data)
         
-        # Use fallback method for Windows or if offscreen fails
-        if self.config.get('use_matplotlib_fallback', False) or not self.config['offscreen']:
-            return self._generate_preview_matplotlib_fallback(mesh, preview_image_path, camera_pos, mesh_center)
-        
-        # Try offscreen rendering
+        # Try vedo rendering with robust Windows offscreen support
         try:
-            # Initialize offscreen Plotter
-            plotter = Plotter(
-                offscreen=True,
-                size=self.config['output_size'],
-                bg=self.config['background_color']
-            )
+            logger.info(f"Trying vedo rendering (offscreen={self.config['offscreen']})")
+            
+            # Set VTK environment for better Windows compatibility
+            import os
+            os.environ['VTK_USE_OSMESA'] = '0'  # Disable OSMesa on Windows
+            
+            # Initialize Plotter with robust error handling
+            plotter = None
+            
+            try:
+                # Try standard offscreen rendering first
+                if self.config['offscreen']:
+                    logger.info("Attempting offscreen rendering...")
+                    
+                    # Create plotter with minimal configuration to avoid initialization issues
+                    plotter = Plotter(
+                        offscreen=True,
+                        size=self.config['output_size'],
+                        interactive=False
+                    )
+                    
+                    # Verify the plotter was properly initialized
+                    if plotter is None or not hasattr(plotter, 'window'):
+                        raise RuntimeError("Plotter window not initialized")
+                        
+                    # Test if the render window is properly initialized
+                    if hasattr(plotter, 'window') and plotter.window:
+                        # Safe initialization check - avoid GetInitialized() call that causes errors
+                        try:
+                            plotter.window.SetOffScreenRendering(1)
+                            if hasattr(plotter.window, 'Modified'):
+                                plotter.window.Modified()
+                        except Exception as init_err:
+                            logger.warning(f"Window initialization issue: {init_err}")
+                            # Continue anyway - sometimes it still works
+                            
+                else:
+                    # Visible rendering
+                    plotter = Plotter(
+                        size=self.config['output_size'],
+                        interactive=False
+                    )
+                
+                if plotter is None:
+                    raise RuntimeError("Failed to create plotter instance")
+                    
+            except Exception as plotter_error:
+                logger.warning(f"Plotter creation failed: {plotter_error}")
+                # Try fallback plotter creation
+                try:
+                    logger.info("Trying fallback plotter creation...")
+                    plotter = Plotter(size=self.config['output_size'])
+                    if plotter and hasattr(plotter, 'window') and plotter.window:
+                        plotter.window.SetOffScreenRendering(1)
+                except Exception as fallback_error:
+                    logger.error(f"Fallback plotter creation failed: {fallback_error}")
+                    raise RuntimeError("All plotter creation methods failed")
             
             try:
                 # Add mesh to plotter
                 plotter.add(mesh)
                 
+                # Set background color (ignore errors)
+                try:
+                    plotter.background(self.config['background_color'])
+                except:
+                    pass
+                
                 # Set isometric camera position
-                if plotter.camera:
+                if hasattr(plotter, 'camera') and plotter.camera:
                     plotter.camera.SetPosition(camera_pos)
                     plotter.camera.SetFocalPoint(mesh_center)
                     plotter.camera.SetViewUp(self.config['camera_up'])
+                    
+                    # Reset camera to fit the mesh properly
+                    plotter.reset_camera()
                     plotter.camera.Zoom(self.config['zoom_factor'])
                 
-                # Render and capture screenshot
-                plotter.render()
-                plotter.screenshot(preview_image_path)
+                # Enable better rendering quality if available
+                try:
+                    if hasattr(plotter, 'renderer') and plotter.renderer:
+                        plotter.renderer.SetUseDepthPeeling(self.config['depth_peeling'])
+                except:
+                    pass  # Ignore depth peeling errors
                 
-                logger.info(f"Preview image generated: {preview_image_path}")
-                return preview_image_path
+                # Render with error handling
+                try:
+                    plotter.render()
+                except Exception as render_error:
+                    logger.warning(f"Render call failed: {render_error}")
+                    # Continue - sometimes screenshot works even if render fails
+                
+                # Take screenshot with multiple fallback methods
+                screenshot_success = False
+                screenshot_methods = [
+                    # Method 1: Direct file save
+                    lambda: plotter.screenshot(preview_image_path),
+                    # Method 2: Get array then save
+                    lambda: self._save_screenshot_array(plotter, preview_image_path),
+                    # Method 3: Legacy screenshot method
+                    lambda: self._save_screenshot_legacy(plotter, preview_image_path)
+                ]
+                
+                for i, method in enumerate(screenshot_methods):
+                    try:
+                        method()
+                        if os.path.exists(preview_image_path):
+                            screenshot_success = True
+                            logger.info(f"✓ Screenshot method {i+1} succeeded")
+                            break
+                    except Exception as screenshot_error:
+                        logger.warning(f"Screenshot method {i+1} failed: {screenshot_error}")
+                        continue
+                
+                if screenshot_success:
+                    logger.info(f"✓ Vedo preview image generated successfully: {preview_image_path}")
+                    return preview_image_path
+                else:
+                    raise RuntimeError("All screenshot methods failed")
                 
             finally:
-                # Always close the plotter
+                # Safe cleanup
                 if plotter:
-                    plotter.close()
+                    try:
+                        plotter.close()
+                    except Exception as cleanup_error:
+                        logger.warning(f"Plotter cleanup warning: {cleanup_error}")
                     
         except Exception as e:
-            logger.warning(f"Offscreen rendering failed: {e}")
+            logger.warning(f"Vedo rendering failed: {e}")
+            logger.info("Falling back to matplotlib rendering...")
             # Fall back to matplotlib method
             return self._generate_preview_matplotlib_fallback(mesh, preview_image_path, camera_pos, mesh_center)
     
+    def _save_screenshot_array(self, plotter, preview_image_path: str) -> None:
+        """
+        Alternative screenshot method using array conversion.
+        """
+        img_array = plotter.screenshot(asarray=True)
+        if img_array is not None and len(img_array) > 0:
+            from PIL import Image
+            img = Image.fromarray(img_array)
+            img.save(preview_image_path)
+        else:
+            raise RuntimeError("Screenshot array is empty")
+    
+    def _save_screenshot_legacy(self, plotter, preview_image_path: str) -> None:
+        """
+        Legacy screenshot method with manual buffer reading.
+        """
+        if hasattr(plotter, 'window') and plotter.window:
+            # Force a render
+            plotter.window.Render()
+            
+            # Get window to front buffer
+            plotter.window.SetSwapBuffers(1)
+            
+            # Use basic screenshot approach
+            try:
+                plotter.screenshot(preview_image_path, scale=1)
+            except:
+                # Try with different parameters
+                plotter.screenshot(filename=preview_image_path)
+        else:
+            raise RuntimeError("No valid render window for legacy screenshot")
+
     def _generate_preview_file_path(self, stl_data: Dict[str, Any]) -> str:
         """
         Generate preview image file path.
@@ -360,9 +503,9 @@ class MeshPreviewGenerator(BaseProcessor):
             
             logger.info("Using matplotlib fallback for preview generation")
             
-            # Get mesh vertices and faces
-            vertices = mesh.points()
-            faces = mesh.faces()
+            # Get mesh vertices and faces (using new vedo API)
+            vertices = mesh.vertices
+            faces = mesh.cells
             
             # Create 3D plot
             fig = plt.figure(figsize=(10, 8))

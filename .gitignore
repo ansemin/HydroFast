@@ -76,3 +76,9 @@ backend/media/generated_stl/*.stl
 backend/media/stl_previews/*.png
 backend/media/stl_previews/*.jpg
 backend/media/stl_previews/*.jpeg
+
+# Test directories and files
+backend/media/test_improved_depth/
+backend/media/test_stl_pipeline/
+backend/test_full_pipeline/
+backend/test_full_pipeline.py
