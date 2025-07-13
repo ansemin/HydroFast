@@ -106,6 +106,13 @@ const ProcessingScreen = () => {
             scanData.stl_preview_url = response.data.preview_generation.preview_image_url;
             scanData.preview_metadata = response.data.preview_generation.preview_metadata;
           }
+        } else if (step === 4) {
+          // Step 4: Final file preparation (simulation step)
+          console.log('🎯 Processing Step 4: Preparing files for download...');
+          
+          // No API call needed - just simulate the final preparation
+          // All files are already generated in previous steps
+          console.log('✅ Files prepared for download');
         }
         
         // Simulate the processing delay, then navigate

@@ -21,8 +21,9 @@ const MeshDetectionScreen = () => {
   const { scanId, scanData, patientId } = route.params || {};
 
   const handleProcess = () => {
-    // Navigate to Download Files screen
-    navigation.navigate('Download Files', { 
+    // Navigate to Processing screen for final step (step 4)
+    navigation.navigate('Processing', { 
+      step: 4,
       scanId, 
       scanData, 
       patientId 

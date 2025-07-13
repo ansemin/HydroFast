@@ -36,6 +36,16 @@ const DownloadFilesScreen = () => {
         return;
       }
 
+      // Check if this is a simulation URL
+      if (url.startsWith('simulation://')) {
+        Alert.alert(
+          'Simulation Mode', 
+          `This is a demo. In the real app, ${filename} would be downloaded from the server.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+
       console.log(`Downloading ${filename} from:`, url);
       
       // Open the URL in the browser/default app
@@ -61,6 +71,18 @@ const DownloadFilesScreen = () => {
         return;
       }
 
+      // Check if we're in simulation mode
+      const isSimulation = files.some(file => file.url.startsWith('simulation://'));
+      
+      if (isSimulation) {
+        Alert.alert(
+          'Simulation Mode',
+          `This is a demo. In the real app, all ${files.length} files would be downloaded as a ZIP archive.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+
       // Download each file with a small delay between them
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -82,6 +104,64 @@ const DownloadFilesScreen = () => {
   // Get list of available files for download
   const getAvailableFiles = () => {
     const files = [];
+
+    // Check if we have scanData, otherwise use simulation data
+    const isSimulation = !scanData?.image;
+    
+    if (isSimulation) {
+      // Simulation mode - return mock file list for testing
+      return [
+        {
+          name: 'Original Image',
+          filename: 'original_image.jpg',
+          url: 'simulation://original_image.jpg',
+          type: 'Image',
+          description: 'Original wound photograph'
+        },
+        {
+          name: 'Segmented Image',
+          filename: 'segmented_wound.jpg',
+          url: 'simulation://segmented_wound.jpg',
+          type: 'Image',
+          description: 'Wound segmentation result'
+        },
+        {
+          name: '8-bit Depth Map',
+          filename: 'depth_map_8bit.png',
+          url: 'simulation://depth_map_8bit.png',
+          type: 'Image',
+          description: 'ZoeDepth analysis result (8-bit)'
+        },
+        {
+          name: '16-bit Depth Map',
+          filename: 'depth_map_16bit.png',
+          url: 'simulation://depth_map_16bit.png',
+          type: 'Image',
+          description: 'ZoeDepth analysis result (16-bit)'
+        },
+        {
+          name: 'STL 3D Model',
+          filename: 'wound_model.stl',
+          url: 'simulation://wound_model.stl',
+          type: '3D Model',
+          description: '3D printable mesh (2.4 MB)'
+        },
+        {
+          name: 'STL Preview',
+          filename: 'stl_preview.png',
+          url: 'simulation://stl_preview.png',
+          type: 'Image',
+          description: '3D mesh visualization'
+        },
+        {
+          name: 'G-code Print File',
+          filename: 'wound_model.gcode',
+          url: 'simulation://wound_model.gcode',
+          type: 'Print File',
+          description: 'Ready for 3D printing'
+        }
+      ];
+    }
 
     // Original image
     if (scanData?.image) {
