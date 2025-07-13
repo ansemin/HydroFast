@@ -73,9 +73,9 @@ const PhotoPreviewScreen = () => {
       console.log('Upload successful', response);
       Alert.alert('Success', 'Image uploaded to server successfully');
       
-      // Navigate to Processing screen with step 1 and pass scan data
+      // Navigate directly to Processing screen, starting with step 1 (wound detection)
       navigation.navigate('Processing', { 
-        step: 1, 
+        step: 1,
         scanId: response.id,
         scanData: response,
         patientId: patientId 

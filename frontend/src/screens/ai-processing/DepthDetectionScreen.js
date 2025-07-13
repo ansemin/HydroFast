@@ -12,7 +12,7 @@ function BackArrowIcon() {
   );
 }
 
-// Fallback image for depth detection
+// Fallback depth image if no depth map is available
 const fallbackDepthImage = require('../../assets/images/0138_depth_grayscale_zd.png');
 
 const DepthDetectionScreen = () => {
@@ -21,7 +21,7 @@ const DepthDetectionScreen = () => {
   const { scanId, scanData, patientId } = route.params || {};
   
   const handleProcess = () => {
-    // Navigate to Processing screen, specifying step 3
+    // Navigate to Processing screen, specifying step 3 (mesh generation)
     navigation.navigate('Processing', { 
       step: 3, 
       scanId, 
@@ -30,16 +30,22 @@ const DepthDetectionScreen = () => {
     }); 
   };
 
-  // Get depth image source
+  // Determine depth image source - use 8-bit depth map if available, otherwise fallback
   const getDepthImageSource = () => {
     if (scanData?.depth_map_8bit) {
+      // If we have an 8-bit depth map URL from the backend
+      console.log('Using depth map from backend:', scanData.depth_map_8bit);
       return { uri: scanData.depth_map_8bit };
+    } else if (scanData?.depth_map_16bit) {
+      // If we have a 16-bit depth map URL from the backend
+      console.log('Using 16-bit depth map from backend:', scanData.depth_map_16bit);
+      return { uri: scanData.depth_map_16bit };
     } else {
+      // Fallback to static depth image
+      console.log('Using fallback depth image');
       return fallbackDepthImage;
     }
   };
-
-
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -55,11 +61,29 @@ const DepthDetectionScreen = () => {
 
         {/* Title */}
         <Text style={styles.title}>Depth Detection</Text>
-        
-        {/* Image Preview */}
+
+        {/* Depth Information */}
+        {scanData?.depth_metadata && (
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoText}>
+              Volume: {scanData.depth_metadata.volume_estimate?.total_volume?.toFixed(2) || 'N/A'} mm³
+            </Text>
+            <Text style={styles.infoText}>
+              Confidence: {((scanData.depth_metadata.processing_confidence || 0) * 100).toFixed(1)}%
+            </Text>
+          </View>
+        )}
+
+        {/* Depth Image Preview */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            <Image source={getDepthImageSource()} style={styles.image} />
+            <Image 
+              source={getDepthImageSource()} 
+              style={styles.image}
+              onError={(error) => {
+                console.log('Error loading depth image:', error.nativeEvent.error);
+              }}
+            />
           </View>
         </View>
         
@@ -72,38 +96,49 @@ const DepthDetectionScreen = () => {
       </View>
     </SafeAreaView>
   );
-
-
 };
 
-// Styles adapted from WoundDetectionScreen/PhotoPreviewScreen with metadata styling
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FCFFF8',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 25,
-    left: 18,
-    padding: 10,
-    zIndex: 1,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FCFFF8',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    top: Platform.OS === 'ios' ? 50 : 30,
+    zIndex: 1,
     padding: 10,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: Platform.OS === 'ios' ? 60 : 40,
+    marginBottom: 20,
     color: '#000000',
-    alignSelf: 'center',
-    marginTop: 25, 
-    marginBottom: 10, 
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  infoContainer: {
+    backgroundColor: '#F5F5F5',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#333333',
+    marginBottom: 5,
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
@@ -111,46 +146,40 @@ const styles = StyleSheet.create({
     }),
   },
   imageOuterContainer: {
-    width: '100%',
-    height: 420, // Restored to original size
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginVertical: 20,
   },
   imageContainer: {
-    width: '90%',
-    height: 390, // Restored to original size
-    borderRadius: 13,
-    overflow: 'hidden', 
-    backgroundColor: '#000000',
+    width: 300,
+    height: 300,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain', 
+    resizeMode: 'cover',
   },
-
   buttonWrapper: {
-    width: '100%',
-    marginTop: 20, 
-    paddingBottom: 25,
+    paddingVertical: 20,
     alignItems: 'center',
   },
   processButton: {
-    backgroundColor: '#27CFA0',
-    borderRadius: 13,
-    width: '40%',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 50,
     paddingVertical: 15,
-    justifyContent: 'center',
+    borderRadius: 25,
+    minWidth: 200,
     alignItems: 'center',
-    shadowColor: 'rgba(112, 231, 187, 0.55)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     fontFamily: Platform.select({
       ios: 'Urbanist',

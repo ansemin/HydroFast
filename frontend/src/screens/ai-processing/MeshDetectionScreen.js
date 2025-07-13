@@ -12,25 +12,34 @@ function BackArrowIcon() {
   );
 }
 
-// Image for mesh detection
-const meshImage = require('../../assets/images/0138_mesh_consistent_z05.png');
+// Fallback mesh image if no STL preview is available
+const fallbackMeshImage = require('../../assets/images/0138_mesh_consistent_z05.png');
 
 const MeshDetectionScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
-  
-  // Get STL preview from scan data, fallback to static image
-  const previewImage = scanData?.stl_preview ? { uri: scanData.stl_preview } : meshImage;
-  
+
   const handleProcess = () => {
-    // Navigate to Processing screen, specifying step 4
-    navigation.navigate('Processing', { 
-      step: 4, 
+    // Navigate to Download Files screen
+    navigation.navigate('Download Files', { 
       scanId, 
       scanData, 
       patientId 
     }); 
+  };
+
+  // Determine STL preview image source
+  const getMeshImageSource = () => {
+    if (scanData?.stl_preview_url) {
+      // If we have an STL preview URL from the backend
+      console.log('Using STL preview from backend:', scanData.stl_preview_url);
+      return { uri: scanData.stl_preview_url };
+    } else {
+      // Fallback to static mesh image
+      console.log('Using fallback mesh image');
+      return fallbackMeshImage;
+    }
   };
 
   return (
@@ -47,31 +56,40 @@ const MeshDetectionScreen = () => {
 
         {/* Title */}
         <Text style={styles.title}>Mesh Detection</Text>
-        
-        {/* Image Preview - Using fixed dimensions */} 
-        <View style={styles.imageOuterContainer}>
-          <View style={styles.imageContainer}>
-            {/* Use the STL preview if available, otherwise fallback to static image */}
-            <Image source={previewImage} style={styles.image} />
-          </View>
-        </View>
-        
-        {/* Mesh Info (if available) */}
+
+        {/* Mesh Information */}
         {scanData?.mesh_metadata && (
           <View style={styles.infoContainer}>
             <Text style={styles.infoText}>
-              Faces: {scanData.mesh_metadata.face_count || 'N/A'} • 
-              Vertices: {scanData.mesh_metadata.vertex_count || 'N/A'}
+              Vertices: {scanData.mesh_metadata.vertex_count?.toLocaleString() || 'N/A'}
             </Text>
             <Text style={styles.infoText}>
-              Volume: {scanData.mesh_metadata.volume_estimate || 'N/A'} mm³
+              Faces: {scanData.mesh_metadata.face_count?.toLocaleString() || 'N/A'}
+            </Text>
+            <Text style={styles.infoText}>
+              Volume: {scanData.mesh_metadata.volume_mm3?.toFixed(2) || 'N/A'} mm³
+            </Text>
+            <Text style={styles.infoText}>
+              File Size: {scanData.mesh_metadata.file_size_mb || 'N/A'} MB
             </Text>
           </View>
         )}
+
+        {/* STL Preview Image */}
+        <View style={styles.imageOuterContainer}>
+          <View style={styles.imageContainer}>
+            <Image 
+              source={getMeshImageSource()} 
+              style={styles.image}
+              onError={(error) => {
+                console.log('Error loading STL preview image:', error.nativeEvent.error);
+              }}
+            />
+          </View>
+        </View>
         
-        {/* Action Button */} 
+        {/* Action Button */}
         <View style={styles.buttonWrapper}>
-          {/* Single centered button */} 
           <TouchableOpacity style={styles.processButton} onPress={handleProcess}>
             <Text style={styles.buttonText}>Process</Text>
           </TouchableOpacity>
@@ -81,34 +99,47 @@ const MeshDetectionScreen = () => {
   );
 };
 
-// Styles adapted from previous screens
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FCFFF8',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 25,
-    left: 18,
-    padding: 10,
-    zIndex: 1,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FCFFF8',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    top: Platform.OS === 'ios' ? 50 : 30,
+    zIndex: 1,
     padding: 10,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: Platform.OS === 'ios' ? 60 : 40,
+    marginBottom: 20,
     color: '#000000',
-    alignSelf: 'center',
-    marginTop: 25, 
-    marginBottom: 10, 
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  infoContainer: {
+    backgroundColor: '#F5F5F5',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#333333',
+    marginBottom: 5,
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
@@ -116,61 +147,40 @@ const styles = StyleSheet.create({
     }),
   },
   imageOuterContainer: {
-    width: '100%',
-    height: 420,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginVertical: 20,
   },
   imageContainer: {
-    width: '90%',
-    height: 390,
-    borderRadius: 13,
-    overflow: 'hidden', 
-    backgroundColor: '#000000',
+    width: 300,
+    height: 300,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain', 
-  },
-  infoContainer: {
-    marginTop: 10,
-    padding: 10,
-    alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#666666',
-    textAlign: 'center',
-    marginVertical: 2,
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
+    resizeMode: 'contain', // Use contain for 3D mesh previews to show the full model
   },
   buttonWrapper: {
-    width: '100%',
-    marginTop: 20, 
-    paddingBottom: 25,
+    paddingVertical: 20,
     alignItems: 'center',
   },
   processButton: {
-    backgroundColor: '#27CFA0',
-    borderRadius: 13,
-    width: '40%',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 50,
     paddingVertical: 15,
-    justifyContent: 'center',
+    borderRadius: 25,
+    minWidth: 200,
     alignItems: 'center',
-    shadowColor: 'rgba(112, 231, 187, 0.55)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     fontFamily: Platform.select({
       ios: 'Urbanist',
