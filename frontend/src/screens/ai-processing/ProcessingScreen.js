@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import api from '../../services/api';
+import { aiProcessingService } from '../../services/aiProcessingService';
 
 const ProcessingScreen = () => {
   const navigation = useNavigation();
@@ -89,11 +90,27 @@ const ProcessingScreen = () => {
           // Step 3: Process mesh generation (placeholder)
           console.log('🎯 Processing Step 3: Mesh Generation for scanId:', scanId);
           
-          response = await api.post(`/scans/${scanId}/process_mesh_generation/`, {}, {
-            timeout: 30000, // 30 seconds timeout for mesh generation
-          });
+          response = await aiProcessingService.processMeshGeneration(scanId, 'enhanced');
           
-          console.log('✅ Mesh generation completed:', response.data);
+          console.log('✅ Mesh generation completed:', response);
+          
+          // Update scanData with mesh generation results
+          if (response) {
+            scanData.stl_file = response.stl_file;
+            scanData.stl_preview = response.stl_preview;
+            scanData.mesh_metadata = response.mesh_metadata;
+            
+            // Log key mesh generation results
+            if (response.mesh_metadata) {
+              console.log('📊 Mesh Generation Results:');
+              console.log(`   • STL File: ${response.stl_file ? 'Generated' : 'Not available'}`);
+              console.log(`   • Preview: ${response.stl_preview ? 'Generated' : 'Not available'}`);
+              console.log(`   • Faces: ${response.mesh_metadata.face_count || 'N/A'}`);
+              console.log(`   • Vertices: ${response.mesh_metadata.vertex_count || 'N/A'}`);
+              console.log(`   • Volume: ${response.mesh_metadata.volume_estimate || 'N/A'} mm³`);
+              console.log(`   • Visualization Mode: ${response.mesh_metadata.visualization_mode || 'N/A'}`);
+            }
+          }
           
         } else if (step === 4) {
           // Step 4: No processing needed, just prepare download files

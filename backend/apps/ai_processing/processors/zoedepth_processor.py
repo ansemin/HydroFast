@@ -16,9 +16,14 @@ from .base import BaseProcessor
 from .depth_utils import (
     extract_wound_mask_from_segmented,
     apply_depth_processing,
+    apply_sharp_depth_processing,
+    apply_notebook_depth_processing,
     save_depth_maps,
     calculate_depth_statistics,
-    estimate_volume_from_depth
+    estimate_volume_from_depth,
+    detect_bounding_box_from_segmented,
+    crop_image_with_bbox,
+    visualize_bounding_box
 )
 
 logger = logging.getLogger(__name__)
@@ -146,6 +151,7 @@ class ZoeDepthProcessor(BaseProcessor):
                 brightness_beta=self.config['brightness_beta'],
                 blur_kernel=self.config['blur_kernel']
             )
+            logger.info("Using IMPROVED depth processing with brighter background")
             
             # Note: Wound mask is now applied inside the improved apply_depth_processing function
             if wound_mask is not None:
@@ -197,6 +203,151 @@ class ZoeDepthProcessor(BaseProcessor):
             
         except Exception as e:
             logger.error(f"Error during ZoeDepth processing: {e}")
+            raise
+
+    def process_with_bbox_crop(self, original_image_path: str, segmented_image_path: str, output_dir: str) -> Dict[str, Any]:
+        """
+        Process wound image using improved bbox crop workflow.
+        
+        1. Detect bounding box from segmented image
+        2. Crop original image using bounding box
+        3. Perform ZoeDepth on cropped image
+        4. Generate depth maps and analysis
+        
+        Args:
+            original_image_path: Path to the original image
+            segmented_image_path: Path to the segmented wound image
+            output_dir: Directory to save intermediate and final results
+            
+        Returns:
+            Dictionary containing depth analysis results with bbox workflow
+        """
+        if not self.is_loaded:
+            self.load_model()
+        
+        if not self.validate_input(segmented_image_path):
+            raise ValueError(f"Invalid segmented image path: {segmented_image_path}")
+        
+        if not self.validate_input(original_image_path):
+            raise ValueError(f"Invalid original image path: {original_image_path}")
+        
+        try:
+            logger.info(f"Processing depth with bbox crop workflow")
+            logger.info(f"Original image: {original_image_path}")
+            logger.info(f"Segmented image: {segmented_image_path}")
+            
+            # Create output directory
+            output_path = Path(output_dir)
+            output_path.mkdir(parents=True, exist_ok=True)
+            
+            # Step 1: Detect bounding box from segmented image
+            bbox = detect_bounding_box_from_segmented(segmented_image_path)
+            if bbox is None:
+                raise ValueError("Could not detect bounding box from segmented image")
+            
+            # Step 2: Visualize bounding box on original image
+            bbox_viz_path = output_path / "bbox_visualization.png"
+            visualize_bounding_box(original_image_path, bbox, str(bbox_viz_path))
+            
+            # Step 3: Crop original image using bounding box
+            cropped_image_path = output_path / "cropped_wound.png"
+            crop_success = crop_image_with_bbox(original_image_path, bbox, str(cropped_image_path))
+            if not crop_success:
+                raise ValueError("Failed to crop image using bounding box")
+            
+            # Step 4: Crop segmented image using same bounding box
+            cropped_segmented_path = output_path / "cropped_segmented.png"
+            crop_segmented_success = crop_image_with_bbox(segmented_image_path, bbox, str(cropped_segmented_path))
+            if not crop_segmented_success:
+                raise ValueError("Failed to crop segmented image using bounding box")
+            
+            # Step 5: Preprocess the cropped image
+            processed_image, original_size = self.preprocess(str(cropped_image_path))
+            
+            # Step 6: Generate depth map using ZoeDepth on cropped image
+            raw_depth_map = self._generate_depth_map(processed_image)
+            
+            # Step 7: Resize depth map to cropped image size if needed
+            if self.config['output_size'] is None and original_size is not None:
+                raw_depth_map = cv2.resize(raw_depth_map, original_size, interpolation=cv2.INTER_LINEAR)
+            
+            # Step 8: Extract wound mask from cropped segmented image
+            wound_mask = extract_wound_mask_from_segmented(
+                str(cropped_segmented_path), 
+                method=self.config['mask_extraction_method']
+            )
+            
+            # Step 9: Apply depth processing
+            processed_depth_map = apply_depth_processing(
+                raw_depth_map,
+                mask=wound_mask,
+                contrast_alpha=self.config['contrast_alpha'],
+                brightness_beta=self.config['brightness_beta'],
+                blur_kernel=self.config['blur_kernel']
+            )
+            logger.info("Using IMPROVED depth processing with bbox crop workflow")
+            
+            # Step 10: Calculate depth statistics
+            depth_stats = calculate_depth_statistics(processed_depth_map, wound_mask)
+            
+            # Step 11: Estimate volume
+            volume_estimate = estimate_volume_from_depth(
+                processed_depth_map, 
+                wound_mask, 
+                self.config['pixel_size_mm']
+            )
+            
+            # Step 12: Save depth maps with custom naming
+            depth_8bit_path = output_path / "depth_8bit.png"
+            depth_16bit_path = output_path / "depth_16bit.png"
+            
+            # Save 8-bit depth map
+            depth_8bit_normalized = cv2.normalize(processed_depth_map, None, 0, 255, cv2.NORM_MINMAX)
+            cv2.imwrite(str(depth_8bit_path), depth_8bit_normalized.astype(np.uint8))
+            
+            # Save 16-bit depth map  
+            depth_16bit_normalized = cv2.normalize(processed_depth_map, None, 0, 65535, cv2.NORM_MINMAX)
+            cv2.imwrite(str(depth_16bit_path), depth_16bit_normalized.astype(np.uint16))
+            
+            # Step 13: Create results dictionary
+            results = {
+                'workflow_type': 'bbox_crop',
+                'original_image_path': original_image_path,
+                'segmented_image_path': segmented_image_path,
+                'bbox': bbox,
+                'bbox_visualization_path': str(bbox_viz_path),
+                'cropped_image_path': str(cropped_image_path),
+                'cropped_segmented_path': str(cropped_segmented_path),
+                'depth_map_8bit_path': str(depth_8bit_path),
+                'depth_map_16bit_path': str(depth_16bit_path),
+                'depth_statistics': depth_stats,
+                'volume_estimate': {
+                    'total_volume': volume_estimate,  # cubic mm
+                    'confidence': 0.8,  # Confidence score (can be improved with validation)
+                    'method': 'ZoeDepth_bbox_crop'
+                },
+                'wound_mask_extracted': wound_mask is not None,
+                'processing_parameters': {
+                    'model_type': self.config['model_type'],
+                    'contrast_alpha': self.config['contrast_alpha'],
+                    'brightness_beta': self.config['brightness_beta'],
+                    'blur_kernel': self.config['blur_kernel'],
+                    'mask_extraction_method': self.config['mask_extraction_method'],
+                    'pixel_size_mm': self.config['pixel_size_mm']
+                }
+            }
+            
+            # Step 14: Save metadata
+            metadata_path = output_path / "metadata.json"
+            with open(metadata_path, 'w') as f:
+                json.dump(results, f, indent=2, default=str)
+            results['metadata_path'] = str(metadata_path)
+            
+            logger.info(f"Successfully completed bbox crop workflow")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error in bbox crop workflow: {e}")
             raise
     
     def validate_input(self, image_path: str) -> bool:

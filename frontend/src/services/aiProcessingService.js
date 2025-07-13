@@ -45,14 +45,18 @@ export const aiProcessingService = {
   },
 
   // Process mesh generation (placeholder for future implementation)
-  processMeshGeneration: async (scanId) => {
+  processMeshGeneration: async (scanId, visualization_mode = 'enhanced') => {
     try {
-      console.log(`Mesh generation not yet implemented for scan ${scanId}`);
-      // For now, return mock data
-      return {
-        status: 'Not implemented',
-        message: 'Mesh generation will be implemented in future phases'
-      };
+      console.log(`Processing mesh generation for scan ${scanId} with mode: ${visualization_mode}`);
+      
+      const response = await api.post(`/scans/${scanId}/process_mesh_generation/`, {
+        visualization_mode
+      }, {
+        timeout: 60000, // 1 minute timeout for mesh generation
+      });
+      
+      console.log('✅ Mesh generation completed:', response.data);
+      return response.data;
     } catch (error) {
       console.error('Mesh generation error:', error);
       throw error;
