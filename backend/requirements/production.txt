@@ -21,4 +21,7 @@ django-security==0.17.0
 
 # Performance
 redis==5.0.1
-django-redis==5.4.0 
+django-redis==5.4.0
+
+# 3D Mesh Processing Performance
+numba>=0.58.0 
