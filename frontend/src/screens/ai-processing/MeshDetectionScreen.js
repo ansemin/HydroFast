@@ -20,6 +20,9 @@ const MeshDetectionScreen = () => {
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
   
+  // Get STL preview from scan data, fallback to static image
+  const previewImage = scanData?.stl_preview ? { uri: scanData.stl_preview } : meshImage;
+  
   const handleProcess = () => {
     // Navigate to Processing screen, specifying step 4
     navigation.navigate('Processing', { 
@@ -48,10 +51,23 @@ const MeshDetectionScreen = () => {
         {/* Image Preview - Using fixed dimensions */} 
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            {/* Use the required local mesh image */}
-            <Image source={meshImage} style={styles.image} />
+            {/* Use the STL preview if available, otherwise fallback to static image */}
+            <Image source={previewImage} style={styles.image} />
           </View>
         </View>
+        
+        {/* Mesh Info (if available) */}
+        {scanData?.mesh_metadata && (
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoText}>
+              Faces: {scanData.mesh_metadata.face_count || 'N/A'} • 
+              Vertices: {scanData.mesh_metadata.vertex_count || 'N/A'}
+            </Text>
+            <Text style={styles.infoText}>
+              Volume: {scanData.mesh_metadata.volume_estimate || 'N/A'} mm³
+            </Text>
+          </View>
+        )}
         
         {/* Action Button */} 
         <View style={styles.buttonWrapper}>
@@ -116,6 +132,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'contain', 
+  },
+  infoContainer: {
+    marginTop: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#666666',
+    textAlign: 'center',
+    marginVertical: 2,
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
   buttonWrapper: {
     width: '100%',

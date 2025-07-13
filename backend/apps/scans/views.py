@@ -144,26 +144,125 @@ class ScanViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def process_mesh_generation(self, request, pk=None):
-        """Step 3: Process mesh generation (placeholder)"""
+        """Step 3: Process mesh generation with STL and preview"""
         scan = self.get_object()
         try:
+            import os
+            from django.conf import settings
+            from apps.ai_processing.processors.depth_analyzer import DepthAnalyzer
+            from apps.ai_processing.processors.mesh_generator import MeshGenerator
+            from apps.ai_processing.processors.mesh_preview_generator import MeshPreviewGenerator
+            
             # Check if depth analysis was done first
-            # For now, we'll skip this check but it can be added later
+            if not scan.processed_image:
+                return Response(
+                    {'error': 'Wound detection must be completed first. Run /process_wound_detection/ first.'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
-            # TODO: Implement actual mesh generation in future phase
-            # This will include:
-            # 1. Loading depth maps from previous step
-            # 2. Generating 3D mesh using depth data
-            # 3. Creating mesh file (PLY, OBJ, etc.)
-            # 4. Saving mesh file to media storage
+            # Get the segmented image path for depth analysis
+            segmented_image_path = scan.processed_image.path
             
+            # Step 3a: Generate depth analysis (if not already done)
+            print("🔍 Generating depth analysis for mesh generation...")
+            depth_analyzer = DepthAnalyzer()
+            depth_results = depth_analyzer.process(segmented_image_path)
+            
+            # Step 3b: Generate STL mesh
+            print("🏗️ Generating STL mesh...")
+            
+            # Get visualization mode from request (default: balanced)
+            viz_mode = request.data.get('visualization_mode', 'balanced')
+            
+            # Configure based on visualization mode
+            if viz_mode == 'realistic':
+                # Realistic physical dimensions for 3D printing
+                z_dimension = 1.8
+                clip_percentile = 10
+            elif viz_mode == 'enhanced':
+                # Enhanced visualization for better 3D preview
+                z_dimension = 8.0
+                clip_percentile = 5
+            else:  # 'balanced' (default)
+                # Balanced between realism and visualization
+                z_dimension = 5.0
+                clip_percentile = 5
+            
+            mesh_config = {
+                'actual_x': 7.4,      # Physical dimensions from STL.py
+                'actual_y': 16.4,
+                'actual_z': z_dimension,
+                'base_layers': 0,
+                'base_thickness_mm': 0.26,
+                'depth_clip_percentile': clip_percentile
+            }
+            
+            mesh_generator = MeshGenerator(mesh_config)
+            stl_results = mesh_generator.process(depth_results)
+            
+            if stl_results['generation_status'] != 'success':
+                return Response(
+                    {'error': f'STL generation failed: {stl_results.get("error", "Unknown error")}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # Step 3c: Generate mesh preview
+            print("🖼️ Generating mesh preview...")
+            
+            # Enhanced preview configuration based on testing results
+            preview_config = {
+                'camera_position': (1.5, 1.5, 1),    # Improved isometric angle for better depth view
+                'mesh_color': 'lightgray',           # Light gray as in report
+                'background_color': 'white',         # White background
+                'output_size': (1000, 800),          # Higher resolution for better quality
+                'zoom_factor': 1.0,                  # Less zoom to show more context
+                'offscreen': True,                   # Server-side rendering
+                'use_matplotlib_fallback': True      # Force consistent rendering on Windows
+            }
+            
+            preview_generator = MeshPreviewGenerator(preview_config)
+            preview_results = preview_generator.process(stl_results)
+            
+            # Build URLs for generated files
+            stl_file_url = None
+            preview_image_url = None
+            
+            if stl_results.get('stl_file_path'):
+                stl_relative = os.path.relpath(stl_results['stl_file_path'], settings.MEDIA_ROOT)
+                stl_file_url = request.build_absolute_uri(settings.MEDIA_URL + stl_relative)
+            
+            if preview_results.get('preview_image_path'):
+                preview_relative = os.path.relpath(preview_results['preview_image_path'], settings.MEDIA_ROOT)
+                preview_image_url = request.build_absolute_uri(settings.MEDIA_URL + preview_relative)
+            
+            # Prepare response data
             response_data = {
                 'status': 'Mesh generation complete',
-                'mesh_file_url': None,  # Will be implemented later
                 'scan_id': scan.id,
                 'step': 'mesh_generation',
-                'note': 'Mesh generation placeholder - will be implemented in future phase',
-                'ready_for_implementation': True
+                'stl_generation': {
+                    'status': stl_results['generation_status'],
+                    'stl_file_url': stl_file_url,
+                    'mesh_metadata': stl_results['mesh_metadata'],
+                    'algorithm': stl_results.get('algorithm', 'STL_reference'),
+                    'visualization_mode': viz_mode,
+                    'z_dimension_mm': z_dimension,
+                    'configuration_notes': {
+                        'realistic': 'Accurate 1.8mm depth for 3D printing',
+                        'enhanced': 'Enhanced 8.0mm depth for better visualization', 
+                        'balanced': 'Balanced 5.0mm depth (default)'
+                    }.get(viz_mode, 'Balanced configuration')
+                },
+                'preview_generation': {
+                    'status': preview_results['generation_status'],
+                    'preview_image_url': preview_image_url,
+                    'preview_metadata': preview_results['preview_metadata'],
+                    'view_info': preview_results['view_info']
+                },
+                'depth_analysis': {
+                    'volume_estimate': depth_results.get('volume_estimate', {}),
+                    'depth_statistics': depth_results.get('depth_statistics', {})
+                }
             }
             
             return Response(response_data)

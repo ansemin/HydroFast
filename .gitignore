@@ -72,3 +72,7 @@ backend/media/depth_maps/*.png
 backend/media/depth_maps/*.jpg
 backend/media/depth_maps/*.jpeg
 backend/media/depth_maps/*.json
+backend/media/generated_stl/*.stl
+backend/media/stl_previews/*.png
+backend/media/stl_previews/*.jpg
+backend/media/stl_previews/*.jpeg

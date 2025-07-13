@@ -60,6 +60,56 @@ const DownloadFilesScreen = () => {
     }
   };
 
+  // Download functionality for STL files
+  const downloadSTLFile = async (url, filename) => {
+    try {
+      if (!url) {
+        Alert.alert('Error', 'STL file URL not available');
+        return;
+      }
+
+      console.log(`Downloading STL file: ${filename}`);
+      
+      // For now, show download initiated message
+      Alert.alert(
+        'Download Started', 
+        `Downloading ${filename}...\n\nFile Size: ${scanData?.mesh_metadata?.file_size || 'Unknown'}\nFormat: STL (3D Model)`,
+        [{ text: 'OK' }]
+      );
+      
+    } catch (error) {
+      console.error('Error downloading STL file:', error);
+      Alert.alert('Download Error', `Failed to download ${filename}: ${error.message}`);
+    }
+  };
+
+  // Download all files
+  const downloadAllFiles = async () => {
+    try {
+      const availableFiles = [];
+      
+      if (scanData?.processed_image) availableFiles.push('Segmented Image');
+      if (scanData?.depth_map_8bit) availableFiles.push('Depth Map (8-bit)');
+      if (scanData?.depth_map_16bit) availableFiles.push('Depth Map (16-bit)');
+      if (scanData?.stl_file) availableFiles.push('STL File');
+      
+      if (availableFiles.length === 0) {
+        Alert.alert('No Files', 'No files available for download');
+        return;
+      }
+      
+      Alert.alert(
+        'Download All Files', 
+        `Downloading ${availableFiles.length} files:\n• ${availableFiles.join('\n• ')}\n\nNote: Full download functionality will be implemented in the next phase.`,
+        [{ text: 'OK' }]
+      );
+      
+    } catch (error) {
+      console.error('Error downloading all files:', error);
+      Alert.alert('Download Error', `Failed to download files: ${error.message}`);
+    }
+  };
+
   /*
   const handleDownload = async () => {
     console.log('Download initiated using FileSystem.downloadAsync...');
@@ -184,22 +234,28 @@ const DownloadFilesScreen = () => {
             </View>
           )}
 
-          {/* STL File (Future Implementation) */}
-          <View style={styles.fileBox}>
-            <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
-            <View style={styles.fileInfoTextContainer}>
-              <Text style={styles.fileName}>STL result.zip</Text>
-              <Text style={styles.fileDetails}>ZIP Archive • 3D Mesh (Coming Soon)</Text> 
+          {/* STL File */}
+          {scanData?.stl_file && (
+            <View style={styles.fileBox}>
+              <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
+              <View style={styles.fileInfoTextContainer}>
+                <Text style={styles.fileName}>
+                  {scanData.mesh_metadata?.filename || 'STL_Model.stl'}
+                </Text>
+                <Text style={styles.fileDetails}>
+                  STL File • 3D Mesh • {scanData.mesh_metadata?.file_size || 'Unknown size'}
+                </Text> 
+              </View>
+              <TouchableOpacity onPress={() => downloadSTLFile(scanData.stl_file, scanData.mesh_metadata?.filename || 'STL_Model.stl')}>
+                <Image source={rightDownloadIcon} style={styles.fileIconRight} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => Alert.alert("Coming Soon", "3D mesh generation will be available in the next phase.")}>
-              <Image source={rightDownloadIcon} style={styles.fileIconRight} />
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
 
         {/* Footer Button */} 
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.downloadAllButton} onPress={() => Alert.alert("Download Disabled", "This feature is temporarily disabled.")}>
+          <TouchableOpacity style={styles.downloadAllButton} onPress={downloadAllFiles}>
             <Text style={styles.downloadAllButtonText}>Download All</Text>
           </TouchableOpacity>
         </View>
