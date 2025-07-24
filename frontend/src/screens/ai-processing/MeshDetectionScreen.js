@@ -81,20 +81,6 @@ const MeshDetectionScreen = () => {
         {/* Title */}
         <Text style={styles.title}>Mesh Detection</Text>
 
-        {/* Mesh Information */}
-        {scanData?.stl_generation?.mesh_metadata && (
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoText}>
-              Vertices: {scanData.stl_generation.mesh_metadata.vertex_count?.toLocaleString() || 'N/A'} | 
-              Faces: {scanData.stl_generation.mesh_metadata.face_count?.toLocaleString() || 'N/A'}
-            </Text>
-            <Text style={styles.infoText}>
-              Volume: {scanData.stl_generation.mesh_metadata.volume_mm3?.toFixed(2) || 'N/A'} mm³ | 
-              File Size: {scanData.stl_generation.mesh_metadata.file_size_mb || 'N/A'} MB
-            </Text>
-          </View>
-        )}
-
         {/* STL Preview Image - Using same layout as other screens */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
@@ -153,25 +139,7 @@ const styles = StyleSheet.create({
       default: 'sans-serif',
     }),
   },
-  infoContainer: {
-    backgroundColor: '#F0F0F8', // Light blue background for mesh info
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-    width: '90%',
-    alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#333333',
-    textAlign: 'center',
-    marginBottom: 2,
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
-  },
+
   imageOuterContainer: {
     width: '100%',
     height: 420, // Keep same height as other screens for consistency
