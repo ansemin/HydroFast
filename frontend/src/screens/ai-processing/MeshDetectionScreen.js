@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { scanService } from '../../services';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -20,21 +21,43 @@ const MeshDetectionScreen = () => {
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
 
-  const handleProcess = () => {
-    // Navigate to Processing screen for final step (step 4)
-    navigation.navigate('Processing', { 
-      step: 4,
-      scanId, 
-      scanData, 
-      patientId 
-    }); 
+  const handleProcess = async () => {
+    try {
+      console.log('Starting mesh generation...');
+      
+      // Process mesh generation using the scan ID
+      const meshResponse = await scanService.processMeshGeneration(scanId, 'balanced');
+      console.log('Mesh generation completed:', meshResponse);
+      
+      // Combine the current scan data with the mesh results
+      const combinedScanData = {
+        ...scanData,
+        ...meshResponse,
+      };
+      
+      Alert.alert('Success', 'Mesh generation completed successfully');
+      
+      // Navigate to DownloadFilesScreen to show final results and download options
+      navigation.navigate('DownloadFiles', { 
+        scanId, 
+        scanData: combinedScanData, 
+        patientId 
+      }); 
+    } catch (error) {
+      console.error('Error processing mesh generation:', error);
+      Alert.alert('Error', `Failed to process mesh generation: ${error.message}`);
+    }
   };
 
   // Determine STL preview image source
   const getMeshImageSource = () => {
-    if (scanData?.stl_preview_url) {
-      // If we have an STL preview URL from the backend
-      console.log('Using STL preview from backend:', scanData.stl_preview_url);
+    if (scanData?.preview_generation?.preview_image_url) {
+      // If we have an STL preview URL from the mesh generation response
+      console.log('Using STL preview from backend:', scanData.preview_generation.preview_image_url);
+      return { uri: scanData.preview_generation.preview_image_url };
+    } else if (scanData?.stl_preview_url) {
+      // Legacy field name support
+      console.log('Using legacy STL preview from backend:', scanData.stl_preview_url);
       return { uri: scanData.stl_preview_url };
     } else {
       // Fallback to static mesh image
@@ -59,24 +82,20 @@ const MeshDetectionScreen = () => {
         <Text style={styles.title}>Mesh Detection</Text>
 
         {/* Mesh Information */}
-        {scanData?.mesh_metadata && (
+        {scanData?.stl_generation?.mesh_metadata && (
           <View style={styles.infoContainer}>
             <Text style={styles.infoText}>
-              Vertices: {scanData.mesh_metadata.vertex_count?.toLocaleString() || 'N/A'}
+              Vertices: {scanData.stl_generation.mesh_metadata.vertex_count?.toLocaleString() || 'N/A'} | 
+              Faces: {scanData.stl_generation.mesh_metadata.face_count?.toLocaleString() || 'N/A'}
             </Text>
             <Text style={styles.infoText}>
-              Faces: {scanData.mesh_metadata.face_count?.toLocaleString() || 'N/A'}
-            </Text>
-            <Text style={styles.infoText}>
-              Volume: {scanData.mesh_metadata.volume_mm3?.toFixed(2) || 'N/A'} mm³
-            </Text>
-            <Text style={styles.infoText}>
-              File Size: {scanData.mesh_metadata.file_size_mb || 'N/A'} MB
+              Volume: {scanData.stl_generation.mesh_metadata.volume_mm3?.toFixed(2) || 'N/A'} mm³ | 
+              File Size: {scanData.stl_generation.mesh_metadata.file_size_mb || 'N/A'} MB
             </Text>
           </View>
         )}
 
-        {/* STL Preview Image */}
+        {/* STL Preview Image - Using same layout as other screens */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
             <Image 
@@ -100,31 +119,34 @@ const MeshDetectionScreen = () => {
   );
 };
 
+// Styles matching other screens for consistency
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    backgroundColor: '#FCFFF8', // Background color matching other screens
   },
   backButton: {
     position: 'absolute',
-    left: 20,
-    top: Platform.OS === 'ios' ? 50 : 30,
-    zIndex: 1,
+    top: 25,
+    left: 18,
     padding: 10,
+    zIndex: 1,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#FCFFF8',
+    padding: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center', // Center all content horizontally
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: Platform.OS === 'ios' ? 60 : 40,
-    marginBottom: 20,
-    color: '#000000',
+    color: '#000000', // Black color
+    alignSelf: 'center',
+    marginTop: 25, 
+    marginBottom: 10, 
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
@@ -132,15 +154,18 @@ const styles = StyleSheet.create({
     }),
   },
   infoContainer: {
-    backgroundColor: '#F5F5F5',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
+    backgroundColor: '#F0F0F8', // Light blue background for mesh info
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    width: '90%',
+    alignItems: 'center',
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#333333',
-    marginBottom: 5,
+    textAlign: 'center',
+    marginBottom: 2,
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
@@ -148,19 +173,17 @@ const styles = StyleSheet.create({
     }),
   },
   imageOuterContainer: {
-    flex: 1,
+    width: '100%',
+    height: 420, // Keep same height as other screens for consistency
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
   },
   imageContainer: {
-    width: 300,
-    height: 300,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: '90%',
+    height: 390, // Keep same height
+    borderRadius: 13,
+    overflow: 'hidden', 
+    backgroundColor: '#000000', // Black background
   },
   image: {
     width: '100%',
@@ -168,20 +191,27 @@ const styles = StyleSheet.create({
     resizeMode: 'contain', // Use contain for 3D mesh previews to show the full model
   },
   buttonWrapper: {
-    paddingVertical: 20,
-    alignItems: 'center',
+    width: '100%',
+    marginTop: 20, 
+    paddingBottom: 25,
+    alignItems: 'center', // Center the button horizontally
   },
   processButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 50,
+    backgroundColor: '#27CFA0', // Specified green color matching other screens
+    borderRadius: 13,
+    width: '40%', // Adjust width as needed, centered
     paddingVertical: 15,
-    borderRadius: 25,
-    minWidth: 200,
+    justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: 'rgba(112, 231, 187, 0.55)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#FFFFFF', // White text
+    fontSize: 15,
     fontWeight: 'bold',
     fontFamily: Platform.select({
       ios: 'Urbanist',

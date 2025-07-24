@@ -157,14 +157,17 @@ const ProcessingScreen = () => {
         {/* Title */}
         <Text style={styles.title}>Processing...</Text>
         
-        {/* Loading Animation */}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
+        {/* Centered Content Container */}
+        <View style={styles.centeredContent}>
+          {/* Loading Animation */}
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+          </View>
+          
+          {/* Processing Text */}
+          <Text style={styles.processingText}>{getStepText()}</Text>
+          <Text style={styles.subtitle}>Please kindly wait...</Text>
         </View>
-        
-        {/* Processing Text */}
-        <Text style={styles.processingText}>{getStepText()}</Text>
-        <Text style={styles.subtitle}>Please kindly wait...</Text>
       </View>
     </SafeAreaView>
   );
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center', // Center content horizontally
-    justifyContent: 'flex-start', // Align content to the top
+    justifyContent: 'flex-start', // Keep title at the top
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, // Adjust for Android status bar
     paddingHorizontal: 10,
   },
@@ -219,6 +222,11 @@ const styles = StyleSheet.create({
       android: 'Urbanist',
       default: 'sans-serif',
     }),
+  },
+  centeredContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

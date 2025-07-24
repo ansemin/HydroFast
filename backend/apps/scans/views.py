@@ -37,14 +37,15 @@ class ScanViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def process_wound_detection(self, request, pk=None):
-        """Step 1: Process wound detection only"""
+        """Step 1: Process wound detection with bbox crop workflow"""
         scan = self.get_object()
         try:
             import os
             from django.conf import settings
             from apps.ai_processing.processors.wound_detector import WoundDetector
+            from apps.ai_processing.processors.zoedepth_processor import ZoeDepthProcessor
             
-            # Step 1: Wound Detection only
+            # Step 1a: Basic Wound Detection to create segmented image
             detector = WoundDetector()
             segmented_image_path = detector.process(scan.image.path)
             
@@ -53,14 +54,49 @@ class ScanViewSet(viewsets.ModelViewSet):
             scan.processed_image = relative_path
             scan.save()
             
-            # Build full URL for the processed image
+            # Step 1b: Use bbox crop workflow to create cropped images
+            # Create output directory for bbox crop results
+            bbox_output_dir = os.path.join(settings.MEDIA_ROOT, 'bbox_crop_results', f'scan_{scan.id}')
+            os.makedirs(bbox_output_dir, exist_ok=True)
+            
+            # Initialize ZoeDepthProcessor with bbox crop workflow
+            zoedepth_processor = ZoeDepthProcessor()
+            bbox_results = zoedepth_processor.process_with_bbox_crop(
+                original_image_path=scan.image.path,
+                segmented_image_path=segmented_image_path,
+                output_dir=bbox_output_dir
+            )
+            
+            # Build URLs for all generated images
             processed_image_url = request.build_absolute_uri(scan.processed_image.url) if scan.processed_image else None
             
+            # Build URLs for bbox crop results
+            cropped_segmented_url = None
+            cropped_image_url = None
+            bbox_visualization_url = None
+            
+            if bbox_results.get('cropped_segmented_path'):
+                cropped_segmented_relative = os.path.relpath(bbox_results['cropped_segmented_path'], settings.MEDIA_ROOT)
+                cropped_segmented_url = request.build_absolute_uri(settings.MEDIA_URL + cropped_segmented_relative)
+            
+            if bbox_results.get('cropped_image_path'):
+                cropped_image_relative = os.path.relpath(bbox_results['cropped_image_path'], settings.MEDIA_ROOT)
+                cropped_image_url = request.build_absolute_uri(settings.MEDIA_URL + cropped_image_relative)
+            
+            if bbox_results.get('bbox_visualization_path'):
+                bbox_viz_relative = os.path.relpath(bbox_results['bbox_visualization_path'], settings.MEDIA_ROOT)
+                bbox_visualization_url = request.build_absolute_uri(settings.MEDIA_URL + bbox_viz_relative)
+            
             response_data = {
-                'status': 'Wound detection complete',
-                'processed_image': processed_image_url,
+                'status': 'Wound detection complete with bbox crop',
+                'processed_image': processed_image_url,  # Original segmented image
+                'cropped_segmented_path': cropped_segmented_url,  # Cropped segmented image (what user wants)
+                'cropped_image_path': cropped_image_url,  # Cropped original image
+                'bbox_visualization_path': bbox_visualization_url,  # Bbox visualization
+                'bbox': bbox_results.get('bbox', {}),  # Bounding box coordinates
                 'scan_id': scan.id,
-                'step': 'wound_detection'
+                'step': 'wound_detection_with_bbox_crop',
+                'workflow_type': 'bbox_crop'
             }
             
             return Response(response_data)
@@ -71,18 +107,18 @@ class ScanViewSet(viewsets.ModelViewSet):
                 'error': str(e),
                 'traceback': traceback.format_exc(),
                 'scan_id': scan.id if 'scan' in locals() else None,
-                'step': 'wound_detection'
+                'step': 'wound_detection_with_bbox_crop'
             }
             return Response(error_details, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['post'])
     def process_depth_analysis(self, request, pk=None):
-        """Step 2: Process depth analysis using ZoeDepth"""
+        """Step 2: Process depth analysis using ZoeDepth with bbox crop workflow"""
         scan = self.get_object()
         try:
             import os
             from django.conf import settings
-            from apps.ai_processing.processors.depth_analyzer import DepthAnalyzer
+            from apps.ai_processing.processors.zoedepth_processor import ZoeDepthProcessor
             
             # Check if wound detection was done first
             if not scan.processed_image:
@@ -91,12 +127,113 @@ class ScanViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Get the segmented image path
-            segmented_image_path = scan.processed_image.path
+            # Look for bbox crop results directory from the wound detection step
+            bbox_output_dir = os.path.join(settings.MEDIA_ROOT, 'bbox_crop_results', f'scan_{scan.id}')
+            cropped_image_path = os.path.join(bbox_output_dir, 'cropped_wound.png')
+            cropped_segmented_path = os.path.join(bbox_output_dir, 'cropped_segmented.png')
             
-            # Step 2: ZoeDepth Processing
-            depth_analyzer = DepthAnalyzer()
-            depth_results = depth_analyzer.process(segmented_image_path)
+            # Check if bbox crop results exist
+            if os.path.exists(cropped_image_path) and os.path.exists(cropped_segmented_path):
+                # Use direct processing on already cropped images (like test_full_pipeline.py)
+                print(f"🎯 Using pre-cropped images for depth analysis")
+                print(f"Cropped original: {cropped_image_path}")
+                print(f"Cropped segmented: {cropped_segmented_path}")
+                
+                # Create depth analysis output directory
+                depth_output_dir = os.path.join(settings.MEDIA_ROOT, 'depth_maps_bbox')
+                os.makedirs(depth_output_dir, exist_ok=True)
+                
+                # Initialize ZoeDepthProcessor and process the cropped original with cropped segmented as mask
+                zoedepth_processor = ZoeDepthProcessor()
+                
+                # Ensure model is loaded
+                if not zoedepth_processor.is_loaded:
+                    zoedepth_processor.load_model()
+                
+                # Process the cropped original image using ZoeDepth
+                processed_image, original_size = zoedepth_processor.preprocess(cropped_image_path)
+                raw_depth_map = zoedepth_processor._generate_depth_map(processed_image)
+                
+                # Resize depth map to cropped image size if needed
+                if zoedepth_processor.config['output_size'] is None and original_size is not None:
+                    import cv2
+                    raw_depth_map = cv2.resize(raw_depth_map, original_size, interpolation=cv2.INTER_LINEAR)
+                
+                # Extract wound mask from cropped segmented image
+                from apps.ai_processing.processors.depth_utils import extract_wound_mask_from_segmented, apply_depth_processing, calculate_depth_statistics, estimate_volume_from_depth
+                wound_mask = extract_wound_mask_from_segmented(
+                    cropped_segmented_path, 
+                    method=zoedepth_processor.config['mask_extraction_method']
+                )
+                
+                # Apply depth processing with the mask
+                processed_depth_map = apply_depth_processing(
+                    raw_depth_map,
+                    mask=wound_mask,
+                    contrast_alpha=zoedepth_processor.config['contrast_alpha'],
+                    brightness_beta=zoedepth_processor.config['brightness_beta'],
+                    blur_kernel=zoedepth_processor.config['blur_kernel']
+                )
+                
+                # Calculate depth statistics
+                depth_stats = calculate_depth_statistics(processed_depth_map, wound_mask)
+                
+                # Estimate volume
+                volume_estimate = estimate_volume_from_depth(
+                    processed_depth_map, 
+                    wound_mask, 
+                    zoedepth_processor.config['pixel_size_mm']
+                )
+                
+                # Save depth maps with same naming as test_full_pipeline.py
+                import numpy as np
+                import cv2
+                from pathlib import Path
+                
+                depth_output_path = Path(depth_output_dir)
+                depth_8bit_path = depth_output_path / "depth_8bit.png"
+                depth_16bit_path = depth_output_path / "depth_16bit.png"
+                
+                # Save 8-bit depth map
+                depth_8bit_normalized = cv2.normalize(processed_depth_map, None, 0, 255, cv2.NORM_MINMAX)
+                cv2.imwrite(str(depth_8bit_path), depth_8bit_normalized.astype(np.uint8))
+                
+                # Save 16-bit depth map  
+                depth_16bit_normalized = cv2.normalize(processed_depth_map, None, 0, 65535, cv2.NORM_MINMAX)
+                cv2.imwrite(str(depth_16bit_path), depth_16bit_normalized.astype(np.uint16))
+                
+                # Create results dictionary matching test_full_pipeline.py structure
+                depth_results = {
+                    'workflow_type': 'bbox_crop',
+                    'depth_map_8bit_path': str(depth_8bit_path),
+                    'depth_map_16bit_path': str(depth_16bit_path),
+                    'depth_statistics': depth_stats,
+                    'volume_estimate': {
+                        'total_volume': volume_estimate,
+                        'confidence': 0.8,
+                        'method': 'ZoeDepth_bbox_crop'
+                    },
+                    'wound_mask_extracted': wound_mask is not None,
+                    'processing_parameters': {
+                        'model_type': zoedepth_processor.config['model_type'],
+                        'contrast_alpha': zoedepth_processor.config['contrast_alpha'],
+                        'brightness_beta': zoedepth_processor.config['brightness_beta'],
+                        'blur_kernel': zoedepth_processor.config['blur_kernel'],
+                        'mask_extraction_method': zoedepth_processor.config['mask_extraction_method'],
+                        'pixel_size_mm': zoedepth_processor.config['pixel_size_mm']
+                    }
+                }
+                
+                print(f"✅ Depth analysis completed using pre-cropped images (matching test_full_pipeline.py)")
+                
+            else:
+                # Fallback to regular depth analysis if bbox crop results don't exist
+                print(f"⚠️ Bbox crop results not found, falling back to regular depth analysis")
+                from apps.ai_processing.processors.depth_analyzer import DepthAnalyzer
+                
+                segmented_image_path = scan.processed_image.path
+                depth_analyzer = DepthAnalyzer()
+                depth_results = depth_analyzer.process(segmented_image_path)
             
             # Build URLs for depth maps
             depth_8bit_url = None
@@ -110,21 +247,31 @@ class ScanViewSet(viewsets.ModelViewSet):
                 depth_16bit_relative = os.path.relpath(depth_results['depth_map_16bit_path'], settings.MEDIA_ROOT)
                 depth_16bit_url = request.build_absolute_uri(settings.MEDIA_URL + depth_16bit_relative)
             
+            # Extract volume estimate for simplified response
+            volume_estimate = 0
+            if depth_results.get('volume_estimate') and isinstance(depth_results['volume_estimate'], dict):
+                volume_estimate = depth_results['volume_estimate'].get('total_volume', 0)
+            elif depth_results.get('volume_estimate') and isinstance(depth_results['volume_estimate'], (int, float)):
+                volume_estimate = depth_results['volume_estimate']
+            
             response_data = {
                 'status': 'Depth analysis complete',
                 'depth_map_8bit': depth_8bit_url,
                 'depth_map_16bit': depth_16bit_url,
+                'volume_estimate': volume_estimate,
                 'depth_metadata': {
+                    'processor': 'ZoeDepthProcessor',
+                    'analysis_method': depth_results.get('workflow_type', 'ZoeDepth_bbox_crop'),
+                    'workflow_type': depth_results.get('workflow_type', 'bbox_crop'),
                     'depth_statistics': depth_results.get('depth_statistics', {}),
                     'volume_estimate': depth_results.get('volume_estimate', {}),
-                    'wound_severity': depth_results.get('wound_severity', 'unknown'),
-                    'processing_confidence': depth_results.get('processing_confidence', 0.0),
-                    'surface_area': depth_results.get('surface_area', 0.0),
                     'wound_mask_extracted': depth_results.get('wound_mask_extracted', False),
-                    'analysis_method': depth_results.get('analysis_method', 'ZoeDepth_monocular'),
-                    'processor': depth_results.get('processor', 'DepthAnalyzer'),
-                    'timestamp': depth_results.get('timestamp'),
-                    'units': depth_results.get('units', {})
+                    'processing_parameters': depth_results.get('processing_parameters', {}),
+                    'processing_confidence': 0,
+                    'surface_area': 0,
+                    'timestamp': None,
+                    'units': {},
+                    'wound_severity': 'unknown'
                 },
                 'scan_id': scan.id,
                 'step': 'depth_analysis'

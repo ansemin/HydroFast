@@ -67,22 +67,30 @@ const PhotoPreviewScreen = () => {
       
       console.log('Uploading image to server for patient:', patientId);
       
-      // Send the request using the scanService
-      const response = await scanService.createScan(formData);
+      // Step 1: Upload the image
+      const uploadResponse = await scanService.createScan(formData);
+      console.log('Upload successful', uploadResponse);
       
-      console.log('Upload successful', response);
-      Alert.alert('Success', 'Image uploaded to server successfully');
+      // Step 2: Process wound detection with bbox crop workflow
+      console.log('Starting wound detection with bbox crop...');
+      const woundDetectionResponse = await scanService.processWoundDetection(uploadResponse.id);
+      console.log('Wound detection completed:', woundDetectionResponse);
       
-      // Navigate directly to Processing screen, starting with step 1 (wound detection)
-      navigation.navigate('Processing', { 
-        step: 1,
-        scanId: response.id,
-        scanData: response,
+      // Combine the responses
+      const combinedScanData = {
+        ...uploadResponse,
+        ...woundDetectionResponse,
+      };
+      
+      // Navigate to CroppedOriginalScreen to show the cropped original image
+      navigation.navigate('CroppedOriginal', { 
+        scanId: uploadResponse.id,
+        scanData: combinedScanData,
         patientId: patientId 
       });
     } catch (error) {
-      console.error('Error uploading image:', error);
-      Alert.alert('Error', `Failed to upload image: ${error.message}`);
+      console.error('Error in upload and wound detection:', error);
+      Alert.alert('Error', `Failed to process image: ${error.message}`);
     }
   };
 

@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { scanService } from '../../services';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -13,57 +12,42 @@ function BackArrowIcon() {
   );
 }
 
-// Fallback depth image if no depth map is available
-const fallbackDepthImage = require('../../assets/images/0138_depth_grayscale_zd.png');
+// Fallback image if no cropped original image is available
+const fallbackOriginalImage = require('../../assets/images/0138_segmented.png');
 
-const DepthDetectionScreen = () => {
+const CroppedOriginalScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
   
-  const handleProcess = async () => {
-    try {
-      console.log('Starting mesh generation...');
-      
-      // Process mesh generation using the scan ID
-      const meshResponse = await scanService.processMeshGeneration(scanId, 'balanced');
-      console.log('Mesh generation completed:', meshResponse);
-      
-      // Combine the current scan data with the mesh results
-      const combinedScanData = {
-        ...scanData,
-        ...meshResponse,
-      };
-      
-      Alert.alert('Success', 'Mesh generation completed successfully');
-      
-      // Navigate to MeshDetectionScreen with the mesh results
-      navigation.navigate('MeshDetection', { 
-        scanId, 
-        scanData: combinedScanData, 
-        patientId 
-      }); 
-    } catch (error) {
-      console.error('Error processing mesh generation:', error);
-      Alert.alert('Error', `Failed to process mesh generation: ${error.message}`);
-    }
+  const handleProcess = () => {
+    // Navigate to WoundDetectionScreen to show the segmented result
+    navigation.navigate('WoundDetection', { 
+      scanId, 
+      scanData, 
+      patientId 
+    }); 
   };
 
-  // Determine depth image source - use 8-bit depth map if available, otherwise fallback
-  const getDepthImageSource = () => {
-    if (scanData?.depth_map_8bit) {
-      // If we have an 8-bit depth map URL from the backend
-      console.log('Using depth map from backend:', scanData.depth_map_8bit);
-      return { uri: scanData.depth_map_8bit };
-    } else if (scanData?.depth_map_16bit) {
-      // If we have a 16-bit depth map URL from the backend
-      console.log('Using 16-bit depth map from backend:', scanData.depth_map_16bit);
-      return { uri: scanData.depth_map_16bit };
-    } else {
-      // Fallback to static depth image
-      console.log('Using fallback depth image');
-      return fallbackDepthImage;
+  // Determine image source - use cropped original image from bbox workflow
+  const getImageSource = () => {
+    // Priority 1: Use cropped original image from bbox workflow
+    if (scanData?.cropped_image_path) {
+      return { uri: scanData.cropped_image_path };
     }
+    
+    // Priority 2: Use bbox visualization if available
+    if (scanData?.bbox_visualization_path) {
+      return { uri: scanData.bbox_visualization_path };
+    }
+    
+    // Priority 3: Use original image if no cropped version available
+    if (scanData?.image) {
+      return { uri: scanData.image };
+    } 
+    
+    // Fallback: Static image
+    return fallbackOriginalImage;
   };
 
   return (
@@ -79,23 +63,18 @@ const DepthDetectionScreen = () => {
         </TouchableOpacity>
 
         {/* Title */}
-        <Text style={styles.title}>Depth Detection</Text>
+        <Text style={styles.title}>Cropped Original</Text>
 
-        {/* Depth Image Preview - Using same layout as WoundDetectionScreen */}
+        {/* Image Preview - Using fixed dimensions */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            <Image 
-              source={getDepthImageSource()} 
-              style={styles.image}
-              onError={(error) => {
-                console.log('Error loading depth image:', error.nativeEvent.error);
-              }}
-            />
+            <Image source={getImageSource()} style={styles.image} />
           </View>
         </View>
         
         {/* Action Button */}
         <View style={styles.buttonWrapper}>
+          {/* Single centered button */}
           <TouchableOpacity style={styles.processButton} onPress={handleProcess}>
             <Text style={styles.buttonText}>Process</Text>
           </TouchableOpacity>
@@ -105,11 +84,11 @@ const DepthDetectionScreen = () => {
   );
 };
 
-// Styles exactly matching WoundDetectionScreen for consistency
+// Styles identical to WoundDetectionScreen for consistency
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FCFFF8', // Background color matching WoundDetectionScreen
+    backgroundColor: '#FCFFF8', // Background color
   },
   backButton: {
     position: 'absolute',
@@ -139,9 +118,10 @@ const styles = StyleSheet.create({
       default: 'sans-serif',
     }),
   },
+
   imageOuterContainer: {
     width: '100%',
-    height: 420, // Keep same height as other screens for consistency
+    height: 420, // Keep same height as photo preview for consistency
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -164,7 +144,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Center the button horizontally
   },
   processButton: {
-    backgroundColor: '#27CFA0', // Specified green color matching other screens
+    backgroundColor: '#27CFA0', // Specified green color
     borderRadius: 13,
     width: '40%', // Adjust width as needed, centered
     paddingVertical: 15,
@@ -188,4 +168,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DepthDetectionScreen; 
+export default CroppedOriginalScreen; 
