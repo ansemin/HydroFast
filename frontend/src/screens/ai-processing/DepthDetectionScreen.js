@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { scanService } from '../../services';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -20,14 +21,32 @@ const DepthDetectionScreen = () => {
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
   
-  const handleProcess = () => {
-    // Navigate to Processing screen, specifying step 3 (mesh generation)
-    navigation.navigate('Processing', { 
-      step: 3, 
-      scanId, 
-      scanData, 
-      patientId 
-    }); 
+  const handleProcess = async () => {
+    try {
+      console.log('Starting mesh generation...');
+      
+      // Process mesh generation using the scan ID
+      const meshResponse = await scanService.processMeshGeneration(scanId, 'balanced');
+      console.log('Mesh generation completed:', meshResponse);
+      
+      // Combine the current scan data with the mesh results
+      const combinedScanData = {
+        ...scanData,
+        ...meshResponse,
+      };
+      
+      Alert.alert('Success', 'Mesh generation completed successfully');
+      
+      // Navigate to MeshDetectionScreen with the mesh results
+      navigation.navigate('MeshDetection', { 
+        scanId, 
+        scanData: combinedScanData, 
+        patientId 
+      }); 
+    } catch (error) {
+      console.error('Error processing mesh generation:', error);
+      Alert.alert('Error', `Failed to process mesh generation: ${error.message}`);
+    }
   };
 
   // Determine depth image source - use 8-bit depth map if available, otherwise fallback
@@ -62,19 +81,7 @@ const DepthDetectionScreen = () => {
         {/* Title */}
         <Text style={styles.title}>Depth Detection</Text>
 
-        {/* Depth Information */}
-        {scanData?.depth_metadata && (
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoText}>
-              Volume: {scanData.depth_metadata.volume_estimate?.total_volume?.toFixed(2) || 'N/A'} mm³
-            </Text>
-            <Text style={styles.infoText}>
-              Confidence: {((scanData.depth_metadata.processing_confidence || 0) * 100).toFixed(1)}%
-            </Text>
-          </View>
-        )}
-
-        {/* Depth Image Preview */}
+        {/* Depth Image Preview - Using same layout as WoundDetectionScreen */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
             <Image 
@@ -98,47 +105,34 @@ const DepthDetectionScreen = () => {
   );
 };
 
+// Styles exactly matching WoundDetectionScreen for consistency
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    backgroundColor: '#FCFFF8', // Background color matching WoundDetectionScreen
   },
   backButton: {
     position: 'absolute',
-    left: 20,
-    top: Platform.OS === 'ios' ? 50 : 30,
-    zIndex: 1,
+    top: 25,
+    left: 18,
     padding: 10,
+    zIndex: 1,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#FCFFF8',
+    padding: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center', // Center all content horizontally
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: Platform.OS === 'ios' ? 60 : 40,
-    marginBottom: 20,
-    color: '#000000',
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
-  },
-  infoContainer: {
-    backgroundColor: '#F5F5F5',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#333333',
-    marginBottom: 5,
+    color: '#000000', // Black color
+    alignSelf: 'center',
+    marginTop: 25, 
+    marginBottom: 10, 
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
@@ -146,40 +140,45 @@ const styles = StyleSheet.create({
     }),
   },
   imageOuterContainer: {
-    flex: 1,
+    width: '100%',
+    height: 420, // Keep same height as other screens for consistency
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
   },
   imageContainer: {
-    width: 300,
-    height: 300,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: '90%',
+    height: 390, // Keep same height
+    borderRadius: 13,
+    overflow: 'hidden', 
+    backgroundColor: '#000000', // Black background
   },
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    resizeMode: 'contain', 
   },
   buttonWrapper: {
-    paddingVertical: 20,
-    alignItems: 'center',
+    width: '100%',
+    marginTop: 20, 
+    paddingBottom: 25,
+    alignItems: 'center', // Center the button horizontally
   },
   processButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 50,
+    backgroundColor: '#27CFA0', // Specified green color matching other screens
+    borderRadius: 13,
+    width: '40%', // Adjust width as needed, centered
     paddingVertical: 15,
-    borderRadius: 25,
-    minWidth: 200,
+    justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: 'rgba(112, 231, 187, 0.55)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#FFFFFF', // White text
+    fontSize: 15,
     fontWeight: 'bold',
     fontFamily: Platform.select({
       ios: 'Urbanist',

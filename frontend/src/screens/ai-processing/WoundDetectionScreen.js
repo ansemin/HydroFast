@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { scanService } from '../../services';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -20,31 +21,57 @@ const WoundDetectionScreen = () => {
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
   
-  const handleProcess = () => {
-    // Navigate to Processing screen, specifying step 2
-    navigation.navigate('Processing', { 
-      step: 2, 
-      scanId, 
-      scanData, 
-      patientId 
-    }); 
-  };
-
-  // Determine image source - use processed image if available, otherwise fallback
-  const getImageSource = () => {
-    if (scanData?.processed_image) {
-      // If we have a processed image URL from the backend
-      return { uri: scanData.processed_image };
-    } else if (scanData?.image) {
-      // If we have the original image URL
-      return { uri: scanData.image };
-    } else {
-      // Fallback to static image
-      return fallbackWoundImage;
+  const handleProcess = async () => {
+    try {
+      console.log('Starting depth analysis...');
+      
+      // Process depth analysis using the scan ID
+      const depthResponse = await scanService.processDepthAnalysis(scanId);
+      console.log('Depth analysis completed:', depthResponse);
+      
+      // Combine the current scan data with the depth results
+      const combinedScanData = {
+        ...scanData,
+        ...depthResponse,
+      };
+      
+      // Navigate to DepthDetectionScreen with the depth results
+      navigation.navigate('DepthDetection', { 
+        scanId, 
+        scanData: combinedScanData, 
+        patientId 
+      }); 
+    } catch (error) {
+      console.error('Error processing depth analysis:', error);
+      Alert.alert('Error', `Failed to process depth analysis: ${error.message}`);
     }
   };
 
-
+  // Determine image source - use cropped segmented image from bbox workflow
+  const getImageSource = () => {
+    // Priority 1: Use cropped segmented image from bbox workflow (the main goal)
+    if (scanData?.cropped_segmented_path) {
+      return { uri: scanData.cropped_segmented_path };
+    }
+    
+    // Priority 2: Use cropped image path (fallback from bbox workflow)
+    if (scanData?.cropped_image_path) {
+      return { uri: scanData.cropped_image_path };
+    }
+    
+    // Priority 3: Use processed/segmented image if no cropped version available
+    if (scanData?.processed_image) {
+      return { uri: scanData.processed_image };
+    } 
+    
+    // Priority 4: Use original image if no processed image available
+    if (scanData?.image) {
+      return { uri: scanData.image };
+    } 
+    
+    // Fallback: Static image
+    return fallbackWoundImage;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -77,6 +77,24 @@ backend/media/stl_previews/*.png
 backend/media/stl_previews/*.jpg
 backend/media/stl_previews/*.jpeg
 
+# Ignore bbox crop results (subdirectories with scan results)
+backend/media/bbox_crop_results/**/*.png
+backend/media/bbox_crop_results/**/*.jpg
+backend/media/bbox_crop_results/**/*.jpeg
+backend/media/bbox_crop_results/**/*.json
+
+# Ignore depth maps bbox files
+backend/media/depth_maps_bbox/*.png
+backend/media/depth_maps_bbox/*.jpg
+backend/media/depth_maps_bbox/*.jpeg
+backend/media/depth_maps_bbox/*.json
+
+# Ignore depth maps bbox files inside depth_maps folder
+backend/media/depth_maps/depth_maps_bbox/*.png
+backend/media/depth_maps/depth_maps_bbox/*.jpg
+backend/media/depth_maps/depth_maps_bbox/*.jpeg
+backend/media/depth_maps/depth_maps_bbox/*.json
+
 # Test directories and files
 backend/media/test_improved_depth/
 backend/media/test_stl_pipeline/

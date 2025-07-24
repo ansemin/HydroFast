@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { scanService } from '../../services';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -13,57 +12,42 @@ function BackArrowIcon() {
   );
 }
 
-// Fallback mesh image if no STL preview is available
-const fallbackMeshImage = require('../../assets/images/0138_mesh_consistent_z05.png');
+// Fallback image if no cropped original image is available
+const fallbackOriginalImage = require('../../assets/images/0138_segmented.png');
 
-const MeshDetectionScreen = () => {
+const CroppedOriginalScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
-
-  const handleProcess = async () => {
-    try {
-      console.log('Starting mesh generation...');
-      
-      // Process mesh generation using the scan ID
-      const meshResponse = await scanService.processMeshGeneration(scanId, 'balanced');
-      console.log('Mesh generation completed:', meshResponse);
-      
-      // Combine the current scan data with the mesh results
-      const combinedScanData = {
-        ...scanData,
-        ...meshResponse,
-      };
-      
-      Alert.alert('Success', 'Mesh generation completed successfully');
-      
-      // Navigate to DownloadFilesScreen to show final results and download options
-      navigation.navigate('DownloadFiles', { 
-        scanId, 
-        scanData: combinedScanData, 
-        patientId 
-      }); 
-    } catch (error) {
-      console.error('Error processing mesh generation:', error);
-      Alert.alert('Error', `Failed to process mesh generation: ${error.message}`);
-    }
+  
+  const handleProcess = () => {
+    // Navigate to WoundDetectionScreen to show the segmented result
+    navigation.navigate('WoundDetection', { 
+      scanId, 
+      scanData, 
+      patientId 
+    }); 
   };
 
-  // Determine STL preview image source
-  const getMeshImageSource = () => {
-    if (scanData?.preview_generation?.preview_image_url) {
-      // If we have an STL preview URL from the mesh generation response
-      console.log('Using STL preview from backend:', scanData.preview_generation.preview_image_url);
-      return { uri: scanData.preview_generation.preview_image_url };
-    } else if (scanData?.stl_preview_url) {
-      // Legacy field name support
-      console.log('Using legacy STL preview from backend:', scanData.stl_preview_url);
-      return { uri: scanData.stl_preview_url };
-    } else {
-      // Fallback to static mesh image
-      console.log('Using fallback mesh image');
-      return fallbackMeshImage;
+  // Determine image source - use cropped original image from bbox workflow
+  const getImageSource = () => {
+    // Priority 1: Use cropped original image from bbox workflow
+    if (scanData?.cropped_image_path) {
+      return { uri: scanData.cropped_image_path };
     }
+    
+    // Priority 2: Use bbox visualization if available
+    if (scanData?.bbox_visualization_path) {
+      return { uri: scanData.bbox_visualization_path };
+    }
+    
+    // Priority 3: Use original image if no cropped version available
+    if (scanData?.image) {
+      return { uri: scanData.image };
+    } 
+    
+    // Fallback: Static image
+    return fallbackOriginalImage;
   };
 
   return (
@@ -79,23 +63,18 @@ const MeshDetectionScreen = () => {
         </TouchableOpacity>
 
         {/* Title */}
-        <Text style={styles.title}>Mesh Detection</Text>
+        <Text style={styles.title}>Cropped Original</Text>
 
-        {/* STL Preview Image - Using same layout as other screens */}
+        {/* Image Preview - Using fixed dimensions */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            <Image 
-              source={getMeshImageSource()} 
-              style={styles.image}
-              onError={(error) => {
-                console.log('Error loading STL preview image:', error.nativeEvent.error);
-              }}
-            />
+            <Image source={getImageSource()} style={styles.image} />
           </View>
         </View>
         
         {/* Action Button */}
         <View style={styles.buttonWrapper}>
+          {/* Single centered button */}
           <TouchableOpacity style={styles.processButton} onPress={handleProcess}>
             <Text style={styles.buttonText}>Process</Text>
           </TouchableOpacity>
@@ -105,11 +84,11 @@ const MeshDetectionScreen = () => {
   );
 };
 
-// Styles matching other screens for consistency
+// Styles identical to WoundDetectionScreen for consistency
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FCFFF8', // Background color matching other screens
+    backgroundColor: '#FCFFF8', // Background color
   },
   backButton: {
     position: 'absolute',
@@ -142,7 +121,7 @@ const styles = StyleSheet.create({
 
   imageOuterContainer: {
     width: '100%',
-    height: 420, // Keep same height as other screens for consistency
+    height: 420, // Keep same height as photo preview for consistency
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -156,7 +135,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain', // Use contain for 3D mesh previews to show the full model
+    resizeMode: 'contain', 
   },
   buttonWrapper: {
     width: '100%',
@@ -165,7 +144,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Center the button horizontally
   },
   processButton: {
-    backgroundColor: '#27CFA0', // Specified green color matching other screens
+    backgroundColor: '#27CFA0', // Specified green color
     borderRadius: 13,
     width: '40%', // Adjust width as needed, centered
     paddingVertical: 15,
@@ -189,4 +168,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MeshDetectionScreen; 
+export default CroppedOriginalScreen; 
