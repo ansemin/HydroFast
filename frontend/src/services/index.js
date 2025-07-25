@@ -18,10 +18,8 @@ export const { login, register, logout, getUserInfo, isAuthenticated } = authSer
 export const { getAllPatients, getPatient, createPatient, updatePatient, deletePatient } = patientService;
 export const { getAllScans, getPatientScans, createScan, processWoundDetection, processDepthAnalysis } = scanService;
 export const { 
-  processComprehensiveScan,
-  extractDepthMapUrls,
-  extractDepthMetadata,
-  formatDepthStatistics,
-  downloadDepthMap,
-  mockProcessing
+  processWoundDetection: aiProcessWoundDetection,
+  processDepthAnalysis: aiProcessDepthAnalysis,
+  processMeshGeneration,
+  processComprehensiveScan
 } = aiProcessingService; 
