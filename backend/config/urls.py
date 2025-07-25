@@ -25,7 +25,7 @@ urlpatterns = [
     path('api/', include('apps.patients.urls')),
     path('api/', include('apps.scans.urls')),
     path('api/', include('apps.ai_processing.urls')),
-    path('api/', include('coreViews.urls')),
+    # Removed coreViews.urls - legacy code that duplicates apps functionality
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 

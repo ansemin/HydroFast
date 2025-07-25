@@ -102,5 +102,4 @@ backend/test_full_pipeline/
 backend/test_full_pipeline.py
 
 # Don't ignore the cleanup scripts
-backend/clean_media.py
-backend/clean_media.bat
+# backend/clean_media.py
