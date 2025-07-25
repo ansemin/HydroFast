@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen({ className = "" }) {
   const navigation = useNavigation();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -37,8 +37,8 @@ export default function LoginScreen({ className = "" }) {
   }, []);
 
   const handleLogin = async () => {
-    if (!email) {
-      Alert.alert("Error", "Please enter your email");
+    if (!username) {
+      Alert.alert("Error", "Please enter your username");
       return;
     }
     
@@ -50,8 +50,8 @@ export default function LoginScreen({ className = "" }) {
     setLoading(true);
     
     try {
-      console.log(`Attempting to login with: ${email}`);
-      await login(email, password);
+      console.log(`Attempting to login with: ${username}`);
+      await login(username, password);
       navigation.replace('Patients List');
     } catch (error) {
       console.error('Authentication error:', error);
@@ -65,7 +65,7 @@ export default function LoginScreen({ className = "" }) {
         if (error.response.status === 400) {
           Alert.alert(
             "Authentication Failed", 
-            "Invalid credentials. Please check your email and password."
+            "Invalid credentials. Please check your username and password."
           );
         } else if (error.response.status === 401) {
           Alert.alert(
@@ -106,13 +106,12 @@ export default function LoginScreen({ className = "" }) {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Username"
             placeholderTextColor="#676767"
-            keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            value={email}
-            onChangeText={setEmail}
+            value={username}
+            onChangeText={setUsername}
           />
         </View>
 

@@ -23,29 +23,18 @@ const DepthDetectionScreen = () => {
   
   const handleProcess = async () => {
     try {
-      console.log('Starting mesh generation...');
+      console.log('Navigating to mesh generation screen...');
       
-      // Process mesh generation using the scan ID
-      const meshResponse = await scanService.processMeshGeneration(scanId, 'balanced');
-      console.log('Mesh generation completed:', meshResponse);
-      
-      // Combine the current scan data with the mesh results
-      const combinedScanData = {
-        ...scanData,
-        ...meshResponse,
-      };
-      
-      Alert.alert('Success', 'Mesh generation completed successfully');
-      
-      // Navigate to MeshDetectionScreen with the mesh results
+      // Navigate directly to MeshDetectionScreen
+      // Mesh generation will be handled there to avoid duplication
       navigation.navigate('MeshDetection', { 
         scanId, 
-        scanData: combinedScanData, 
+        scanData, 
         patientId 
       }); 
     } catch (error) {
-      console.error('Error processing mesh generation:', error);
-      Alert.alert('Error', `Failed to process mesh generation: ${error.message}`);
+      console.error('Error navigating to mesh detection:', error);
+      Alert.alert('Error', `Failed to navigate: ${error.message}`);
     }
   };
 

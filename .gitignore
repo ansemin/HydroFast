@@ -94,6 +94,7 @@ backend/media/depth_maps/depth_maps_bbox/*.png
 backend/media/depth_maps/depth_maps_bbox/*.jpg
 backend/media/depth_maps/depth_maps_bbox/*.jpeg
 backend/media/depth_maps/depth_maps_bbox/*.json
+backend/media/depth_maps_bbox/*
 
 # Test directories and files
 backend/media/test_improved_depth/
@@ -102,5 +103,4 @@ backend/test_full_pipeline/
 backend/test_full_pipeline.py
 
 # Don't ignore the cleanup scripts
-backend/clean_media.py
-backend/clean_media.bat
+# backend/clean_media.py

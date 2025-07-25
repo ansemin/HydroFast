@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { register } from '../../services';
 
 // Back Arrow Component using the provided SVG
 function BackArrowIcon() {
@@ -14,13 +15,15 @@ function BackArrowIcon() {
 export default function SignUpScreen({ navigation }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [retypePassword, setRetypePassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     // Basic validation
-    if (!firstName || !lastName || !email || !password || !retypePassword) {
+    if (!firstName || !lastName || !username || !email || !password || !retypePassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -30,10 +33,52 @@ export default function SignUpScreen({ navigation }) {
       return;
     }
 
-    // TODO: Implement actual sign up logic
-    Alert.alert('Success', 'Account created successfully!', [
-      { text: 'OK', onPress: () => navigation.goBack() }
-    ]);
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log(`Attempting to register user: ${username}`);
+      await register(username, email, password);
+      Alert.alert(
+        'Success', 
+        'Account created successfully! Please log in with your new credentials.',
+        [
+          { text: 'OK', onPress: () => navigation.navigate('Login') }
+        ]
+      );
+    } catch (error) {
+      console.error('Registration error:', error);
+      
+      if (error.code === 'ERR_NETWORK') {
+        Alert.alert(
+          "Network Error", 
+          "Could not connect to the server. Please check your internet connection and make sure the server is running."
+        );
+      } else if (error.response) {
+        if (error.response.status === 400) {
+          const errorMessage = error.response.data.error || error.response.data.message || "Invalid registration data. Please check your information.";
+          Alert.alert("Registration Failed", errorMessage);
+        } else if (error.response.status === 409) {
+          Alert.alert("Registration Failed", "This username or email is already taken. Please choose different credentials.");
+        } else {
+          Alert.alert(
+            "Server Error", 
+            `The server returned an error: ${error.response.status} ${error.response.statusText}`
+          );
+        }
+      } else {
+        Alert.alert(
+          "Registration Failed", 
+          error.message || "An unexpected error occurred. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoBack = () => {
@@ -67,6 +112,16 @@ export default function SignUpScreen({ navigation }) {
         value={lastName}
         onChangeText={setLastName}
         autoCapitalize="words"
+        autoCorrect={false}
+      />
+
+      {/* Username Field */}
+      <Text style={styles.usernameLabel}>Username</Text>
+      <TextInput
+        style={styles.usernameInput}
+        value={username}
+        onChangeText={setUsername}
+        autoCapitalize="none"
         autoCorrect={false}
       />
 
@@ -104,8 +159,16 @@ export default function SignUpScreen({ navigation }) {
       />
 
       {/* Sign Up Button */}
-      <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-        <Text style={styles.signUpButtonText}>Sign up</Text>
+      <TouchableOpacity 
+        style={styles.signUpButton} 
+        onPress={handleSignUp}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.signUpButtonText}>Sign up</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -158,7 +221,7 @@ const styles = StyleSheet.create({
   signUpButton: {
     position: 'absolute',
     left: 70,
-    top: 510,
+    top: 580,
     width: 240,
     height: 44,
     backgroundColor: '#27CFA0',
@@ -179,17 +242,19 @@ const styles = StyleSheet.create({
   },
 });
 
-// Position styles for labels - matching the HTML specifications
+// Position styles for labels - adjusted for new username field
 styles.firstNameLabel = { ...styles.label, top: 150 };
 styles.firstNameInput = { ...styles.input, top: 169.95 };
 styles.lastNameLabel = { ...styles.label, top: 219 };
 styles.lastNameInput = { ...styles.input, top: 237.95 };
-styles.emailLabel = { ...styles.label, top: 288 };
-styles.emailInput = { ...styles.input, top: 305.95 };
-styles.passwordLabel = { ...styles.label, top: 357 };
-styles.passwordInput = { ...styles.input, top: 373.95 };
-styles.retypeLabel = { ...styles.label, top: 424.95 };
-styles.retypeInput = { ...styles.input, top: 441.90 };
+styles.usernameLabel = { ...styles.label, top: 288 };
+styles.usernameInput = { ...styles.input, top: 305.95 };
+styles.emailLabel = { ...styles.label, top: 357 };
+styles.emailInput = { ...styles.input, top: 374.95 };
+styles.passwordLabel = { ...styles.label, top: 426 };
+styles.passwordInput = { ...styles.input, top: 443.95 };
+styles.retypeLabel = { ...styles.label, top: 494.95 };
+styles.retypeInput = { ...styles.input, top: 511.90 };
 
 // Update component to use positioned styles
 export { SignUpScreen }; 
