@@ -151,7 +151,7 @@ class ZoeDepthProcessor(BaseProcessor):
                 brightness_beta=self.config['brightness_beta'],
                 blur_kernel=self.config['blur_kernel']
             )
-            logger.info("Using IMPROVED depth processing with brighter background")
+            logger.info("Using RAW ZoeDepth output (simplified processing)")
             
             # Note: Wound mask is now applied inside the improved apply_depth_processing function
             if wound_mask is not None:
@@ -285,7 +285,7 @@ class ZoeDepthProcessor(BaseProcessor):
                 brightness_beta=self.config['brightness_beta'],
                 blur_kernel=self.config['blur_kernel']
             )
-            logger.info("Using IMPROVED depth processing with bbox crop workflow")
+            logger.info("Using RAW ZoeDepth output with bbox crop workflow")
             
             # Step 10: Calculate depth statistics
             depth_stats = calculate_depth_statistics(processed_depth_map, wound_mask)

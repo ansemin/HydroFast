@@ -194,13 +194,22 @@ class ScanViewSet(viewsets.ModelViewSet):
                 depth_8bit_path = depth_output_path / "depth_8bit.png"
                 depth_16bit_path = depth_output_path / "depth_16bit.png"
                 
-                # Save 8-bit depth map
-                depth_8bit_normalized = cv2.normalize(processed_depth_map, None, 0, 255, cv2.NORM_MINMAX)
-                cv2.imwrite(str(depth_8bit_path), depth_8bit_normalized.astype(np.uint8))
+                # Save depth maps - convert raw ZoeDepth values to proper visual depth maps
+                # For raw ZoeDepth output, we need to invert the depth values for visualization
+                # (closer = brighter, farther = darker)
+                if processed_depth_map.max() > 1.1:  # Raw ZoeDepth tensor values
+                    # Invert depth for proper visualization (closer = white, farther = black)
+                    depth_inverted = 1.0 / (processed_depth_map + 1e-6)  # Add small epsilon to avoid division by zero
+                    depth_visual = cv2.normalize(depth_inverted, None, 0, 255, cv2.NORM_MINMAX)
+                else:
+                    # Already processed depth map
+                    depth_visual = cv2.normalize(processed_depth_map, None, 0, 255, cv2.NORM_MINMAX)
                 
-                # Save 16-bit depth map  
-                depth_16bit_normalized = cv2.normalize(processed_depth_map, None, 0, 65535, cv2.NORM_MINMAX)
-                cv2.imwrite(str(depth_16bit_path), depth_16bit_normalized.astype(np.uint16))
+                cv2.imwrite(str(depth_8bit_path), depth_visual.astype(np.uint8))
+                
+                # Save 16-bit depth map (preserve original depth values)
+                depth_16bit = cv2.normalize(processed_depth_map, None, 0, 65535, cv2.NORM_MINMAX)
+                cv2.imwrite(str(depth_16bit_path), depth_16bit.astype(np.uint16))
                 
                 # Create results dictionary matching test_full_pipeline.py structure
                 depth_results = {

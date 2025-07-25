@@ -120,83 +120,22 @@ def apply_depth_processing(depth_map: np.ndarray, mask: Optional[np.ndarray] = N
                           contrast_alpha: float = 0.3, brightness_beta: float = -40, 
                           blur_kernel: int = 9) -> np.ndarray:
     """
-    Apply post-processing to depth map following the notebook's improved approach.
+    Return raw ZoeDepth output without processing (simplified approach).
     
     Args:
         depth_map: Raw depth map from ZoeDepth
-        mask: Optional wound mask to limit processing to wound region
-        contrast_alpha: Contrast adjustment factor (0.3 from research)
-        brightness_beta: Brightness adjustment factor (-40 from research)
-        blur_kernel: Gaussian blur kernel size (9 from notebook)
+        mask: Optional wound mask (unused in simplified approach)
+        contrast_alpha: Contrast adjustment factor (unused in simplified approach)
+        brightness_beta: Brightness adjustment factor (unused in simplified approach)
+        blur_kernel: Gaussian blur kernel size (unused in simplified approach)
         
     Returns:
-        Processed depth map
+        Raw depth map (unprocessed ZoeDepth output)
     """
     try:
-        # Step 1: Extract wound-only depth if mask is provided
-        if mask is not None:
-            # Ensure mask is binary
-            mask_binary = (mask > 0).astype(np.uint8)
-            masked_depth = np.zeros_like(depth_map)
-            masked_depth[mask_binary > 0] = depth_map[mask_binary > 0]
-        else:
-            masked_depth = depth_map.copy()
-            mask_binary = (depth_map > 0).astype(np.uint8)
-        
-        # Step 2: Smooth the depth map with Gaussian blur
-        depth_smoothed = cv2.GaussianBlur(masked_depth, (blur_kernel, blur_kernel), sigmaX=2, sigmaY=2)
-        
-        # Step 3: Normalize wound depth values only (not entire image)
-        nonzero_mask = (mask_binary > 0) & (depth_smoothed > 0)
-        
-        if np.any(nonzero_mask):
-            wound_vals = depth_smoothed[nonzero_mask]
-            
-            if wound_vals.max() > wound_vals.min():
-                # Normalize only the wound region
-                depth_norm = np.zeros_like(depth_smoothed)
-                depth_norm[nonzero_mask] = (wound_vals - wound_vals.min()) / (wound_vals.max() - wound_vals.min())
-            else:
-                depth_norm = np.zeros_like(depth_smoothed)
-        else:
-            depth_norm = np.zeros_like(depth_smoothed)
-        
-        # Step 4: Convert to 8-bit for contrast adjustment
-        depth_gray = (depth_norm * 255).astype(np.uint8)
-        
-        # Step 5: Apply contrast and brightness adjustment (exact notebook values)
-        # Use the EXACT notebook values: alpha=0.3, beta=-40
-        depth_contrast = cv2.convertScaleAbs(depth_gray, alpha=contrast_alpha, beta=brightness_beta)
-        
-        # Step 6: Apply mask with BRIGHTER background (not pitch black)
-        # Instead of setting background to 0, set to a low gray value for smoother transitions
-        background_gray = 20  # Low gray value instead of pure black (0)
-        depth_contrast[mask_binary == 0] = background_gray
-        
-        # Step 7: Remove black speckles and holes using morphological operations
-        # Create binary mask from depth image (exclude background gray value)
-        binary_mask = depth_contrast > background_gray
-        
-        # Fill holes inside the wound region (removes black speckles)
-        filled_mask = morphology.binary_fill_holes(binary_mask)
-        
-        # Apply morphological closing to smooth the shape and fill small gaps
-        kernel_size = 3
-        selem = morphology.disk(kernel_size)
-        closed_mask = morphology.binary_closing(filled_mask, selem)
-        
-        # Remove small objects/noise
-        cleaned_mask = morphology.remove_small_objects(closed_mask, min_size=100)
-        
-        # Apply the cleaned mask to the depth image (keep background gray, not black)
-        final_depth = np.where(cleaned_mask, depth_contrast, background_gray).astype(np.uint8)
-        
-        # Keep as 8-bit to match notebook output (avoid double conversion)
-        # Convert to float only for consistency with existing API
-        depth_final = final_depth.astype(np.float32) / 255.0
-        
-        logger.info(f"Applied improved depth processing with smoothing, normalization, and cleaning. Output range: {depth_final.min():.3f} - {depth_final.max():.3f}")
-        return depth_final
+        # Return raw ZoeDepth output directly - this produces the best results
+        logger.info(f"Using raw ZoeDepth output (simplified approach). Output range: {depth_map.min():.3f} - {depth_map.max():.3f}")
+        return depth_map
         
     except Exception as e:
         logger.error(f"Error in depth processing: {e}")
@@ -279,9 +218,9 @@ def apply_sharp_depth_processing(depth_map: np.ndarray, mask: Optional[np.ndarra
             final_depth = depth_contrast
             logger.info("Skipped morphological operations for ultra-sharp results")
         else:
-            # Apply minimal morphological operations
+            # Apply minimal morphological operations (skip binary_fill_holes)
             binary_mask = depth_contrast > 0
-            filled_mask = morphology.binary_fill_holes(binary_mask)
+            filled_mask = binary_mask
             
             # Use smaller kernel for minimal smoothing
             kernel_size = 1
