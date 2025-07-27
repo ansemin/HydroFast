@@ -372,9 +372,9 @@ def save_depth_maps(depth_map: np.ndarray, output_dir: Path, scan_id: str) -> Di
         # Ensure output directory exists
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Generate filenames
-        depth_8bit_path = output_dir / f"{scan_id}_depth_8bit.png"
-        depth_16bit_path = output_dir / f"{scan_id}_depth_16bit.png"
+        # Generate clean filenames - avoid redundant scan_id prefix since it's in the directory
+        depth_8bit_path = output_dir / "depth_8bit.png"
+        depth_16bit_path = output_dir / "depth_16bit.png"
         
         # Save 8-bit depth map (for visualization)
         depth_8bit = (depth_map * 255).astype(np.uint8)

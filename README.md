@@ -248,15 +248,12 @@ If this project has been helpful for your medical research or clinical practice,
 - 🐛 **Report bugs** and suggest improvements
 - 🤝 **Contribute code** or documentation
 - 💬 **Share feedback** about your use case
-- ☕ **Buy me a coffee** if you'd like to support development
-
-[![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/yourhandle)
 
 ### Tech Stack
-**Backend:** Django 5.1.3, Django REST Framework, ZoeDepth, YOLO, OpenCV
-**Frontend:** React Native 0.76.9, Expo SDK 52, React Navigation 6
-**AI/ML:** PyTorch, Ultralytics YOLO, ZoeDepth Monocular Depth Estimation
-**Database:** SQLite (dev), PostgreSQL (prod)
+- **Backend:** Django 5.1.3, Django REST Framework, ZoeDepth, YOLO, OpenCV
+- **Frontend:** React Native 0.76.9, Expo SDK 52, React Navigation 6
+- **AI/ML:** PyTorch, Ultralytics YOLO, ZoeDepth Monocular Depth Estimation
+- **Database:** SQLite (dev), PostgreSQL (prod)
 
 ---
 

@@ -342,11 +342,24 @@ class MeshGenerator(BaseProcessor):
         output_dir = Path(settings.MEDIA_ROOT) / 'generated_stl'
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Generate filename based on original depth map
-        original_path = Path(processed_data['original_depth_path'])
-        scan_id = original_path.stem
+        # Extract scan ID from the depth map path to match our new naming convention
+        depth_map_path = processed_data.get('depth_map_8bit_path') or processed_data.get('depth_map_16bit_path')
         
-        # Create timestamped filename
+        if depth_map_path:
+            # Extract scan ID from the new depth_maps_bbox/scan_X/ structure
+            depth_path = Path(depth_map_path)
+            if 'depth_maps_bbox' in str(depth_path) and len(depth_path.parts) >= 2:
+                # Get scan_X from depth_maps_bbox/scan_X/depth_8bit.png
+                scan_id = depth_path.parent.name  # This will be 'scan_X'
+            else:
+                # Fallback to original method for backward compatibility
+                scan_id = depth_path.stem
+        else:
+            # Fallback if no depth map path available
+            original_depth_path = processed_data.get('original_depth_path', 'unknown_scan')
+            scan_id = Path(original_depth_path).stem
+        
+        # Generate clean STL filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         stl_filename = f"{scan_id}_{timestamp}.stl"
         
