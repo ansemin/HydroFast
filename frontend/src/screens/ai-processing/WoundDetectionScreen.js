@@ -23,9 +23,22 @@ const WoundDetectionScreen = () => {
   
   const handleProcess = async () => {
     try {
+      // Check if depth maps already exist from wound detection (no need to reprocess)
+      if (scanData?.depth_map_8bit && scanData?.depth_map_16bit) {
+        console.log('Depth maps already available from wound detection, skipping reprocessing');
+        
+        // Navigate directly to DepthDetectionScreen with existing depth data
+        navigation.navigate('DepthDetection', { 
+          scanId, 
+          scanData, // Already contains depth_map_8bit and depth_map_16bit
+          patientId 
+        });
+        return;
+      }
+      
       console.log('Starting depth analysis...');
       
-      // Process depth analysis using the scan ID
+      // Process depth analysis using the scan ID (will use existing results if available)
       const depthResponse = await scanService.processDepthAnalysis(scanId);
       console.log('Depth analysis completed:', depthResponse);
       
