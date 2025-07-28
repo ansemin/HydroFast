@@ -103,6 +103,7 @@ backend/test_full_pipeline/
 backend/test_full_pipeline.py
 backend/test image/
 backend/test_full_pipeline back up/
-
+backend/test_stl_generation/
+backend/test_depth_no_mask/
 # Don't ignore the cleanup scripts
 # backend/clean_media.py
