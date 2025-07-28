@@ -294,6 +294,7 @@ Examples:
   python clean_media.py --dry-run      # Show what would be deleted
   python clean_media.py --confirm      # Delete with confirmation
   python clean_media.py --force        # Delete without confirmation (use carefully!)
+  python clean_media.py -y             # Alias for --force
         """
     )
     parser.add_argument(
@@ -307,9 +308,14 @@ Examples:
         help='Ask for confirmation before deleting each category'
     )
     parser.add_argument(
-        '--force',
+        '--force', '-y',
         action='store_true',
         help='Delete files without any confirmation (use carefully!)'
+    )
+    parser.add_argument(
+        '-y', '--yes',
+        action='store_true',
+        help='Yes to all prompts. Deletes files without confirmation.'
     )
     
     args = parser.parse_args()
@@ -325,6 +331,8 @@ Examples:
     # Show summary
     print_files_summary(files_to_clean, media_dir)
     
+    is_forced = args.force or args.yes
+
     if not files_to_clean:
         print("\n🎉 Nothing to clean!")
         # Still check for empty directories even if no files to clean
@@ -332,7 +340,7 @@ Examples:
             print(f"\n🔍 Checking for empty directories...")
             find_and_clean_empty_directories(media_dir, dry_run=True)
         else:
-            if not args.force and not args.confirm:
+            if not is_forced and not args.confirm:
                 if confirm_deletion():
                     deleted_dirs = find_and_clean_empty_directories(media_dir, dry_run=False)
                     if deleted_dirs > 0:
@@ -341,7 +349,7 @@ Examples:
                         print(f"\n🎉 No empty directories found!")
                 else:
                     print("❌ Operation cancelled.")
-            elif args.force:
+            elif is_forced or args.confirm:
                 deleted_dirs = find_and_clean_empty_directories(media_dir, dry_run=False)
                 if deleted_dirs > 0:
                     print(f"\n🎉 Cleanup completed! Removed {deleted_dirs} empty directories.")
@@ -358,11 +366,11 @@ Examples:
         print(f"\n📁 Checking for empty directories after file deletion...")
         find_and_clean_empty_directories(media_dir, dry_run=True)
         
-        print(f"\n✅ Dry run completed. Use --confirm or --force to actually delete files.")
+        print(f"\n✅ Dry run completed. Use --confirm, --force or -y to actually delete files.")
         return
     
     # Get confirmation unless force is used
-    if not args.force:
+    if not is_forced:
         if not confirm_deletion():
             print("❌ Operation cancelled.")
             return

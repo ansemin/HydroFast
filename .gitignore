@@ -105,5 +105,7 @@ backend/test image/
 backend/test_full_pipeline back up/
 backend/test_stl_generation/
 backend/test_depth_no_mask/
+backend/test_complete_flow/
+backend/test_zoedepth_standalone_output/
 # Don't ignore the cleanup scripts
 # backend/clean_media.py
