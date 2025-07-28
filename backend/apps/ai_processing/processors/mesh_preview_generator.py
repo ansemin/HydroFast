@@ -472,13 +472,13 @@ class MeshPreviewGenerator(BaseProcessor):
         output_dir = Path(settings.MEDIA_ROOT) / 'stl_previews'
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Generate filename based on STL file
+        # Generate filename based on STL file with cleaner naming
         stl_file_path = Path(stl_data['stl_file_path'])
+        # Remove the .stl extension and append _preview
         base_name = stl_file_path.stem
         
-        # Create timestamped filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        preview_filename = f"{base_name}_preview_{timestamp}.{self.config['output_format']}"
+        # Create preview filename that matches STL naming
+        preview_filename = f"{base_name}_preview.{self.config['output_format']}"
         
         return str(output_dir / preview_filename)
     

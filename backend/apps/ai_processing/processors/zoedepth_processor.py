@@ -491,15 +491,27 @@ class ZoeDepthProcessor(BaseProcessor):
             Dictionary with paths to saved depth maps
         """
         try:
-            # Get scan ID from original image path
+            # Extract scan ID from the image path - get the actual database scan ID
+            # Instead of using filename stem, extract scan ID from the path structure
             original_path = Path(original_image_path)
-            scan_id = original_path.stem
             
-            # Create output directory
+            # Try to get scan ID from database by matching the image path
             from django.conf import settings
-            output_dir = Path(settings.MEDIA_ROOT) / 'depth_maps'
+            from apps.scans.models import Scan
             
-            # Save depth maps
+            try:
+                # Get scan from database by image path
+                relative_image_path = str(original_path.relative_to(Path(settings.MEDIA_ROOT)))
+                scan = Scan.objects.get(image=relative_image_path)
+                scan_id = f"scan_{scan.id}"
+            except (ValueError, Scan.DoesNotExist):
+                # Fallback to filename-based approach if database lookup fails
+                scan_id = original_path.stem
+            
+            # Use consistent storage path - always use depth_maps_bbox structure
+            output_dir = Path(settings.MEDIA_ROOT) / 'depth_maps_bbox' / scan_id
+            
+            # Save depth maps with clean naming (remove redundant _segmented suffix)
             return save_depth_maps(depth_map, output_dir, scan_id)
             
         except Exception as e:

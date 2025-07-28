@@ -101,6 +101,8 @@ backend/media/test_improved_depth/
 backend/media/test_stl_pipeline/
 backend/test_full_pipeline/
 backend/test_full_pipeline.py
+backend/test image/
+backend/test_full_pipeline back up/
 
 # Don't ignore the cleanup scripts
 # backend/clean_media.py
