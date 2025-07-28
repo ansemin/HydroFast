@@ -1,1 +1,1 @@
-This directory contains image files saved from the app. 
+This directory contains files saved from the app. 
