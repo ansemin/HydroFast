@@ -14,10 +14,6 @@ from datetime import datetime
 
 from .base import BaseProcessor
 from .depth_utils import (
-    extract_wound_mask_from_segmented,
-    apply_depth_processing,
-    apply_sharp_depth_processing,
-    apply_notebook_depth_processing,
     save_depth_maps,
     calculate_depth_statistics,
     estimate_volume_from_depth,
@@ -110,13 +106,16 @@ class ZoeDepthProcessor(BaseProcessor):
     
     def process(self, segmented_image_path: str) -> Dict[str, Any]:
         """
-        Process segmented wound image to generate depth map.
+        Process segmented wound image to generate depth map WITHOUT masking.
+        
+        IMPORTANT: This method now processes the input image directly with ZoeDepth
+        without applying any wound masking. The raw ZoeDepth output is used.
         
         Args:
             segmented_image_path: Path to the segmented wound image
             
         Returns:
-            Dictionary containing depth analysis results
+            Dictionary containing depth analysis results with raw ZoeDepth output
         """
         if not self.is_loaded:
             self.load_model()
@@ -137,36 +136,19 @@ class ZoeDepthProcessor(BaseProcessor):
             if self.config['output_size'] is None and original_size is not None:
                 raw_depth_map = cv2.resize(raw_depth_map, original_size, interpolation=cv2.INTER_LINEAR)
             
-            # Extract wound mask from segmented image
-            wound_mask = extract_wound_mask_from_segmented(
-                segmented_image_path, 
-                method=self.config['mask_extraction_method']
-            )
+            # Use raw depth map directly (NO MASKING APPLIED)
+            logger.info("⚠️  NO WOUND MASKING APPLIED - using raw ZoeDepth output directly")
+            processed_depth_map = raw_depth_map  # Use raw depth map directly
+            logger.info("Using RAW ZoeDepth output without any masking")
             
-            # Apply depth processing (improved algorithm with wound mask)
-            processed_depth_map = apply_depth_processing(
-                raw_depth_map,
-                mask=wound_mask,
-                contrast_alpha=self.config['contrast_alpha'],
-                brightness_beta=self.config['brightness_beta'],
-                blur_kernel=self.config['blur_kernel']
-            )
-            logger.info("Using RAW ZoeDepth output (simplified processing)")
+            # Calculate depth statistics (no mask applied)
+            depth_stats = calculate_depth_statistics(processed_depth_map, mask=None)
             
-            # Note: Wound mask is now applied inside the improved apply_depth_processing function
-            if wound_mask is not None:
-                logger.info("Successfully extracted wound mask for depth processing")
-            else:
-                logger.warning("Could not extract wound mask from non-black regions, using full depth map")
-            
-            # Calculate depth statistics
-            depth_stats = calculate_depth_statistics(processed_depth_map, wound_mask)
-            
-            # Estimate volume
+            # Estimate volume (no mask applied)
             volume_estimate = estimate_volume_from_depth(
                 processed_depth_map, 
-                wound_mask, 
-                self.config['pixel_size_mm']
+                mask=None, 
+                pixel_size_mm=self.config['pixel_size_mm']
             )
             
             # Save depth maps
@@ -180,15 +162,12 @@ class ZoeDepthProcessor(BaseProcessor):
                 'volume_estimate': {
                     'total_volume': volume_estimate,  # cubic mm
                     'confidence': 0.8,  # Confidence score (can be improved with validation)
-                    'method': 'ZoeDepth_monocular'
+                    'method': 'ZoeDepth_raw_no_mask'
                 },
-                'wound_mask_extracted': wound_mask is not None,
+                'wound_mask_extracted': False,  # No masking applied
                 'processing_parameters': {
                     'model_type': self.config['model_type'],
-                    'contrast_alpha': self.config['contrast_alpha'],
-                    'brightness_beta': self.config['brightness_beta'],
-                    'blur_kernel': self.config['blur_kernel'],
-                    'mask_extraction_method': self.config['mask_extraction_method'],
+                    'masking_applied': False,  # Updated to reflect no masking
                     'pixel_size_mm': self.config['pixel_size_mm']
                 }
             }
@@ -207,20 +186,24 @@ class ZoeDepthProcessor(BaseProcessor):
 
     def process_with_bbox_crop(self, original_image_path: str, segmented_image_path: str, output_dir: str) -> Dict[str, Any]:
         """
-        Process wound image using improved bbox crop workflow.
+        Process wound image using simplified bbox crop workflow WITHOUT masking.
         
+        IMPORTANT: ZoeDepth processing is performed on the CROPPED ORIGINAL image only.
+        No wound masking is applied - the raw ZoeDepth output is used directly.
+        
+        Simplified Workflow:
         1. Detect bounding box from segmented image
-        2. Crop original image using bounding box
-        3. Perform ZoeDepth on cropped image
-        4. Generate depth maps and analysis
+        2. Crop original image using bounding box  
+        3. Perform ZoeDepth on CROPPED ORIGINAL image
+        4. Save raw depth map without any masking applied
         
         Args:
             original_image_path: Path to the original image
-            segmented_image_path: Path to the segmented wound image
+            segmented_image_path: Path to the segmented wound image (used only for bbox detection)
             output_dir: Directory to save intermediate and final results
             
         Returns:
-            Dictionary containing depth analysis results with bbox workflow
+            Dictionary containing depth analysis results with simplified workflow
         """
         if not self.is_loaded:
             self.load_model()
@@ -255,49 +238,36 @@ class ZoeDepthProcessor(BaseProcessor):
             if not crop_success:
                 raise ValueError("Failed to crop image using bounding box")
             
-            # Step 4: Crop segmented image using same bounding box
-            cropped_segmented_path = output_path / "cropped_segmented.png"
-            crop_segmented_success = crop_image_with_bbox(segmented_image_path, bbox, str(cropped_segmented_path))
-            if not crop_segmented_success:
-                raise ValueError("Failed to crop segmented image using bounding box")
-            
-            # Step 5: Preprocess the cropped image
+            # Step 4: Preprocess the cropped original image
+            logger.info("IMPORTANT: Using CROPPED ORIGINAL image for ZoeDepth processing (NO MASKING)")
+            logger.info(f"ZoeDepth input: {cropped_image_path} (cropped original)")
             processed_image, original_size = self.preprocess(str(cropped_image_path))
             
-            # Step 6: Generate depth map using ZoeDepth on cropped image
+            # Step 5: Generate depth map using ZoeDepth on cropped original image
+            logger.info("Generating raw depth map from cropped ORIGINAL image using ZoeDepth...")
             raw_depth_map = self._generate_depth_map(processed_image)
             
-            # Step 7: Resize depth map to cropped image size if needed
+            # Step 6: Resize depth map to cropped image size if needed
             if self.config['output_size'] is None and original_size is not None:
                 raw_depth_map = cv2.resize(raw_depth_map, original_size, interpolation=cv2.INTER_LINEAR)
             
-            # Step 8: Extract wound mask from cropped segmented image
-            wound_mask = extract_wound_mask_from_segmented(
-                str(cropped_segmented_path), 
-                method=self.config['mask_extraction_method']
-            )
+            # Step 7: Use raw depth map directly (NO MASKING APPLIED)
+            logger.info("⚠️  NO WOUND MASKING APPLIED - using raw ZoeDepth output directly")
+            logger.info("Simplified Flow: ZoeDepth(cropped_original) = Final depth map")
+            processed_depth_map = raw_depth_map  # Use raw depth map directly
+            logger.info("Using RAW ZoeDepth output without any masking")
             
-            # Step 9: Apply depth processing
-            processed_depth_map = apply_depth_processing(
-                raw_depth_map,
-                mask=wound_mask,
-                contrast_alpha=self.config['contrast_alpha'],
-                brightness_beta=self.config['brightness_beta'],
-                blur_kernel=self.config['blur_kernel']
-            )
-            logger.info("Using RAW ZoeDepth output with bbox crop workflow")
+            # Step 8: Calculate depth statistics (no mask applied)
+            depth_stats = calculate_depth_statistics(processed_depth_map, mask=None)
             
-            # Step 10: Calculate depth statistics
-            depth_stats = calculate_depth_statistics(processed_depth_map, wound_mask)
-            
-            # Step 11: Estimate volume
+            # Step 9: Estimate volume (no mask applied)
             volume_estimate = estimate_volume_from_depth(
                 processed_depth_map, 
-                wound_mask, 
-                self.config['pixel_size_mm']
+                mask=None, 
+                pixel_size_mm=self.config['pixel_size_mm']
             )
             
-            # Step 12: Save depth maps with custom naming
+            # Step 10: Save depth maps with custom naming
             depth_8bit_path = output_path / "depth_8bit.png"
             depth_16bit_path = output_path / "depth_16bit.png"
             
@@ -309,41 +279,37 @@ class ZoeDepthProcessor(BaseProcessor):
             depth_16bit_normalized = cv2.normalize(processed_depth_map, None, 0, 65535, cv2.NORM_MINMAX)
             cv2.imwrite(str(depth_16bit_path), depth_16bit_normalized.astype(np.uint16))
             
-            # Step 13: Create results dictionary
+            # Step 11: Create results dictionary
             results = {
-                'workflow_type': 'bbox_crop',
+                'workflow_type': 'bbox_crop_no_mask',
                 'original_image_path': original_image_path,
                 'segmented_image_path': segmented_image_path,
                 'bbox': bbox,
                 'bbox_visualization_path': str(bbox_viz_path),
                 'cropped_image_path': str(cropped_image_path),
-                'cropped_segmented_path': str(cropped_segmented_path),
                 'depth_map_8bit_path': str(depth_8bit_path),
                 'depth_map_16bit_path': str(depth_16bit_path),
                 'depth_statistics': depth_stats,
                 'volume_estimate': {
                     'total_volume': volume_estimate,  # cubic mm
                     'confidence': 0.8,  # Confidence score (can be improved with validation)
-                    'method': 'ZoeDepth_bbox_crop'
+                    'method': 'ZoeDepth_raw_no_mask'
                 },
-                'wound_mask_extracted': wound_mask is not None,
+                'wound_mask_extracted': False,  # No masking applied
                 'processing_parameters': {
                     'model_type': self.config['model_type'],
-                    'contrast_alpha': self.config['contrast_alpha'],
-                    'brightness_beta': self.config['brightness_beta'],
-                    'blur_kernel': self.config['blur_kernel'],
-                    'mask_extraction_method': self.config['mask_extraction_method'],
+                    'masking_applied': False,  # Updated to reflect no masking
                     'pixel_size_mm': self.config['pixel_size_mm']
                 }
             }
             
-            # Step 14: Save metadata
+            # Step 12: Save metadata
             metadata_path = output_path / "metadata.json"
             with open(metadata_path, 'w') as f:
                 json.dump(results, f, indent=2, default=str)
             results['metadata_path'] = str(metadata_path)
             
-            logger.info(f"Successfully completed bbox crop workflow")
+            logger.info(f"Successfully completed simplified bbox crop workflow (NO MASKING)")
             return results
             
         except Exception as e:

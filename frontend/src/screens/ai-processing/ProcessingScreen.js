@@ -1,134 +1,122 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, SafeAreaView, StatusBar, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import api from '../../services/api';
+import { scanService } from '../../services';
 
 const ProcessingScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { step, scanId, scanData, patientId } = route.params || {};
-  const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
-    let timeoutDurationSeconds = 5;
-    let nextScreen = null; 
-
-    // Determine duration and next screen based on the step
-    switch (step) {
-      case 1: // From PhotoPreviewScreen - Process wound detection
-        timeoutDurationSeconds = 5;
-        nextScreen = 'Wound Detection';
-        break;
-      case 2: // From WoundDetectionScreen - Process depth analysis
-        timeoutDurationSeconds = 8;
-        nextScreen = 'Depth Detection';
-        break;
-      case 3: // From DepthDetectionScreen - Process mesh generation
-        timeoutDurationSeconds = 10;
-        nextScreen = 'Mesh Detection';
-        break;
-      case 4: // From MeshDetectionScreen - Download files
-        timeoutDurationSeconds = 2;
-        nextScreen = 'Download Files';
-        break;
-      default:
-        console.error(`ProcessingScreen received invalid or missing step parameter: ${step}`);
-        timeoutDurationSeconds = 3;
-        nextScreen = 'Patients List';
-        break;
-    }
+    console.log(`🚀 [ProcessingScreen] Starting step: ${step}`);
+    console.log(`🆔 [ProcessingScreen] Scan ID: ${scanId}`);
+    console.log(`👤 [ProcessingScreen] Patient ID: ${patientId}`);
+    console.log(`📦 [ProcessingScreen] Current scan data keys: ${Object.keys(scanData || {})}`);
 
     const processStep = async () => {
       try {
         let response = null;
+        let nextScreen = null;
+        let combinedScanData = { ...scanData };
         
-        if (step === 1 && scanId) {
-          // Step 1: Process wound detection only
-          console.log('🎯 Processing Step 1: Wound Detection for scanId:', scanId);
+        if (step === 'wound_segmentation' && scanId) {
+          // Step 1: YOLO wound segmentation
+          console.log('🤖 [ProcessingScreen] Processing Step 1: YOLO wound segmentation for scanId:', scanId);
           
-          response = await api.post(`/scans/${scanId}/process_wound_detection/`, {}, {
-            timeout: 60000, // 1 minute timeout for wound detection
-          });
+          response = await scanService.processWoundSegmentation(scanId);
           
-          console.log('✅ Wound detection completed:', response.data);
+          console.log('✅ [ProcessingScreen] Wound segmentation completed:', response);
           
-          // Update scanData with wound detection results
-          if (response.data) {
-            scanData.processed_image = response.data.processed_image;
-            scanData.scan_id = response.data.scan_id;
-          }
+          // Combine scan data with segmentation results
+          combinedScanData = {
+            ...scanData,
+            ...response
+          };
           
-        } else if (step === 2 && scanId) {
-          // Step 2: Process depth analysis using ZoeDepth
-          console.log('🎯 Processing Step 2: ZoeDepth Analysis for scanId:', scanId);
+          nextScreen = 'CroppedOriginal'; // Show original image, ready for bbox detection
           
-          response = await api.post(`/scans/${scanId}/process_depth_analysis/`, {}, {
-            timeout: 300000, // 5 minutes timeout for ZoeDepth processing
-          });
+        } else if (step === 'bbox_detection' && scanId) {
+          // Step 2: Bbox detection and cropping
+          console.log('📦 [ProcessingScreen] Processing Step 2: Bbox detection for scanId:', scanId);
           
-          console.log('✅ ZoeDepth analysis completed:', response.data);
+          response = await scanService.processBboxDetection(scanId);
           
-          // Update scanData with depth analysis results
-          if (response.data) {
-            scanData.depth_map_8bit = response.data.depth_map_8bit;
-            scanData.depth_map_16bit = response.data.depth_map_16bit;
-            scanData.depth_metadata = response.data.depth_metadata;
-            
-            // Log key ZoeDepth results
-            if (response.data.depth_metadata) {
-              console.log('📊 ZoeDepth Analysis Results:');
-              console.log(`   • Wound Severity: ${response.data.depth_metadata.wound_severity}`);
-              console.log(`   • Volume: ${response.data.depth_metadata.volume_estimate?.total_volume || 'N/A'} cubic mm`);
-              console.log(`   • Confidence: ${(response.data.depth_metadata.processing_confidence * 100).toFixed(1)}%`);
-              console.log(`   • Surface Area: ${response.data.depth_metadata.surface_area} mm²`);
-              console.log(`   • Mask Extracted: ${response.data.depth_metadata.wound_mask_extracted ? 'Yes' : 'No'}`);
-            }
-          }
+          console.log('✅ [ProcessingScreen] Bbox detection completed:', response);
           
-        } else if (step === 3 && scanId) {
-          // Step 3: Process mesh generation
-          console.log('🎯 Processing Step 3: Mesh Generation for scanId:', scanId);
+          // Combine scan data with bbox results
+          combinedScanData = {
+            ...scanData,
+            ...response
+          };
           
-          response = await api.post(`/scans/${scanId}/process_mesh_generation/`, {
-            visualization_mode: 'enhanced' // Enhanced mode for better 3D preview
-          }, {
-            timeout: 300000, // 5 minutes timeout for mesh generation
-          });
+          nextScreen = 'WoundDetection'; // Show cropped segmented image, ready for depth analysis
           
-          console.log('✅ Mesh generation completed:', response.data);
+        } else if (step === 'depth_analysis' && scanId) {
+          // Step 3: ZoeDepth processing
+          console.log('🔍 [ProcessingScreen] Processing Step 3: ZoeDepth analysis for scanId:', scanId);
           
-          // Update scanData with mesh generation results
-          if (response.data && response.data.stl_generation) {
-            scanData.stl_file_url = response.data.stl_generation.stl_file_url;
-            scanData.mesh_metadata = response.data.stl_generation.mesh_metadata;
-          }
-          if (response.data && response.data.preview_generation) {
-            scanData.stl_preview_url = response.data.preview_generation.preview_image_url;
-            scanData.preview_metadata = response.data.preview_generation.preview_metadata;
-          }
-        } else if (step === 4) {
-          // Step 4: Final file preparation (simulation step)
-          console.log('🎯 Processing Step 4: Preparing files for download...');
+          response = await scanService.processDepthAnalysis(scanId);
           
-          // No API call needed - just simulate the final preparation
-          // All files are already generated in previous steps
-          console.log('✅ Files prepared for download');
+          console.log('✅ [ProcessingScreen] ZoeDepth analysis completed:', response);
+          
+          // Combine scan data with depth results
+          combinedScanData = {
+            ...scanData,
+            ...response
+          };
+          
+          nextScreen = 'DepthDetection'; // Show depth maps, ready for mesh generation
+          
+        } else if (step === 'mesh_generation' && scanId) {
+          // Step 4: Mesh and preview generation
+          console.log('🏗️ [ProcessingScreen] Processing Step 4: Mesh generation for scanId:', scanId);
+          
+          response = await scanService.processMeshGeneration(scanId, 'balanced');
+          
+          console.log('✅ [ProcessingScreen] Mesh generation completed:', response);
+          
+          // Combine scan data with mesh results
+          combinedScanData = {
+            ...scanData,
+            ...response
+          };
+          
+          nextScreen = 'MeshDetection'; // Show STL preview, ready for download
+          
+        } else {
+          console.error(`❌ [ProcessingScreen] Invalid or missing step parameter: ${step}`);
+          setTimeout(() => {
+            navigation.goBack();
+          }, 2000);
+          return;
         }
         
-        // Simulate the processing delay, then navigate
+        console.log(`🔗 [ProcessingScreen] Combined scan data keys: ${Object.keys(combinedScanData)}`);
+        console.log(`🧭 [ProcessingScreen] Navigating to: ${nextScreen}`);
+        
+        // Navigate to next screen with updated scan data
         setTimeout(() => {
-          setIsProcessing(false);
-          navigation.replace(nextScreen, { scanId, scanData, patientId });
-        }, timeoutDurationSeconds * 1000);
+          navigation.replace(nextScreen, { 
+            scanId, 
+            scanData: combinedScanData, 
+            patientId 
+          });
+        }, 1500); // Brief delay to show completion
         
       } catch (error) {
-        console.error(`Error in step ${step}:`, error);
-        setIsProcessing(false);
+        console.error(`❌ [ProcessingScreen] Error in step ${step}:`, error);
+        console.error(`❌ [ProcessingScreen] Error details:`, {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
         
-        // Show error and navigate back
+        // Show error and navigate back after delay
         setTimeout(() => {
           navigation.goBack();
-        }, 2000);
+        }, 3000);
       }
     };
 
@@ -137,16 +125,31 @@ const ProcessingScreen = () => {
 
   const getStepText = () => {
     switch (step) {
-      case 1:
-        return 'Detecting wound boundaries...';
-      case 2:
-        return 'Analyzing wound depth...';
-      case 3:
-        return 'Generating 3D mesh...';
-      case 4:
-        return 'Preparing files...';
+      case 'wound_segmentation':
+        return 'Analyzing wound boundaries with AI...';
+      case 'bbox_detection':
+        return 'Detecting and cropping wound area...';
+      case 'depth_analysis':
+        return 'Generating depth maps with ZoeDepth...';
+      case 'mesh_generation':
+        return 'Creating 3D mesh and preview...';
       default:
         return 'Processing...';
+    }
+  };
+
+  const getStepDescription = () => {
+    switch (step) {
+      case 'wound_segmentation':
+        return 'Using YOLO to identify wound regions';
+      case 'bbox_detection':
+        return 'Cropping images for focused analysis';
+      case 'depth_analysis':
+        return 'Estimating wound depth and volume';
+      case 'mesh_generation':
+        return 'Building 3D model for visualization';
+      default:
+        return 'Please kindly wait...';
     }
   };
 
@@ -161,12 +164,12 @@ const ProcessingScreen = () => {
         <View style={styles.centeredContent}>
           {/* Loading Animation */}
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4CAF50" />
+            <ActivityIndicator size="large" color="#27CFA0" />
           </View>
           
           {/* Processing Text */}
           <Text style={styles.processingText}>{getStepText()}</Text>
-          <Text style={styles.subtitle}>Please kindly wait...</Text>
+          <Text style={styles.subtitle}>{getStepDescription()}</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -198,22 +201,19 @@ const styles = StyleSheet.create({
       default: 'sans-serif',
     }),
   },
+  centeredContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loadingContainer: {
     marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 20,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   processingText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000000', // Text color
-    textAlign: 'center',
-    fontFamily: Platform.select({ // Consistent font
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
-  },
-  subtitle: {
     fontSize: 14,
     color: '#000000', // Text color
     textAlign: 'center',
@@ -223,10 +223,16 @@ const styles = StyleSheet.create({
       default: 'sans-serif',
     }),
   },
-  centeredContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  subtitle: {
+    fontSize: 12,
+    color: '#888888', // Subtitle color
+    textAlign: 'center',
+    marginTop: 5,
+    fontFamily: Platform.select({ // Consistent font
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
   },
 });
 

@@ -1,0 +1,1 @@
+Output directory for the test_depth_no_mask.py script. Contains results from testing depth analysis without wound masking.

@@ -23,34 +23,81 @@ const DepthDetectionScreen = () => {
   
   const handleProcess = async () => {
     try {
-      console.log('Navigating to mesh generation screen...');
+      console.log('🚀 [DepthDetectionScreen] Starting mesh generation process...');
+      console.log('🆔 [DepthDetectionScreen] Scan ID:', scanId);
+      console.log('👤 [DepthDetectionScreen] Patient ID:', patientId);
+      console.log('📦 [DepthDetectionScreen] Current scan data keys:', Object.keys(scanData || {}));
       
-      // Navigate directly to MeshDetectionScreen
-      // Mesh generation will be handled there to avoid duplication
-      navigation.navigate('MeshDetection', { 
-        scanId, 
-        scanData, 
-        patientId 
-      }); 
+      // Check what depth analysis outputs we have
+      console.log('🔍 [DepthDetectionScreen] Checking available depth analysis outputs:');
+      if (scanData?.depth_map_8bit) {
+        console.log('  ✅ 8-bit depth map:', scanData.depth_map_8bit);
+      }
+      if (scanData?.depth_map_16bit) {
+        console.log('  ✅ 16-bit depth map:', scanData.depth_map_16bit);
+      }
+      if (scanData?.volume_estimate) {
+        console.log('  ✅ Volume estimate:', scanData.volume_estimate);
+      }
+      if (scanData?.depth_metadata) {
+        console.log('  ✅ Depth metadata available');
+      }
+      
+      // Validate that depth analysis was completed
+      if (!scanData?.depth_map_8bit && !scanData?.depth_map_16bit) {
+        console.log('⚠️ [DepthDetectionScreen] Warning: No depth analysis results found in scanData');
+        console.log('📋 [DepthDetectionScreen] This might indicate an issue with the previous processing step');
+      }
+      
+      console.log('🧭 [DepthDetectionScreen] Navigating to ProcessingScreen for mesh generation...');
+      
+      // Navigate to ProcessingScreen for mesh generation (Step 4 of processing)
+      navigation.navigate('Processing', { 
+        step: 'mesh_generation',
+        scanId: scanId,
+        scanData: scanData, // Pass current scan data
+        patientId: patientId 
+      });
+      
+      console.log('✅ [DepthDetectionScreen] Navigation completed - handed off to ProcessingScreen');
     } catch (error) {
-      console.error('Error navigating to mesh detection:', error);
-      Alert.alert('Error', `Failed to navigate: ${error.message}`);
+      console.error('❌ [DepthDetectionScreen] Error navigating to processing:', error);
+      console.error('❌ [DepthDetectionScreen] Error details:', {
+        message: error.message,
+        scanId: scanId,
+        patientId: patientId
+      });
+      Alert.alert('Error', `Failed to start mesh generation: ${error.message}`);
     }
   };
 
   // Determine depth image source - use 8-bit depth map if available, otherwise fallback
   const getDepthImageSource = () => {
+    console.log('🔍 [DepthDetectionScreen] Determining depth image source...');
+    console.log('📦 [DepthDetectionScreen] Available scanData keys:', Object.keys(scanData || {}));
+    
     if (scanData?.depth_map_8bit) {
       // If we have an 8-bit depth map URL from the backend
-      console.log('Using depth map from backend:', scanData.depth_map_8bit);
+      console.log('✅ [DepthDetectionScreen] Using 8-bit depth map from backend:', scanData.depth_map_8bit);
       return { uri: scanData.depth_map_8bit };
     } else if (scanData?.depth_map_16bit) {
       // If we have a 16-bit depth map URL from the backend
-      console.log('Using 16-bit depth map from backend:', scanData.depth_map_16bit);
+      console.log('✅ [DepthDetectionScreen] Using 16-bit depth map from backend:', scanData.depth_map_16bit);
       return { uri: scanData.depth_map_16bit };
     } else {
       // Fallback to static depth image
-      console.log('Using fallback depth image');
+      console.log('⚠️ [DepthDetectionScreen] Using fallback depth image - depth maps not available');
+      console.log('📋 [DepthDetectionScreen] Available depth fields:');
+      console.log('  - depth_map_8bit:', scanData?.depth_map_8bit);
+      console.log('  - depth_map_16bit:', scanData?.depth_map_16bit);
+      console.log('  - volume_estimate:', scanData?.volume_estimate);
+      console.log('  - depth_metadata:', scanData?.depth_metadata ? 'available' : 'not available');
+      
+      if (scanData) {
+        console.log('🔍 [DepthDetectionScreen] Full scanData structure:');
+        console.log(JSON.stringify(scanData, null, 2));
+      }
+      
       return fallbackDepthImage;
     }
   };

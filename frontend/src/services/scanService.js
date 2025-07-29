@@ -34,44 +34,65 @@ const createScan = async (formData) => {
   }
 };
 
-// Step 1: Process wound detection with bbox crop workflow
-const processWoundDetection = async (scanId) => {
+// NEW GRANULAR: Step 1 - YOLO wound segmentation only
+const processWoundSegmentation = async (scanId) => {
   try {
-    console.log(`Starting wound detection with bbox crop for scan ${scanId}`);
+    console.log(`🤖 [Frontend] Starting YOLO wound segmentation for scan ${scanId}`);
     
-    const response = await api.post(`/scans/${scanId}/process_wound_detection/`, {}, {
-      timeout: 120000, // 2 minutes timeout for wound detection + bbox crop
+    const response = await api.post(`/scans/${scanId}/process_wound_segmentation/`, {}, {
+      timeout: 60000, // 1 minute timeout for YOLO segmentation
     });
     
-    console.log('✅ Wound detection with bbox crop completed successfully');
-    console.log('Generated files:', {
-      processed_image: response.data.processed_image,
-      cropped_segmented_path: response.data.cropped_segmented_path,
-      cropped_image_path: response.data.cropped_image_path,
-      bbox_visualization_path: response.data.bbox_visualization_path
-    });
+    console.log('✅ [Frontend] YOLO wound segmentation completed successfully');
+    console.log('🎯 [Frontend] Generated segmented image:', response.data.processed_image);
     
     return response.data;
   } catch (error) {
-    console.error('Error processing wound detection:', error);
+    console.error('❌ [Frontend] Error processing wound segmentation:', error);
     if (error.code === 'ECONNABORTED') {
-      console.error('Request timed out - wound detection processing is taking longer than expected');
+      console.error('⏱️ [Frontend] Request timed out - YOLO segmentation taking longer than expected');
     }
     throw error;
   }
 };
 
-// Step 2: Process depth analysis using ZoeDepth
+// NEW GRANULAR: Step 2 - Bbox detection and cropping only
+const processBboxDetection = async (scanId) => {
+  try {
+    console.log(`📦 [Frontend] Starting bbox detection and cropping for scan ${scanId}`);
+    
+    const response = await api.post(`/scans/${scanId}/process_bbox_detection/`, {}, {
+      timeout: 60000, // 1 minute timeout for bbox detection
+    });
+    
+    console.log('✅ [Frontend] Bbox detection and cropping completed successfully');
+    console.log('🔧 [Frontend] Generated files:', {
+      cropped_image_path: response.data.cropped_image_path,
+      cropped_segmented_path: response.data.cropped_segmented_path,
+      bbox_visualization_path: response.data.bbox_visualization_path
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ [Frontend] Error processing bbox detection:', error);
+    if (error.code === 'ECONNABORTED') {
+      console.error('⏱️ [Frontend] Request timed out - bbox detection taking longer than expected');
+    }
+    throw error;
+  }
+};
+
+// SIMPLIFIED: Step 3 - ZoeDepth processing only
 const processDepthAnalysis = async (scanId) => {
   try {
-    console.log(`Starting depth analysis for scan ${scanId}`);
+    console.log(`🔍 [Frontend] Starting ZoeDepth analysis for scan ${scanId}`);
     
     const response = await api.post(`/scans/${scanId}/process_depth_analysis/`, {}, {
       timeout: 300000, // 5 minutes timeout for ZoeDepth processing
     });
     
-    console.log('✅ Depth analysis completed successfully');
-    console.log('Depth results:', {
+    console.log('✅ [Frontend] ZoeDepth analysis completed successfully');
+    console.log('📊 [Frontend] Depth results:', {
       depth_map_8bit: response.data.depth_map_8bit,
       depth_map_16bit: response.data.depth_map_16bit,
       volume_estimate: response.data.depth_metadata?.volume_estimate?.total_volume
@@ -79,18 +100,18 @@ const processDepthAnalysis = async (scanId) => {
     
     return response.data;
   } catch (error) {
-    console.error('Error processing depth analysis:', error);
+    console.error('❌ [Frontend] Error processing depth analysis:', error);
     if (error.code === 'ECONNABORTED') {
-      console.error('Request timed out - ZoeDepth processing is taking longer than expected');
+      console.error('⏱️ [Frontend] Request timed out - ZoeDepth processing taking longer than expected');
     }
     throw error;
   }
 };
 
-// Step 3: Process mesh generation with STL and preview
+// SIMPLIFIED: Step 4 - Mesh and preview generation only
 const processMeshGeneration = async (scanId, visualization_mode = 'balanced') => {
   try {
-    console.log(`Starting mesh generation for scan ${scanId} with mode: ${visualization_mode}`);
+    console.log(`🏗️ [Frontend] Starting mesh generation for scan ${scanId} with mode: ${visualization_mode}`);
     
     const response = await api.post(`/scans/${scanId}/process_mesh_generation/`, {
       visualization_mode
@@ -98,8 +119,8 @@ const processMeshGeneration = async (scanId, visualization_mode = 'balanced') =>
       timeout: 180000, // 3 minutes timeout for mesh generation
     });
     
-    console.log('✅ Mesh generation completed successfully');
-    console.log('Mesh results:', {
+    console.log('✅ [Frontend] Mesh generation completed successfully');
+    console.log('📁 [Frontend] Mesh results:', {
       stl_file_url: response.data.stl_generation?.stl_file_url,
       preview_image_url: response.data.preview_generation?.preview_image_url,
       visualization_mode: response.data.stl_generation?.visualization_mode
@@ -107,43 +128,10 @@ const processMeshGeneration = async (scanId, visualization_mode = 'balanced') =>
     
     return response.data;
   } catch (error) {
-    console.error('Error processing mesh generation:', error);
+    console.error('❌ [Frontend] Error processing mesh generation:', error);
     if (error.code === 'ECONNABORTED') {
-      console.error('Request timed out - mesh generation is taking longer than expected');
+      console.error('⏱️ [Frontend] Request timed out - mesh generation taking longer than expected');
     }
-    throw error;
-  }
-};
-
-// Legacy method for backward compatibility (now calls the 3-step process)
-const processComprehensiveScan = async (scanId) => {
-  try {
-    console.log(`Starting comprehensive scan processing for scan ${scanId}`);
-    console.log('Pipeline: WoundDetector → ZoeDepth → MeshGenerator');
-    
-    // Step 1: Wound Detection
-    const woundResults = await processWoundDetection(scanId);
-    
-    // Step 2: Depth Analysis  
-    const depthResults = await processDepthAnalysis(scanId);
-    
-    // Step 3: Mesh Generation
-    const meshResults = await processMeshGeneration(scanId);
-    
-    // Combine all results
-    const combinedResults = {
-      ...woundResults,
-      ...depthResults,
-      ...meshResults,
-      processing_pipeline: ['WoundDetector', 'ZoeDepth', 'MeshGenerator'],
-      scan_id: scanId
-    };
-    
-    console.log('✅ Comprehensive scan processing completed successfully');
-    return combinedResults;
-    
-  } catch (error) {
-    console.error('Error processing comprehensive scan:', error);
     throw error;
   }
 };
@@ -152,8 +140,8 @@ export const scanService = {
   getAllScans,
   getPatientScans,
   createScan,
-  processWoundDetection,
-  processDepthAnalysis,
-  processMeshGeneration,
-  processComprehensiveScan, // Legacy method
+  processWoundSegmentation, // NEW: YOLO segmentation only
+  processBboxDetection,     // NEW: Bbox detection and cropping only
+  processDepthAnalysis,     // SIMPLIFIED: ZoeDepth only
+  processMeshGeneration,    // SIMPLIFIED: Mesh and preview only
 }; 

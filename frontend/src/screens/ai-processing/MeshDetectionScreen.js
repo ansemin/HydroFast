@@ -23,45 +23,80 @@ const MeshDetectionScreen = () => {
 
   const handleProcess = async () => {
     try {
-      console.log('Starting mesh generation...');
+      console.log('🚀 [MeshDetectionScreen] Navigating to download screen...');
+      console.log('🆔 [MeshDetectionScreen] Scan ID:', scanId);
+      console.log('👤 [MeshDetectionScreen] Patient ID:', patientId);
+      console.log('📦 [MeshDetectionScreen] Current scan data keys:', Object.keys(scanData || {}));
       
-      // Process mesh generation using the scan ID
-      const meshResponse = await scanService.processMeshGeneration(scanId, 'balanced');
-      console.log('Mesh generation completed:', meshResponse);
+      // Check what mesh generation outputs we have
+      console.log('🔍 [MeshDetectionScreen] Checking available mesh generation outputs:');
+      if (scanData?.stl_generation?.stl_file_url) {
+        console.log('  ✅ STL file URL:', scanData.stl_generation.stl_file_url);
+      }
+      if (scanData?.preview_generation?.preview_image_url) {
+        console.log('  ✅ STL preview image URL:', scanData.preview_generation.preview_image_url);
+      }
+      if (scanData?.mesh_metadata) {
+        console.log('  ✅ Mesh metadata available');
+      }
+      if (scanData?.depth_analysis) {
+        console.log('  ✅ Depth analysis data available');
+      }
       
-      // Combine the current scan data with the mesh results
-      const combinedScanData = {
-        ...scanData,
-        ...meshResponse,
-      };
+      // Validate that mesh generation was completed
+      if (!scanData?.stl_generation?.stl_file_url && !scanData?.preview_generation?.preview_image_url) {
+        console.log('⚠️ [MeshDetectionScreen] Warning: No mesh generation results found in scanData');
+        console.log('📋 [MeshDetectionScreen] This might indicate an issue with the previous processing step');
+      }
       
-      Alert.alert('Success', 'Mesh generation completed successfully');
+      console.log('🧭 [MeshDetectionScreen] Navigating to DownloadFilesScreen...');
+      console.log('📦 [MeshDetectionScreen] Passing complete scan data with all processing results');
+      console.log('🎉 [MeshDetectionScreen] Complete AI processing pipeline finished!');
       
-      // Navigate to DownloadFilesScreen to show final results and download options
+      // Navigate directly to DownloadFilesScreen (no more processing needed)
       navigation.navigate('DownloadFiles', { 
         scanId, 
-        scanData: combinedScanData, 
+        scanData, // Should now contain mesh generation results
         patientId 
-      }); 
+      });
+      
+      console.log('✅ [MeshDetectionScreen] Navigation completed - processing pipeline complete!');
     } catch (error) {
-      console.error('Error processing mesh generation:', error);
-      Alert.alert('Error', `Failed to process mesh generation: ${error.message}`);
+      console.error('❌ [MeshDetectionScreen] Error navigating to download:', error);
+      console.error('❌ [MeshDetectionScreen] Error details:', {
+        message: error.message,
+        scanId: scanId,
+        patientId: patientId
+      });
+      Alert.alert('Error', `Failed to navigate: ${error.message}`);
     }
   };
 
   // Determine STL preview image source
   const getMeshImageSource = () => {
+    console.log('🔍 [MeshDetectionScreen] Determining STL preview image source...');
+    console.log('📦 [MeshDetectionScreen] Available scanData keys:', Object.keys(scanData || {}));
+    
     if (scanData?.preview_generation?.preview_image_url) {
       // If we have an STL preview URL from the mesh generation response
-      console.log('Using STL preview from backend:', scanData.preview_generation.preview_image_url);
+      console.log('✅ [MeshDetectionScreen] Using STL preview from backend:', scanData.preview_generation.preview_image_url);
       return { uri: scanData.preview_generation.preview_image_url };
     } else if (scanData?.stl_preview_url) {
       // Legacy field name support
-      console.log('Using legacy STL preview from backend:', scanData.stl_preview_url);
+      console.log('✅ [MeshDetectionScreen] Using legacy STL preview from backend:', scanData.stl_preview_url);
       return { uri: scanData.stl_preview_url };
     } else {
       // Fallback to static mesh image
-      console.log('Using fallback mesh image');
+      console.log('⚠️ [MeshDetectionScreen] Using fallback mesh image - STL preview not generated');
+      console.log('📋 [MeshDetectionScreen] Available scanData preview fields:');
+      console.log('  - preview_generation?.preview_image_url:', scanData?.preview_generation?.preview_image_url);
+      console.log('  - stl_preview_url:', scanData?.stl_preview_url);
+      
+      if (scanData) {
+        console.log('🔍 [MeshDetectionScreen] Full scanData structure:');
+        console.log(JSON.stringify(scanData, null, 2));
+      }
+      
       return fallbackMeshImage;
     }
   };

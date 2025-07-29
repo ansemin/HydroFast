@@ -25,6 +25,11 @@ const PhotoPreviewScreen = () => {
   
   const handleSubmit = async () => {
     try {
+      console.log('🚀 [PhotoPreviewScreen] Starting image upload process...');
+      console.log('📋 [PhotoPreviewScreen] Patient ID:', patientId);
+      console.log('📋 [PhotoPreviewScreen] Patient Name:', patientName);
+      console.log('📋 [PhotoPreviewScreen] Image URI:', imageUri);
+      
       // Create form data
       const formData = new FormData();
       
@@ -32,14 +37,17 @@ const PhotoPreviewScreen = () => {
       let filename = '';
       
       if (Platform.OS === 'web') {
+        console.log('🌐 [PhotoPreviewScreen] Platform: Web - Processing web image...');
         // On web, we may be dealing with a blob, file object, or data URI
         if (imageFile) {
           // If it's already a File object from the file input
           filename = imageFile.name || `image_${Date.now()}.jpg`;
           formData.append('image', imageFile, filename);
+          console.log('📎 [PhotoPreviewScreen] Using File object:', filename);
         } else if (imageUri.startsWith('blob:') || imageUri.startsWith('data:')) {
           // If it's a blob URL or data URI
           filename = `image_${Date.now()}.jpg`;
+          console.log('🔗 [PhotoPreviewScreen] Converting blob/data URI to file:', filename);
           // For blob URLs, fetch and convert to blob
           const response = await fetch(imageUri);
           const blob = await response.blob();
@@ -48,8 +56,10 @@ const PhotoPreviewScreen = () => {
           // Already a blob or some other object
           filename = `image_${Date.now()}.jpg`;
           formData.append('image', imageUri, filename);
+          console.log('📄 [PhotoPreviewScreen] Using blob object:', filename);
         }
       } else {
+        console.log('📱 [PhotoPreviewScreen] Platform: Native - Processing native image...');
         // Native platforms
         filename = imageUri.split('/').pop();
         const match = /\.(\w+)$/.exec(filename);
@@ -60,37 +70,41 @@ const PhotoPreviewScreen = () => {
           name: filename,
           type,
         });
+        console.log('📎 [PhotoPreviewScreen] Native file:', { filename, type });
       }
       
       // Append the patient ID
       formData.append('patient', patientId);
+      console.log('👤 [PhotoPreviewScreen] Added patient ID to form data:', patientId);
       
-      console.log('Uploading image to server for patient:', patientId);
+      console.log('📤 [PhotoPreviewScreen] Step 1: Uploading image to server...');
       
-      // Step 1: Upload the image
+      // Step 1: Upload the image only (no processing yet)
       const uploadResponse = await scanService.createScan(formData);
-      console.log('Upload successful', uploadResponse);
+      console.log('✅ [PhotoPreviewScreen] Upload successful!');
+      console.log('📋 [PhotoPreviewScreen] Upload response:', JSON.stringify(uploadResponse, null, 2));
+      console.log('🆔 [PhotoPreviewScreen] Generated scan ID:', uploadResponse.id);
       
-      // Step 2: Process wound detection with bbox crop workflow
-      console.log('Starting wound detection with bbox crop...');
-      const woundDetectionResponse = await scanService.processWoundDetection(uploadResponse.id);
-      console.log('Wound detection completed:', woundDetectionResponse);
+      console.log('🧭 [PhotoPreviewScreen] Navigating to ProcessingScreen for wound segmentation...');
       
-      // Combine the responses
-      const combinedScanData = {
-        ...uploadResponse,
-        ...woundDetectionResponse,
-      };
-      
-      // Navigate to CroppedOriginalScreen to show the cropped original image
-      navigation.navigate('CroppedOriginal', { 
+      // Navigate to ProcessingScreen for wound segmentation (Step 1 of processing)
+      navigation.navigate('Processing', { 
+        step: 'wound_segmentation',
         scanId: uploadResponse.id,
-        scanData: combinedScanData,
+        scanData: uploadResponse, // Pass initial scan data
         patientId: patientId 
       });
+      
+      console.log('✅ [PhotoPreviewScreen] Navigation completed - handed off to ProcessingScreen');
     } catch (error) {
-      console.error('Error in upload and wound detection:', error);
-      Alert.alert('Error', `Failed to process image: ${error.message}`);
+      console.error('❌ [PhotoPreviewScreen] Error in upload process:', error);
+      console.error('❌ [PhotoPreviewScreen] Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      Alert.alert('Error', `Failed to upload image: ${error.message}`);
     }
   };
 

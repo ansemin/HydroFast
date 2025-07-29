@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, StatusBar, SafeAreaView, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { scanService } from '../../services';
 import Svg, { Path } from 'react-native-svg';
 
 // Back Arrow SVG Component
@@ -20,33 +21,71 @@ const CroppedOriginalScreen = () => {
   const route = useRoute();
   const { scanId, scanData, patientId } = route.params || {};
   
-  const handleProcess = () => {
-    // Navigate to WoundDetectionScreen to show the segmented result
-    navigation.navigate('WoundDetection', { 
-      scanId, 
-      scanData, 
-      patientId 
-    }); 
+  const handleProcess = async () => {
+    try {
+      console.log('🚀 [CroppedOriginalScreen] Starting bbox detection process...');
+      console.log('🆔 [CroppedOriginalScreen] Scan ID:', scanId);
+      console.log('👤 [CroppedOriginalScreen] Patient ID:', patientId);
+      console.log('📦 [CroppedOriginalScreen] Current scan data keys:', Object.keys(scanData || {}));
+      
+      // Check that wound segmentation results are available
+      console.log('🔍 [CroppedOriginalScreen] Checking wound segmentation results:');
+      if (scanData?.processed_image) {
+        console.log('  ✅ Processed/segmented image:', scanData.processed_image);
+      } else {
+        console.log('  ⚠️ No processed image found in scan data');
+      }
+      
+      console.log('🧭 [CroppedOriginalScreen] Navigating to ProcessingScreen for bbox detection...');
+      
+      // Navigate to ProcessingScreen for bbox detection (Step 2 of processing)
+      navigation.navigate('Processing', { 
+        step: 'bbox_detection',
+        scanId: scanId,
+        scanData: scanData, // Pass current scan data
+        patientId: patientId 
+      });
+      
+      console.log('✅ [CroppedOriginalScreen] Navigation completed - handed off to ProcessingScreen');
+    } catch (error) {
+      console.error('❌ [CroppedOriginalScreen] Error navigating to processing:', error);
+      console.error('❌ [CroppedOriginalScreen] Error details:', {
+        message: error.message,
+        scanId: scanId,
+        patientId: patientId
+      });
+      Alert.alert('Error', `Failed to start bbox detection: ${error.message}`);
+    }
   };
 
-  // Determine image source - use cropped original image from bbox workflow
+  // Determine image source - use segmented image from wound segmentation
   const getImageSource = () => {
-    // Priority 1: Use cropped original image from bbox workflow
-    if (scanData?.cropped_image_path) {
-      return { uri: scanData.cropped_image_path };
+    console.log('🔍 [CroppedOriginalScreen] Determining image source...');
+    console.log('📦 [CroppedOriginalScreen] Available scanData keys:', Object.keys(scanData || {}));
+    
+    // Priority 1: Use processed/segmented image from wound segmentation step
+    if (scanData?.processed_image) {
+      console.log('🎯 [CroppedOriginalScreen] Using processed/segmented image from wound segmentation:', scanData.processed_image);
+      return { uri: scanData.processed_image };
     }
     
-    // Priority 2: Use bbox visualization if available
-    if (scanData?.bbox_visualization_path) {
-      return { uri: scanData.bbox_visualization_path };
-    }
-    
-    // Priority 3: Use original image if no cropped version available
+    // Priority 2: Use original image as fallback
     if (scanData?.image) {
+      console.log('📷 [CroppedOriginalScreen] Using original uploaded image (fallback):', scanData.image);
       return { uri: scanData.image };
     } 
     
     // Fallback: Static image
+    console.log('⚠️ [CroppedOriginalScreen] No processed images found, using fallback');
+    console.log('📋 [CroppedOriginalScreen] Available fields:');
+    console.log('  - processed_image:', scanData?.processed_image);
+    console.log('  - image:', scanData?.image);
+    
+    if (scanData) {
+      console.log('🔍 [CroppedOriginalScreen] Full scanData structure:');
+      console.log(JSON.stringify(scanData, null, 2));
+    }
+    
     return fallbackOriginalImage;
   };
 

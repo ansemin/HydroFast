@@ -28,6 +28,13 @@ class MeshPreviewGenerator(BaseProcessor):
     """
     3D mesh preview generator for creating isometric visualizations from STL files.
     Implements Algorithm 2 from the final report using vedo library.
+    
+    DEFAULT CONFIGURATION: Uses "BALANCED" mode optimized for production
+    - Camera position (1.5, 1.5, 1): Improved isometric angle for better depth perception
+    - Output size (1000, 800): High resolution for clinical assessment
+    - Standard zoom (1.0): Optimal mesh visibility
+    - Matplotlib fallback: Ensures consistent rendering across platforms
+    - Based on successful test results from test_stl_generation.py
     """
     
     def __init__(self, config: Dict[str, Any] = None):
@@ -38,34 +45,49 @@ class MeshPreviewGenerator(BaseProcessor):
             config: Configuration dictionary with preview generation parameters
         """
         default_config = {
-            # Camera and view settings
-            'camera_position': (1, 1, 1),     # Isometric view position (1,1,1)
+            # Camera and view settings - DEEP MODE for production
+            'camera_position': (1.5, 1.5, 1), # DEEP: Improved isometric angle (was 1,1,1)
             'camera_up': (0, 0, 1),           # Camera up vector
-            'zoom_factor': 1.2,               # Fixed zoom for consistency
+            'zoom_factor': 1.0,               # DEEP: Standard zoom (was 1.2)
             'background_color': 'white',      # Background color
             
-            # Mesh visualization settings
+            # Mesh visualization settings - DEEP MODE
             'mesh_color': 'lightgray',        # Light gray color for clarity
             'mesh_alpha': 1.0,                # Mesh transparency (opaque)
             'show_edges': False,              # Show mesh edges
             'lighting': 'default',            # Lighting mode
             
-            # Output settings
-            'output_size': (800, 600),        # Image dimensions (width, height)
+            # Output settings - DEEP MODE for production
+            'output_size': (1000, 800),       # DEEP: High resolution (was 800,600)
             'output_format': 'png',           # Output format
             'output_dpi': 150,                # DPI for high quality
             
-            # Rendering settings
+            # Rendering settings - DEEP MODE for production
             'offscreen': True,                # Offscreen rendering for server
             'antialiasing': True,             # Enable antialiasing
             'depth_peeling': True,            # Enable depth peeling for transparency
+            'use_matplotlib_fallback': True,  # DEEP: Force consistent rendering
             
-            # Processing settings
+            # Processing settings - DEEP MODE
             'compute_normals': True,          # Compute surface normals
             'smooth_mesh': False,             # Apply mesh smoothing
             'auto_orient': True,              # Auto-orient mesh for best view
         }
         
+        # Allow overriding mode via environment variable
+        mesh_mode = os.getenv('MESH_GENERATION_MODE', 'DEEP').upper()
+
+        if mesh_mode == 'SHALLOW':
+            logger.info("Using SHALLOW mesh preview settings")
+            default_config.update({
+                'camera_position': (1, 1, 1),
+                'zoom_factor': 1.2,
+                'output_size': (800, 600),
+                'use_matplotlib_fallback': False, # Revert to original behavior
+            })
+        else:
+            logger.info("Using DEEP mesh preview settings (default)")
+
         if config:
             default_config.update(config)
         
