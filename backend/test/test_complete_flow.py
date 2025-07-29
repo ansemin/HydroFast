@@ -28,8 +28,8 @@ import json
 from io import BytesIO
 from PIL import Image
 
-# Add the backend directory to sys.path
-backend_dir = Path(__file__).resolve().parent
+# Add the project's backend directory to sys.path
+backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
 # Setup Django
@@ -55,8 +55,8 @@ class CompleteFlowTester:
     
     def __init__(self):
         self.client = Client()
-        self.output_dir = backend_dir / "test_complete_flow"
-        self.test_image_path = backend_dir / "test image" / "scan_1753445089110.jpg"
+        self.output_dir = Path(__file__).resolve().parent / "test_complete_flow"
+        self.test_image_path = Path(__file__).resolve().parent / "test image" / "scan_1753445089110.jpg"
         self.patient = None
         self.scan_id = None
         self.scan_data = {}

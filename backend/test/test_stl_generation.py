@@ -22,8 +22,8 @@ import shutil
 import cv2
 import numpy as np
 
-# Add the backend directory to sys.path
-backend_dir = Path(__file__).resolve().parent
+# Add the project's backend directory to sys.path
+backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
 # Setup Django
@@ -42,10 +42,10 @@ def test_stl_generation_and_preview():
     """Test STL generation and preview using unmasked depth image."""
     
     # Define paths
-    depth_image_path = backend_dir / "test image" / "04_depth_8bit_unmasked.png"
+    depth_image_path = Path(__file__).resolve().parent / "test image" / "04_depth_8bit_unmasked.png"
     
     # Create output directory
-    output_dir = backend_dir / "test_stl_generation"
+    output_dir = Path(__file__).resolve().parent / "test_stl_generation"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info("="*80)

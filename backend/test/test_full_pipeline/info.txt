@@ -1,0 +1,1 @@
+Output directory for the test_full_pipeline.py script. Contains results from the full AI processing pipeline test.

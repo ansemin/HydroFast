@@ -2,7 +2,7 @@
 
 ## Project Overview
 **Date Created:** 25/07/2025  
-**Last Updated:** 25/07/2025 - **VERIFIED VERSION** ✅✅
+**Last Updated:** 29/07/2025 - **VERIFIED VERSION** ✅✅
 
 **VERIFICATION STATUS:** 🎯 **SYSTEMATICALLY VERIFIED AGAINST SOURCE CODE - 95%+ ACCURACY CONFIRMED**
 - All navigation paths verified by reading actual screen components
@@ -409,6 +409,27 @@ All files are stored in `backend/media/` with consistent database-based scan IDs
 - **Orphan Removal**: Automatically removes files for deleted scans
 - **Statistics Reporting**: Provides storage usage statistics
 
+## Testing
+
+All test scripts are located in the `backend/test/` directory. Each script is designed to be run from the root of the project.
+
+### Test Scripts
+
+-   **`test_complete_flow.py`**: Tests the complete end-to-end user flow through the application by making sequential API calls.
+-   **`test_depth_no_mask.py`**: Tests depth processing using only the cropped original image, without applying the wound mask.
+-   **`test_full_pipeline.py`**: Tests the complete wound processing pipeline, from wound detection to STL preview generation.
+-   **`test_redownload_zoedepth.py`**: Forces a re-download of the ZoeDepth model.
+-   **`test_stl_generation.py`**: Tests the STL mesh generation and preview generation pipeline.
+
+### Running a Test
+
+To run a test, activate the virtual environment and then execute the script with python. For example:
+
+```bash
+source .venv/bin/activate
+python backend/test/test_full_pipeline.py
+```
+
 ### Areas for Improvement 🔧
 - STL preview display optimization (current focus)
 - ScanResultsScreen backend integration (currently placeholder)
@@ -528,3 +549,4 @@ graph TD
     K -.->|"⚠️ POST /api/scans/{id}/process_mesh_generation/"| X[scanService.processMeshGeneration - FIRST CALL]
     L -.->|"⚠️ POST /api/scans/{id}/process_mesh_generation/"| Y[scanService.processMeshGeneration - SECOND CALL]
     G -.->|"GET /api/scans/?patient={id} - PLACEHOLDER DATA"| Z[scanService.getPatientScans]
+```

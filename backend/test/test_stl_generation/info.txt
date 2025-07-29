@@ -1,0 +1,1 @@
+Output directory for the test_stl_generation.py script. Contains generated STL files and previews for different visualization modes.

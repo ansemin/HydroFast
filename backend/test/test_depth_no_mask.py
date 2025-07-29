@@ -23,8 +23,8 @@ import cv2
 import numpy as np
 import torch
 
-# Add the backend directory to sys.path
-backend_dir = Path(__file__).resolve().parent
+# Add the project's backend directory to sys.path
+backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
 # Setup Django
@@ -146,10 +146,10 @@ def test_depth_no_mask():
     """Test depth processing WITHOUT masking using only cropped original."""
     
     # Define paths - same image as full pipeline test
-    original_image_path = backend_dir / "test image" / "scan_1753445089110.jpg"
+    original_image_path = Path(__file__).resolve().parent / "test image" / "scan_1753445089110.jpg"
     
     # Create output directory
-    output_dir = backend_dir / "test_depth_no_mask"
+    output_dir = Path(__file__).resolve().parent / "test_depth_no_mask"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info("="*80)

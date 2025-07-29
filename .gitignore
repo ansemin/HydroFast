@@ -99,13 +99,19 @@ backend/media/depth_maps_bbox/*
 # Test directories and files
 backend/media/test_improved_depth/
 backend/media/test_stl_pipeline/
-backend/test_full_pipeline/
-backend/test_full_pipeline.py
-backend/test image/
-backend/test_full_pipeline back up/
-backend/test_stl_generation/
-backend/test_depth_no_mask/
-backend/test_complete_flow/
 backend/test_zoedepth_standalone_output/
+
+# Ignore test script outputs but not the info.txt files
+backend/test/test_complete_flow/*
+!backend/test/test_complete_flow/info.txt
+backend/test/test_depth_no_mask/*
+!backend/test/test_depth_no_mask/info.txt
+backend/test/test_full_pipeline/*
+!backend/test/test_full_pipeline/info.txt
+backend/test/test_stl_generation/*
+!backend/test/test_stl_generation/info.txt
+backend/test/test image/*
+!backend/test/test image/info.txt
+
 # Don't ignore the cleanup scripts
 # backend/clean_media.py
