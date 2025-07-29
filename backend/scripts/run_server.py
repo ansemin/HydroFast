@@ -7,6 +7,11 @@ import os
 import sys
 import socket
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file at the project root
+dotenv_path = Path(__file__).resolve().parent.parent.parent / '.env'
+load_dotenv(dotenv_path=dotenv_path)
 
 # Add the parent directory to the Python path so we can import Django modules
 BASE_DIR = Path(__file__).resolve().parent.parent

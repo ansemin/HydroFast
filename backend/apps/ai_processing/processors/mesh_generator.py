@@ -23,7 +23,7 @@ class MeshGenerator(BaseProcessor):
     Converts depth maps into 3D meshes suitable for visualization and STL export.
     Implements the algorithm from STL.py with improvements from the notebook.
     
-    DEFAULT CONFIGURATION: Uses "BALANCED" mode optimized for production
+    DEFAULT CONFIGURATION: Uses "DEEP" mode optimized for production
     - 5.0mm Z-dimension: Good balance between visualization and realism
     - 5% depth clipping: Less aggressive noise removal
     - Based on successful test results from test_stl_generation.py
@@ -37,15 +37,15 @@ class MeshGenerator(BaseProcessor):
             config: Configuration dictionary with mesh generation parameters
         """
         default_config = {
-            # Physical dimensions (mm) - BALANCED MODE for production
+            # Physical dimensions (mm) - DEEP MODE for production
             'actual_x': 7.4,      # Actual X dimension in mm
             'actual_y': 16.4,     # Actual Y dimension in mm  
-            'actual_z': 5.0,      # BALANCED: Good visualization (was 1.8)
+            'actual_z': 5.0,      # DEEP: Good visualization (was 1.8)
             'base_layers': 0,     # Number of base layers (k in STL.py)
             'base_thickness_mm': 0.26,  # Base thickness per layer (mm)
             
-            # Processing parameters - BALANCED MODE
-            'depth_clip_percentile': 5,   # BALANCED: Less aggressive clipping (was 10)
+            # Processing parameters - DEEP MODE
+            'depth_clip_percentile': 5,   # DEEP: Less aggressive clipping (was 10)
             'normalize_depth': True,      # Normalize depth values to [0,1]
             'output_format': 'stl',      # Output format
             
@@ -59,6 +59,18 @@ class MeshGenerator(BaseProcessor):
             'cleanup_temp_files': False,   # Clean up temporary files after use
         }
         
+        # Allow overriding mode via environment variable
+        mesh_mode = os.getenv('MESH_GENERATION_MODE', 'DEEP').upper()
+        
+        if mesh_mode == 'SHALLOW':
+            logger.info("Using SHALLOW mesh generation settings")
+            default_config.update({
+                'actual_z': 1.8,
+                'depth_clip_percentile': 10,
+            })
+        else:
+            logger.info("Using DEEP mesh generation settings (default)")
+
         if config:
             default_config.update(config)
         

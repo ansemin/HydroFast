@@ -86,14 +86,15 @@ class CompleteFlowTester:
         
         # Create test patient
         self.patient, created = Patient.objects.get_or_create(
-            name="Test Patient Flow",
+            first_name="Test",
+            last_name="Patient Flow",
             date_of_birth="1990-01-01",
             defaults={
                 'nric': 'T1234567Z',
                 'user': default_user
             }
         )
-        logger.info(f"✅ Test patient: {self.patient.id} - {self.patient.name}")
+        logger.info(f"✅ Test patient: {self.patient.id} - {self.patient.first_name} {self.patient.last_name}")
         
         # Validate test image exists
         if not self.test_image_path.exists():
@@ -176,7 +177,7 @@ class CompleteFlowTester:
             test_file = self.create_test_upload_file()
             
             # Make API call to upload image
-            response = self.client.post('/scans/upload_image/', {
+            response = self.client.post('/api/scans/', {
                 'patient': self.patient.id,
                 'image': test_file
             })
@@ -214,7 +215,7 @@ class CompleteFlowTester:
                 raise Exception("No scan ID available from previous step")
             
             # Make API call to process wound segmentation
-            response = self.client.post(f'/scans/{self.scan_id}/process_wound_segmentation/')
+            response = self.client.post(f'/api/scans/{self.scan_id}/process_wound_segmentation/')
             
             if response.status_code != 200:
                 raise Exception(f"Wound segmentation failed with status {response.status_code}")
@@ -252,7 +253,7 @@ class CompleteFlowTester:
                 raise Exception("No scan ID available from previous step")
             
             # Make API call to process bbox detection
-            response = self.client.post(f'/scans/{self.scan_id}/process_bbox_detection/')
+            response = self.client.post(f'/api/scans/{self.scan_id}/process_bbox_detection/')
             
             if response.status_code != 200:
                 raise Exception(f"Bbox detection failed with status {response.status_code}")
@@ -292,7 +293,7 @@ class CompleteFlowTester:
                 raise Exception("No scan ID available from previous step")
             
             # Make API call to process depth analysis
-            response = self.client.post(f'/scans/{self.scan_id}/process_depth_analysis/')
+            response = self.client.post(f'/api/scans/{self.scan_id}/process_depth_analysis/')
             
             if response.status_code != 200:
                 raise Exception(f"Depth analysis failed with status {response.status_code}")
@@ -332,7 +333,7 @@ class CompleteFlowTester:
                 raise Exception("No scan ID available from previous step")
             
             # Make API call to process mesh generation (using balanced mode - production default)
-            response = self.client.post(f'/scans/{self.scan_id}/process_mesh_generation/', {
+            response = self.client.post(f'/api/scans/{self.scan_id}/process_mesh_generation/', {
                 'visualization_mode': 'balanced'  # Use production default
             })
             
