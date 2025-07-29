@@ -22,55 +22,74 @@ export default function SignUpScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
+    console.log('[SignUpScreen] 📝 Registration form submission initiated');
+    console.log(`[SignUpScreen] User data - Username: "${username}", Email: "${email}", Name: "${firstName} ${lastName}"`);
+    
     // Basic validation
     if (!firstName || !lastName || !username || !email || !password || !retypePassword) {
+      console.log('[SignUpScreen] ❌ Registration failed: Missing required fields');
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
     
     if (password !== retypePassword) {
+      console.log('[SignUpScreen] ❌ Registration failed: Passwords do not match');
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
+      console.log(`[SignUpScreen] ❌ Registration failed: Password too short (${password.length} characters)`);
       Alert.alert('Error', 'Password must be at least 6 characters long');
       return;
     }
 
+    console.log('[SignUpScreen] ✅ Form validation passed, starting registration process');
     setLoading(true);
 
     try {
-      console.log(`Attempting to register user: ${username}`);
+      console.log(`[SignUpScreen] 🚀 Attempting to register user: "${username}" with email: "${email}"`);
       await register(username, email, password);
+      console.log(`[SignUpScreen] ✅ Registration successful for user: "${username}"`);
+      
       Alert.alert(
         'Success', 
         'Account created successfully! Please log in with your new credentials.',
         [
-          { text: 'OK', onPress: () => navigation.navigate('Login') }
+          { text: 'OK', onPress: () => {
+            console.log('[SignUpScreen] User acknowledged success, navigating to Login screen');
+            navigation.navigate('Login');
+          }}
         ]
       );
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error(`[SignUpScreen] ❌ Registration failed for user "${username}":`, error);
       
       if (error.code === 'ERR_NETWORK') {
+        console.error('[SignUpScreen] Network error during registration');
         Alert.alert(
           "Network Error", 
           "Could not connect to the server. Please check your internet connection and make sure the server is running."
         );
       } else if (error.response) {
+        console.error(`[SignUpScreen] Server error response (${error.response.status}):`, error.response.data);
+        
         if (error.response.status === 400) {
           const errorMessage = error.response.data.error || error.response.data.message || "Invalid registration data. Please check your information.";
+          console.error('[SignUpScreen] Invalid registration data:', errorMessage);
           Alert.alert("Registration Failed", errorMessage);
         } else if (error.response.status === 409) {
+          console.error('[SignUpScreen] Username/email already exists');
           Alert.alert("Registration Failed", "This username or email is already taken. Please choose different credentials.");
         } else {
+          console.error(`[SignUpScreen] Unexpected server error: ${error.response.status}`);
           Alert.alert(
             "Server Error", 
             `The server returned an error: ${error.response.status} ${error.response.statusText}`
           );
         }
       } else {
+        console.error('[SignUpScreen] Unexpected registration error:', error.message);
         Alert.alert(
           "Registration Failed", 
           error.message || "An unexpected error occurred. Please try again."

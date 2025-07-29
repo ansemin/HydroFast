@@ -23,36 +23,46 @@ const NewPatientFormScreen = ({ navigation }) => {
 
   // Function to validate form
   const validateForm = () => {
+    console.log('[NewPatientForm] Starting form validation...');
     let isValid = true;
     const newErrors = {};
 
     if (!firstName.trim()) {
+      console.log('[NewPatientForm] ❌ Validation failed: First name is required');
       newErrors.firstName = "First name is required";
       isValid = false;
     }
 
     if (!lastName.trim()) {
+      console.log('[NewPatientForm] ❌ Validation failed: Last name is required');
       newErrors.lastName = "Last name is required";
       isValid = false;
     }
 
     if (!nric.trim()) {
+      console.log('[NewPatientForm] ❌ Validation failed: NRIC/Passport No. is required');
       newErrors.nric = "NRIC/Passport No. is required";
       isValid = false;
     } else if (nric.length > 9) {
+      console.log(`[NewPatientForm] ❌ Validation failed: NRIC too long (${nric.length} characters)`);
       newErrors.nric = "NRIC/Passport No. must be 9 characters or less";
       isValid = false;
     }
 
+    console.log(`[NewPatientForm] Form validation completed - Valid: ${isValid}, Errors: ${Object.keys(newErrors).length}`);
     setErrors(newErrors);
     return isValid;
   };
 
   // Function to handle form submission
   const handleSubmit = async () => {
+    console.log(`[NewPatientForm] 🆕 Form submission initiated for: "${firstName.trim()} ${lastName.trim()}"`);
+    console.log(`[NewPatientForm] Patient data - NRIC: "${nric}", Contact: "${contactNo || 'None'}"`);
+    
     if (!validateForm()) {
       // Display the first error in an alert
       const firstError = Object.values(errors)[0];
+      console.log(`[NewPatientForm] ❌ Form validation failed, showing error: "${firstError}"`);
       Alert.alert("Validation Error", firstError);
       return;
     }
@@ -66,18 +76,22 @@ const NewPatientFormScreen = ({ navigation }) => {
       details: '', // Optional field
     };
 
+    console.log('[NewPatientForm] 🚀 Sending patient creation request to server...');
     try {
-      await patientService.createPatient(patientData);
-      console.log('Success, Patient added successfully!');
+      const result = await patientService.createPatient(patientData);
+      console.log(`[NewPatientForm] ✅ Patient created successfully! ID: ${result.id}, Name: "${firstName} ${lastName}"`);
       Alert.alert('Success', 'Patient added successfully!', [
-        { text: 'OK', onPress: () => navigation.navigate('Patients List') },
+        { text: 'OK', onPress: () => {
+          console.log('[NewPatientForm] User acknowledged success, navigating to Patients List');
+          navigation.navigate('Patients List');
+        }},
       ]);
     } catch (error) {
-      console.error('API Error:', error);
+      console.error(`[NewPatientForm] ❌ Failed to create patient "${firstName} ${lastName}":`, error);
       
       if (error.response && error.response.data) {
         const serverErrors = error.response.data;
-        console.error('Validation errors:', serverErrors);
+        console.error('[NewPatientForm] Server validation errors:', serverErrors);
         
         // Format server errors for display
         let errorMessage = "Failed to add patient:";
@@ -85,8 +99,10 @@ const NewPatientFormScreen = ({ navigation }) => {
           errorMessage += `\n• ${key}: ${messages.join(", ")}`;
         });
         
+        console.log(`[NewPatientForm] Displaying server error to user: ${errorMessage}`);
         Alert.alert("Error", errorMessage);
       } else {
+        console.log('[NewPatientForm] Displaying generic error to user');
         Alert.alert("Error", "Failed to add patient. Please try again.");
       }
     }
