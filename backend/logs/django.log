@@ -3,3 +3,32 @@ Watching for file changes with StatReloader
 Watching for file changes with StatReloader
 /mnt/d/Projects/ME5400B-Project 2/Project-2/backend/scripts/run_server.py changed, reloading.
 Watching for file changes with StatReloader
+INFO 2025-07-29 22:16:15,390 [apps.common] 🌐 POST /api/login/ - User: Anonymous, IP: 172.30.1.9
+INFO 2025-07-29 22:16:15,396 [apps.authentication.views] [AuthAPI] 🔑 POST /auth/login/ - Login attempt for username: 'admin'
+INFO 2025-07-29 22:16:15,835 [apps.authentication.views] [AuthAPI] ✅ Login successful for user: 'admin' (Admin: False)
+INFO 2025-07-29 22:16:15,836 [apps.common] ✅ POST /api/login/ - 200 (445.79ms)
+INFO 2025-07-29 22:16:15,986 [apps.common] 🌐 GET /api/patients/ - User: Anonymous, IP: 172.30.1.9
+INFO 2025-07-29 22:16:15,990 [apps.patients.views] [PatientsAPI] 📋 GET /patients/ - Fetching patients list
+INFO 2025-07-29 22:16:15,991 [apps.patients.views] [PatientsAPI] 👤 Regular user 'admin' accessing their patients
+INFO 2025-07-29 22:16:15,995 [apps.patients.views] [PatientsAPI] ✅ Successfully retrieved 21 patients
+INFO 2025-07-29 22:16:15,996 [apps.common] ✅ GET /api/patients/ - 200 (10.76ms)
+INFO 2025-07-29 22:16:16,012 [apps.common] 🌐 GET /api/patients/ - User: Anonymous, IP: 172.30.1.9
+INFO 2025-07-29 22:16:16,015 [apps.patients.views] [PatientsAPI] 📋 GET /patients/ - Fetching patients list
+INFO 2025-07-29 22:16:16,017 [apps.patients.views] [PatientsAPI] 👤 Regular user 'admin' accessing their patients
+INFO 2025-07-29 22:16:16,020 [apps.patients.views] [PatientsAPI] ✅ Successfully retrieved 21 patients
+INFO 2025-07-29 22:16:16,020 [apps.common] ✅ GET /api/patients/ - 200 (8.05ms)
+INFO 2025-07-29 22:16:26,763 [apps.common] 🌐 GET /api/patients/11/ - User: Anonymous, IP: 172.30.1.9
+INFO 2025-07-29 22:16:26,766 [apps.patients.views] [PatientsAPI] 👤 GET /patients/11/ - Fetching patient details
+INFO 2025-07-29 22:16:26,768 [apps.patients.views] [PatientsAPI] 👤 Regular user 'admin' accessing their patients
+INFO 2025-07-29 22:16:26,769 [apps.patients.views] [PatientsAPI] ✅ Successfully retrieved patient: Allison Torres (ID: 11, NRIC: S0560308M)
+INFO 2025-07-29 22:16:26,770 [apps.common] ✅ GET /api/patients/11/ - 200 (6.45ms)
+INFO 2025-07-29 22:16:28,955 [apps.common] 🌐 GET /api/patients/ - User: Anonymous, IP: 172.30.1.9
+INFO 2025-07-29 22:16:28,957 [apps.patients.views] [PatientsAPI] 📋 GET /patients/ - Fetching patients list
+INFO 2025-07-29 22:16:28,958 [apps.patients.views] [PatientsAPI] 👤 Regular user 'admin' accessing their patients
+INFO 2025-07-29 22:16:28,960 [apps.patients.views] [PatientsAPI] ✅ Successfully retrieved 21 patients
+INFO 2025-07-29 22:16:28,961 [apps.common] ✅ GET /api/patients/ - 200 (6.05ms)
+INFO 2025-07-29 22:16:34,636 [apps.common] 🌐 GET /api/patients/ - User: Anonymous, IP: 172.30.1.9
+INFO 2025-07-29 22:16:34,640 [apps.patients.views] [PatientsAPI] 📋 GET /patients/ - Fetching patients list
+INFO 2025-07-29 22:16:34,641 [apps.patients.views] [PatientsAPI] 👤 Regular user 'admin' accessing their patients
+INFO 2025-07-29 22:16:34,644 [apps.patients.views] [PatientsAPI] ✅ Successfully retrieved 21 patients
+INFO 2025-07-29 22:16:34,645 [apps.common] ✅ GET /api/patients/ - 200 (9.21ms)
