@@ -73,16 +73,33 @@ class CompleteFlowTester:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"📁 Created output directory: {self.output_dir}")
         
-        # Ensure default user exists
+        # Ensure admin user exists
         try:
-            default_user = User.objects.get(username="default_user")
-            logger.info("✅ Default user found")
+            admin_user = User.objects.get(username="admin")
+            logger.info("✅ Admin user found")
         except User.DoesNotExist:
-            default_user = User.objects.create_user(
-                username="default_user",
-                password="default_password"
+            admin_user = User.objects.create_user(
+                username="admin",
+                password="admin123"
             )
-            logger.info("✅ Created default user")
+            logger.info("✅ Created admin user")
+
+        # Perform token-based login
+        response = self.client.post('/api/login/', {
+            'username': 'admin',
+            'password': 'admin123'
+        })
+        
+        if response.status_code != 200:
+            raise Exception("Failed to authenticate and get token")
+            
+        token = response.json().get('token')
+        if not token:
+            raise Exception("Token not found in login response")
+            
+        # Set the token in the client's headers for all subsequent requests
+        self.client.defaults['HTTP_AUTHORIZATION'] = f'Token {token}'
+        logger.info("✅ Client authenticated with token")
         
         # Create test patient
         self.patient, created = Patient.objects.get_or_create(
@@ -91,7 +108,7 @@ class CompleteFlowTester:
             date_of_birth="1990-01-01",
             defaults={
                 'nric': 'T1234567Z',
-                'user': default_user
+                'user': admin_user
             }
         )
         logger.info(f"✅ Test patient: {self.patient.id} - {self.patient.first_name} {self.patient.last_name}")

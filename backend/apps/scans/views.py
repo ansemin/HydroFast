@@ -236,6 +236,7 @@ class ScanViewSet(viewsets.ModelViewSet):
             print(f"🤖 [Backend] Processing ZoeDepth on cropped original image (NO MASKING)...")
             # Initialize ZoeDepth processor
             processor = ZoeDepthProcessor()
+            processor.load_model()  # Explicitly load the model
             
             print(f"📷 [Backend] IMPORTANT: Using CROPPED ORIGINAL image for ZoeDepth processing (NO MASKING)")
             print(f"📷 [Backend] ZoeDepth input: {cropped_image_path} (cropped original)")
