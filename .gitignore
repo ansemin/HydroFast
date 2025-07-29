@@ -58,6 +58,7 @@ MLIntegration/
 
 # Gemini-specific files
 GEMINI.md
+CLAUDE.md
 db.sqlite3
 backend/backup/
 

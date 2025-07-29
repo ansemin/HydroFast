@@ -12,13 +12,36 @@ import {
   SafeAreaView 
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 
 // Back Arrow SVG Component
 function BackArrowIcon() {
   return (
     <Svg width="18" height="16" viewBox="0 0 18 16" fill="none">
       <Path d="M16 9.01626C16.5613 9.01626 17.0163 8.56126 17.0163 8C17.0163 7.43874 16.5613 6.98374 16 6.98374L16 9.01626ZM1.2814 7.2814C0.884525 7.67827 0.884525 8.32173 1.2814 8.7186L7.74882 15.186C8.14569 15.5829 8.78915 15.5829 9.18602 15.186C9.58289 14.7891 9.58289 14.1457 9.18602 13.7488L3.4372 8L9.18602 2.25118C9.58289 1.85431 9.58289 1.21085 9.18602 0.813981C8.78915 0.417108 8.14569 0.417108 7.74881 0.813981L1.2814 7.2814ZM16 6.98374L2 6.98375L2 9.01626L16 9.01626L16 6.98374Z" fill="black"/>
+    </Svg>
+  );
+}
+
+// Green File Icon SVG Component
+function FileIcon() {
+  return (
+    <Svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <Rect width="40" height="40" rx="6" fill="#27CF9F"/>
+      <Path d="M20.0005 18.019L19.9997 24.5M19.9997 24.5C20.3733 24.505 20.7418 24.2482 21.0137 23.9348L22.8346 21.8927M19.9997 24.5C19.6394 24.4952 19.2743 24.2398 18.9858 23.9348L17.1543 21.8927" stroke="white" strokeWidth="1.71836" strokeLinecap="round"/>
+      <Path d="M23.4325 10.5726L23.4325 13.7229C23.4325 14.803 23.4325 15.343 23.768 15.6785C24.1035 16.0141 24.6436 16.0141 25.7236 16.0141L28.0612 16.0141" stroke="white" strokeWidth="1.71836"/>
+      <Path d="M14.291 10.8594H23.9482C24.4269 10.8595 24.8741 11.0988 25.1396 11.4971L27.5107 15.0547C27.6675 15.2899 27.7519 15.566 27.752 15.8486V27.209C27.7519 27.9998 27.1101 28.6406 26.3193 28.6406H14.291C13.5003 28.6406 12.8594 27.9997 12.8594 27.209V12.291C12.8594 11.5003 13.5003 10.8594 14.291 10.8594Z" stroke="white" strokeWidth="1.71836"/>
+    </Svg>
+  );
+}
+
+// Download Button Icon SVG Component (using download_button_white.svg)
+function DownloadButtonIcon() {
+  return (
+    <Svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <Rect width="40" height="40" rx="20" fill="#FCFFF8"/>
+      <Path d="M20.0002 22.069V12.4138M20.0002 22.069C18.8412 22.069 16.6759 18.8036 15.8623 17.9756M20.0002 22.069C21.1592 22.069 23.3246 18.8036 24.1382 17.9756" stroke="#707070" strokeWidth="1.58621" strokeLinecap="round" strokeLinejoin="round"/>
+      <Path d="M28.6441 23.7241C28.6441 26.3488 28.0964 26.8965 25.4717 26.8965H14.897C12.2724 26.8965 11.7246 26.3488 11.7246 23.7241" stroke="#707070" strokeWidth="1.58621" strokeLinecap="round" strokeLinejoin="round"/>
     </Svg>
   );
 }
@@ -62,10 +85,113 @@ const DownloadFilesScreen = () => {
     }
   };
 
-  // Download all available files
+  // Get the STL files for download (STL file + STL preview)
+  const getSTLFiles = () => {
+    const files = [];
+    
+    // Check if we have scanData with STL file info, otherwise use simulation data
+    const isSimulation = !scanData?.stl_file_url && !scanData?.stl_filename;
+    
+    if (isSimulation) {
+      // Simulation mode - return mock STL files for testing
+      return [
+        {
+          name: 'HydroFast_STL',
+          filename: 'hydrofast_model.stl',
+          url: 'simulation://hydrofast_model.stl',
+          type: '3D Model',
+          size: '2.4MB',
+          isMainFile: true
+        },
+        {
+          name: 'STL Preview',
+          filename: 'hydrofast_preview.png',
+          url: 'simulation://hydrofast_preview.png',
+          type: 'Image',
+          size: '1.2MB',
+          isMainFile: false
+        }
+      ];
+    }
+
+    // Add STL file if available
+    if (scanData?.stl_file_url) {
+      const fileSize = scanData?.mesh_metadata?.file_size_mb ? `${scanData.mesh_metadata.file_size_mb}MB` : '2.4MB';
+      files.push({
+        name: 'HydroFast_STL',
+        filename: scanData.stl_file_url.split('/').pop() || 'hydrofast_model.stl',
+        url: scanData.stl_file_url,
+        type: '3D Model',
+        size: fileSize,
+        isMainFile: true
+      });
+    } else if (scanData?.stl_filename) {
+      const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
+      files.push({
+        name: 'HydroFast_STL',
+        filename: scanData.stl_filename,
+        url: `${baseUrl}/media/generated_stl/${scanData.stl_filename}`,
+        type: '3D Model',
+        size: scanData?.mesh_metadata?.file_size_mb ? `${scanData.mesh_metadata.file_size_mb}MB` : '2.4MB',
+        isMainFile: true
+      });
+    }
+
+    // Add STL preview if available
+    if (scanData?.stl_preview_url) {
+      files.push({
+        name: 'STL Preview',
+        filename: scanData.stl_preview_url.split('/').pop() || 'stl_preview.png',
+        url: scanData.stl_preview_url,
+        type: 'Image',
+        size: '1.2MB',
+        isMainFile: false
+      });
+    } else if (scanData?.preview_generation?.preview_image_url) {
+      files.push({
+        name: 'STL Preview',
+        filename: scanData.preview_generation.preview_image_url.split('/').pop() || 'stl_preview.png',
+        url: scanData.preview_generation.preview_image_url,
+        type: 'Image',
+        size: '1.2MB',
+        isMainFile: false
+      });
+    } else if (scanId) {
+      // Construct STL preview path based on pattern: depth_8bit_YYYYMMDD_HHMMSS_preview.png
+      const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
+      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
+      const previewFilename = `depth_8bit_${timestamp}_preview.png`;
+      files.push({
+        name: 'STL Preview',
+        filename: previewFilename,
+        url: `${baseUrl}/media/stl_previews/${previewFilename}`,
+        type: 'Image',
+        size: '1.2MB',
+        isMainFile: false
+      });
+    }
+
+    // Fallback: if we have a scanId but no STL file, try to construct one
+    if (files.length === 0 && scanId) {
+      const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
+      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
+      const expectedFilename = `depth_8bit_${timestamp}.stl`;
+      files.push({
+        name: 'HydroFast_STL',
+        filename: expectedFilename,
+        url: `${baseUrl}/media/generated_stl/${expectedFilename}`,
+        type: '3D Model',
+        size: '2.4MB',
+        isMainFile: true
+      });
+    }
+
+    return files;
+  };
+
   const downloadAllFiles = async () => {
     try {
-      const files = getAvailableFiles();
+      const files = getSTLFiles();
       if (files.length === 0) {
         Alert.alert('No Files', 'No files are available for download');
         return;
@@ -83,12 +209,12 @@ const DownloadFilesScreen = () => {
         return;
       }
 
-      // Download each file with a small delay between them
+      // In a real implementation, you would zip the files server-side and download the ZIP
+      // For now, we'll download each file individually with a delay
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        await downloadFile(file.url, file.name);
+        await downloadFile(file.url, file.filename);
         
-        // Add a small delay between downloads
         if (i < files.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -101,139 +227,8 @@ const DownloadFilesScreen = () => {
     }
   };
 
-  // Get list of available files for download
-  const getAvailableFiles = () => {
-    const files = [];
+  const stlFiles = getSTLFiles();
 
-    // Check if we have scanData, otherwise use simulation data
-    const isSimulation = !scanData?.image;
-    
-    if (isSimulation) {
-      // Simulation mode - return mock file list for testing
-      return [
-        {
-          name: 'Original Image',
-          filename: 'original_image.jpg',
-          url: 'simulation://original_image.jpg',
-          type: 'Image',
-          description: 'Original wound photograph'
-        },
-        {
-          name: 'Segmented Image',
-          filename: 'segmented_wound.jpg',
-          url: 'simulation://segmented_wound.jpg',
-          type: 'Image',
-          description: 'Wound segmentation result'
-        },
-        {
-          name: '8-bit Depth Map',
-          filename: 'depth_map_8bit.png',
-          url: 'simulation://depth_map_8bit.png',
-          type: 'Image',
-          description: 'ZoeDepth analysis result (8-bit)'
-        },
-        {
-          name: '16-bit Depth Map',
-          filename: 'depth_map_16bit.png',
-          url: 'simulation://depth_map_16bit.png',
-          type: 'Image',
-          description: 'ZoeDepth analysis result (16-bit)'
-        },
-        {
-          name: 'STL 3D Model',
-          filename: 'wound_model.stl',
-          url: 'simulation://wound_model.stl',
-          type: '3D Model',
-          description: '3D printable mesh (2.4 MB)'
-        },
-        {
-          name: 'STL Preview',
-          filename: 'stl_preview.png',
-          url: 'simulation://stl_preview.png',
-          type: 'Image',
-          description: '3D mesh visualization'
-        },
-        {
-          name: 'G-code Print File',
-          filename: 'wound_model.gcode',
-          url: 'simulation://wound_model.gcode',
-          type: 'Print File',
-          description: 'Ready for 3D printing'
-        }
-      ];
-    }
-
-    // Original image
-    if (scanData?.image) {
-      files.push({
-        name: 'Original Image',
-        filename: 'original_image.jpg',
-        url: scanData.image,
-        type: 'Image',
-        description: 'Original wound photograph'
-      });
-    }
-
-    // Segmented image (wound detection result)
-    if (scanData?.processed_image) {
-      files.push({
-        name: 'Segmented Image',
-        filename: 'segmented_wound.jpg',
-        url: scanData.processed_image,
-        type: 'Image',
-        description: 'Wound segmentation result'
-      });
-    }
-
-    // Depth map (8-bit)
-    if (scanData?.depth_map_8bit) {
-      files.push({
-        name: '8-bit Depth Map',
-        filename: 'depth_map_8bit.png',
-        url: scanData.depth_map_8bit,
-        type: 'Image',
-        description: 'ZoeDepth analysis result (8-bit)'
-      });
-    }
-
-    // Depth map (16-bit)
-    if (scanData?.depth_map_16bit) {
-      files.push({
-        name: '16-bit Depth Map',
-        filename: 'depth_map_16bit.png',
-        url: scanData.depth_map_16bit,
-        type: 'Image',
-        description: 'ZoeDepth analysis result (16-bit)'
-      });
-    }
-
-    // STL file
-    if (scanData?.stl_file_url) {
-      const fileSize = scanData?.mesh_metadata?.file_size_mb ? `${scanData.mesh_metadata.file_size_mb} MB` : '';
-      files.push({
-        name: 'STL 3D Model',
-        filename: 'wound_model.stl',
-        url: scanData.stl_file_url,
-        type: '3D Model',
-        description: `3D printable mesh ${fileSize}`.trim()
-      });
-    }
-
-    // STL preview image
-    if (scanData?.stl_preview_url) {
-      files.push({
-        name: 'STL Preview',
-        filename: 'stl_preview.png',
-        url: scanData.stl_preview_url,
-        type: 'Image',
-        description: '3D mesh visualization'
-      });
-    }
-
-    return files;
-  };
-
-  const availableFiles = getAvailableFiles();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -242,7 +237,7 @@ const DownloadFilesScreen = () => {
         {/* Back Button */}
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => navigation.navigate('Patients List')}
+          onPress={() => navigation.navigate('Scan Results', { patientId })}
         >
           <BackArrowIcon />
         </TouchableOpacity>
@@ -250,51 +245,61 @@ const DownloadFilesScreen = () => {
         {/* Title */}
         <Text style={styles.title}>Download Files</Text>
 
-        {/* Success Message */}
-        <View style={styles.successContainer}>
-          <Text style={styles.successTitle}>YOUR FILES ARE READY!</Text>
-          <Text style={styles.successSubtitle}>
-            Processing complete. {availableFiles.length} file{availableFiles.length !== 1 ? 's' : ''} available for download.
-          </Text>
-        </View>
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>Your Files Are Ready</Text>
 
-        {/* Files List */}
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.filesContainer}>
-            {availableFiles.length > 0 ? (
-              availableFiles.map((file, index) => (
-                <View key={index} style={styles.fileItem}>
-                  <View style={styles.fileInfo}>
-                    <Text style={styles.fileName}>{file.name}</Text>
-                    <Text style={styles.fileType}>{file.type}</Text>
-                    <Text style={styles.fileDescription}>{file.description}</Text>
+        {/* STL Files */}
+        {stlFiles.length > 0 ? (
+          <View style={styles.fileContainer}>
+            {stlFiles.map((file, index) => {
+              const currentDate = new Date();
+              const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
+              
+              return (
+                <View key={index} style={styles.scanCard}>
+                  {/* Scan Card Header */}
+                  <View style={styles.scanCardHeader}>
+                    <Text style={styles.scanCardTitle}>
+                      {file.isMainFile ? 'STL File' : 'STL Preview'}
+                    </Text>
+                    <Text style={styles.scanCardDate}>{formattedDate}</Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.downloadButton}
-                    onPress={() => downloadFile(file.url, file.filename)}
-                  >
-                    <Text style={styles.downloadButtonText}>Download</Text>
-                  </TouchableOpacity>
+                  
+                  {/* Inner File Info Box */}
+                  <View style={styles.fileBox}>
+                    <FileIcon />
+                    <View style={styles.fileInfoTextContainer}>
+                      <Text style={styles.fileName}>{file.name}</Text>
+                      <Text style={styles.fileDetails}>{file.type} {file.size}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.downloadButtonRight}
+                      onPress={() => downloadFile(file.url, file.filename)}
+                    >
+                      <DownloadButtonIcon />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              ))
-            ) : (
-              <View style={styles.noFilesContainer}>
-                <Text style={styles.noFilesText}>No files available for download</Text>
-                <Text style={styles.noFilesSubtext}>
-                  Please ensure all processing steps have been completed.
-                </Text>
-              </View>
-            )}
+              );
+            })}
           </View>
-        </ScrollView>
+        ) : (
+          <View style={styles.noFileContainer}>
+            <Text style={styles.noFileText}>No STL files available for download</Text>
+            <Text style={styles.noFileSubtext}>
+              Please ensure all processing steps have been completed.
+            </Text>
+          </View>
+        )}
+
+        {/* Spacer to push download button to bottom */}
+        <View style={styles.spacer} />
 
         {/* Download All Button */}
-        {availableFiles.length > 0 && (
-          <View style={styles.buttonWrapper}>
-            <TouchableOpacity style={styles.downloadAllButton} onPress={downloadAllFiles}>
-              <Text style={styles.downloadAllButtonText}>DOWNLOAD ALL</Text>
-            </TouchableOpacity>
-          </View>
+        {stlFiles.length > 0 && (
+          <TouchableOpacity style={styles.downloadButton} onPress={downloadAllFiles}>
+            <Text style={styles.downloadButtonText}>Download All</Text>
+          </TouchableOpacity>
         )}
       </View>
     </SafeAreaView>
@@ -304,27 +309,27 @@ const DownloadFilesScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FCFFF8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 0 : 20,
+    backgroundColor: '#FCFFF8',
+    padding: 10,
+    borderRadius: 30,
   },
   backButton: {
     position: 'absolute',
-    left: 20,
-    top: Platform.OS === 'ios' ? 50 : 30,
-    zIndex: 1,
+    top: 25,
+    left: 18,
     padding: 10,
+    zIndex: 1,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     textAlign: 'center',
-    marginTop: Platform.OS === 'ios' ? 60 : 40,
-    marginBottom: 20,
+    marginTop: 25,
+    marginBottom: 44,
     color: '#000000',
     fontFamily: Platform.select({
       ios: 'Urbanist',
@@ -332,79 +337,161 @@ const styles = StyleSheet.create({
       default: 'sans-serif',
     }),
   },
-  successContainer: {
-    backgroundColor: '#E8F5E8',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  successTitle: {
+  subtitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2E7D32',
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: 58,
+    marginLeft: 15, // Add left margin to move text to the left
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  fileContainer: {
+    marginBottom: 20, // Reduced margin
+    marginHorizontal: 15,
+  },
+  scanCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  scanCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
-    textAlign: 'center',
+  },
+  scanCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
       default: 'sans-serif',
     }),
   },
-  successSubtitle: {
+  scanCardDate: {
     fontSize: 14,
-    color: '#388E3C',
-    textAlign: 'center',
+    color: '#666666',
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
       default: 'sans-serif',
     }),
   },
-  scrollView: {
-    flex: 1,
+  fileBox: {
+    backgroundColor: '#EEEEEE', 
+    borderRadius: 10, 
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  filesContainer: {
-    paddingBottom: 20,
+  fileInfoTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    marginLeft: 15,
+  },
+  fileName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000000', 
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  fileDetails: {
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 2,
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  downloadButtonRight: {
+    padding: 5,
   },
   fileItem: {
     flexDirection: 'row',
-    backgroundColor: '#F8F9FA',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    backgroundColor: 'rgba(238, 238, 238, 0.93)',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 13,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    height: 56,
+    marginBottom: 10, // Add spacing between multiple files
   },
   fileInfo: {
     flex: 1,
-    marginRight: 15,
-  },
-  fileName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: 4,
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
+    marginLeft: 13,
   },
   fileType: {
-    fontSize: 12,
-    color: '#666666',
-    marginBottom: 2,
+    fontSize: 10.95,
+    fontWeight: '400',
+    color: '#707070',
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
       default: 'sans-serif',
     }),
   },
-  fileDescription: {
-    fontSize: 12,
+  fileSize: {
+    fontSize: 10.95,
+    fontWeight: '400',
+    color: '#707070',
+    position: 'absolute',
+    right: -140, // Position it to the right
+    top: 20,
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  downloadButtonContainer: {
+    marginLeft: 'auto',
+  },
+  spacer: {
+    flex: 1, // This will push the download button to the bottom
+  },
+  noFileContainer: {
+    alignItems: 'center',
+    padding: 40,
+    marginTop: 100,
+  },
+  noFileText: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: Platform.select({
+      ios: 'Urbanist',
+      android: 'Urbanist',
+      default: 'sans-serif',
+    }),
+  },
+  noFileSubtext: {
+    fontSize: 14,
     color: '#888888',
+    textAlign: 'center',
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',
@@ -412,62 +499,26 @@ const styles = StyleSheet.create({
     }),
   },
   downloadButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    backgroundColor: '#27CFA0',
+    borderRadius: 13,
+    width: '90%', // Make it wider like in the image
+    paddingVertical: 15,
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 30, // Add bottom margin for spacing from screen edge
+    shadowColor: '#70E7BB',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.55,
+    shadowRadius: 4,
+    elevation: 4,
   },
   downloadButtonText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
-  },
-  noFilesContainer: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  noFilesText: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 10,
-    textAlign: 'center',
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
-  },
-  noFilesSubtext: {
-    fontSize: 14,
-    color: '#888888',
-    textAlign: 'center',
-    fontFamily: Platform.select({
-      ios: 'Urbanist',
-      android: 'Urbanist',
-      default: 'sans-serif',
-    }),
-  },
-  buttonWrapper: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  downloadAllButton: {
-    backgroundColor: '#2E7D32',
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 25,
-    minWidth: 200,
-    alignItems: 'center',
-  },
-  downloadAllButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '700',
     fontFamily: Platform.select({
       ios: 'Urbanist',
       android: 'Urbanist',

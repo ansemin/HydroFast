@@ -114,76 +114,65 @@ This document serves as a comprehensive guide to the HydroFast wound analysis mo
 **PhotoPreviewScreen.js** → **Backend Communication:**
 - **Navigation Paths:**
   - Retake: `PhotoPreviewScreen` → `CameraScreen` ✅ **VERIFIED: goBack()**
-  - Submit: `PhotoPreviewScreen` → `CroppedOriginalScreen` ✅ **VERIFIED: 'CroppedOriginal'**
+  - Submit: `PhotoPreviewScreen` → `ProcessingScreen` → `CroppedOriginalScreen` ✅ **VERIFIED**
   
 - **Backend API Calls:**
   - `scanService.createScan(formData)` → `POST /api/scans/upload_image/` ✅ **VERIFIED**
-  - ✅ **STEP-BY-STEP**: Only uploads image, no automatic processing
-  - FormData includes image file and patient ID
-  - ✅ **IMPROVED UX**: User controls each processing step
+  - `scanService.processInitialCrop(scanId)` → `POST /api/scans/{id}/process_initial_crop/`
+  - ✅ **GRANULAR**: Uploads image, then finds bbox and crops the original image.
 
-### 4. AI Processing Pipeline Flow ⚠️ **ERRORS FOUND**
+### 4. AI Processing Pipeline Flow ✅ **REFACTORED & VERIFIED**
+
+**PhotoPreviewScreen.js** → **Backend Communication:**
+- **Navigation Paths:**
+  - Retake: `PhotoPreviewScreen` → `CameraScreen`
+  - Submit: `PhotoPreviewScreen` → `ProcessingScreen` → `CroppedOriginalScreen`
+- **Backend API Calls:**
+  - `scanService.createScan(formData)` → `POST /api/scans/upload_image/`
+  - `scanService.processInitialCrop(scanId)` → `POST /api/scans/{id}/process_initial_crop/`
+  - ✅ **GRANULAR**: Uploads image, then finds bbox and crops the original image.
 
 **CroppedOriginalScreen.js** → **Backend Communication:**
 - **Navigation Paths:**
-  - Back: `CroppedOriginalScreen` → `PhotoPreviewScreen` ✅ **VERIFIED: goBack()**
-  - Process: `CroppedOriginalScreen` → `WoundDetectionScreen` ✅ **VERIFIED: 'WoundDetection'**
-  
+  - Back: `CroppedOriginalScreen` → `PhotoPreviewScreen`
+  - Process: `CroppedOriginalScreen` → `ProcessingScreen` → `WoundDetectionScreen`
 - **Backend API Calls:**
-  - ✅ **STEP 1**: `scanService.processWoundDetection(scanId)` → `POST /api/scans/{id}/process_wound_detection/`
-  - ✅ **TRIGGER POINT**: Wound detection + bbox crop processing starts here
-  - Shows original image, processes wound detection on click
+  - `scanService.processCroppedSegmentation(scanId)` → `POST /api/scans/{id}/process_cropped_segmentation/`
+  - ✅ **GRANULAR**: Crops the full segmented image using the saved bounding box.
 
 **WoundDetectionScreen.js** → **Backend Communication:**
 - **Navigation Paths:**
-  - Back: `WoundDetectionScreen` → `CroppedOriginalScreen` ✅ **VERIFIED: goBack()**
-  - Process: `WoundDetectionScreen` → `DepthDetectionScreen` ✅ **UPDATED: Step-by-step flow**
-  
+  - Back: `WoundDetectionScreen` → `CroppedOriginalScreen`
+  - Process: `WoundDetectionScreen` → `ProcessingScreen` → `DepthDetectionScreen`
 - **Backend API Calls:**
-  - ✅ **STEP 2**: `scanService.processDepthAnalysis(scanId)` → `POST /api/scans/{id}/process_depth_analysis/`
-  - ✅ **TRIGGER POINT**: Depth analysis processing starts here
-  - Displays YOLO-segmented wound image
-  - ✅ **STEP-BY-STEP**: Only depth analysis, no mesh generation
+  - `scanService.processDepthAnalysis(scanId)` → `POST /api/scans/{id}/process_depth_analysis/`
+  - ✅ **GRANULAR**: Performs depth analysis on the **cropped original image**.
 
 **DepthDetectionScreen.js** → **Backend Communication:**
 - **Navigation Paths:**
-  - Back: `DepthDetectionScreen` → `WoundDetectionScreen` ✅ **VERIFIED: goBack()**
-  - Process: `DepthDetectionScreen` → `MeshDetectionScreen` ✅ **VERIFIED: 'MeshDetection'**
-  
+  - Back: `DepthDetectionScreen` → `WoundDetectionScreen`
+  - Process: `DepthDetectionScreen` → `ProcessingScreen` → `MeshDetectionScreen`
 - **Backend API Calls:**
-  - ✅ **STEP 3**: `scanService.processMeshGeneration(scanId, 'balanced')` → `POST /api/scans/{id}/process_mesh_generation/`
-  - ✅ **TRIGGER POINT**: STL generation + preview processing starts here
-  - Displays ZoeDepth-generated depth map (8-bit or 16-bit)
-  - ✅ **STEP-BY-STEP**: Mesh generation triggered by user action
+  - `scanService.processMeshGeneration(scanId, 'balanced')` → `POST /api/scans/{id}/process_mesh_generation/`
+  - ✅ **GRANULAR**: Generates the STL file and preview image.
 
 **MeshDetectionScreen.js** → **Backend Communication:**
 - **Navigation Paths:**
-  - Back: `MeshDetectionScreen` → `DepthDetectionScreen` ✅ **VERIFIED: goBack()**
-  - Process: `MeshDetectionScreen` → `DownloadFilesScreen` ✅ **VERIFIED: 'DownloadFiles'**
-  
+  - Back: `MeshDetectionScreen` → `DepthDetectionScreen`
+  - Process: `MeshDetectionScreen` → `DownloadFilesScreen`
 - **Backend API Calls:**
-  - ✅ **STEP 4**: No API calls - displays mesh results generated in DepthDetectionScreen
-  - ✅ **DISPLAY ONLY**: Shows STL preview image from previous step
-  - Displays generated STL mesh preview
-  - ✅ **FINAL STEP**: Navigates to download screen
+  - None. Displays results from the previous step.
 
 **DownloadFilesScreen.js** → **Backend Communication:**
 - **Navigation Paths:**
-  - ✅ **CORRECT UX**: Back: `DownloadFilesScreen` → `PatientsListScreen` **ONLY**
-  - ✅ **APPROPRIATE**: Goes directly to 'Patients List' as end of workflow is logical UX design
-  - Complete: Natural workflow completion point for users
-  
+  - Back: `DownloadFilesScreen` → `PatientsListScreen`
 - **Backend API Calls:**
-  - No additional API calls ✅ **VERIFIED**
-  - Downloads files via direct URL access
-  - Supports individual file and bulk download
+  - None. Provides download links.
 
-⚠️ **ProcessingScreen.js** → **Status: EXISTS but NOT USED** ✅ **VERIFIED**
-- ProcessingScreen component exists and is implemented
-- Registered in App.js navigation as "Processing"
-- **However, no component actually navigates to it**
-- Current flow uses direct screen-to-screen navigation
-- **May be intended for future loading state implementation**
+✅ **ProcessingScreen.js** → **Status: NOW IN USE**
+- `ProcessingScreen` is now used between each step of the AI pipeline to show progress.
+- It takes a `step` parameter to determine which backend service to call.
+- It navigates to the correct screen upon completion.
 
 ## Backend Data Models ✅ **VERIFIED**
 
@@ -228,9 +217,13 @@ class Scan(models.Model):
 - `POST /api/scans/upload_image/` - Upload scan image only ✅ **INDEPENDENT**
 - `GET /api/scans/` - List scans ✅ **VERIFIED: ScanViewSet**
 - `GET /api/scans/?patient={id}` - Get scans for specific patient ✅ **VERIFIED**
-- `POST /api/scans/{id}/process_wound_detection/` - ❌ **MEGA-ENDPOINT**: Wound detection + bbox crop + ZoeDepth + volume estimation
-- `POST /api/scans/{id}/process_depth_analysis/` - ⚠️ **SMART REUSE**: Checks existing depth maps, fallback reprocessing
-- `POST /api/scans/{id}/process_mesh_generation/` - ❌ **PARTIALLY REDUNDANT**: Depth analysis + STL generation + preview
+- `POST /api/scans/{id}/process_initial_crop/` - Segments the full image, finds the bounding box, and crops the *original* image.
+- `POST /api/scans/{id}/process_cropped_segmentation/` - Uses the saved bounding box to crop the full *segmented* image.
+- `POST /api/scans/{id}/process_depth_analysis/` - Performs depth analysis on the cropped original image.
+- `POST /api/scans/{id}/process_mesh_generation/` - Generates the STL file and preview image.
+- `POST /api/scans/{id}/process_wound_detection/` - ❌ **DEPRECATED**: Monolithic endpoint.
+- `POST /api/scans/{id}/process_scan/` - ❌ **DEPRECATED**: Monolithic endpoint.
+
 
 ### AI Model APIs (apps/ai_processing/)
 - `GET /api/aimodels/` - List AI models ✅ **VERIFIED but unused**
@@ -243,95 +236,86 @@ path('api/', include('apps.scans.urls')),      # Registers 'scans' → ScanViewS
 ```
 **All route conflicts eliminated! Apps structure now provides clean, non-conflicting API endpoints.**
 
-## AI Processing Pipeline ⚠️ **BACKEND ARCHITECTURE ISSUE**
+## AI Processing Pipeline ⚠️ **BACKEND ARCHITECTURE REFACTORED**
 
-### ⚠️ **CRITICAL BACKEND LIMITATION**
-**The backend is NOT designed for true step-by-step processing.** The endpoints are **monolithic** and do multiple steps each:
+### ✅ **Granular, Step-by-Step Processing Implemented**
+The backend has been refactored to support a true step-by-step AI processing pipeline. Each step is triggered by a separate API call from the frontend, giving the user full control over the workflow.
 
-### Step 1: Image Upload (PhotoPreviewScreen → CroppedOriginalScreen)
-- **Trigger:** User clicks "Submit" on PhotoPreviewScreen
+### Step 1: Image Upload (PhotoPreviewScreen)
+- **Trigger:** User clicks "Submit" on PhotoPreviewScreen.
 - **Backend Call:** `POST /api/scans/upload_image/`
-- **Processing:** ✅ **Image upload only** (truly independent)
-- **Output:** Basic scan record with image URL
+- **Processing:** ✅ **Image upload only.**
+- **Output:** Basic scan record with `scanId` and `image_url`.
 
-### Step 2: MEGA-PROCESSING (CroppedOriginalScreen → WoundDetectionScreen)
-- **Trigger:** User clicks "Process" on CroppedOriginalScreen
-- **Backend Call:** `POST /api/scans/{id}/process_wound_detection/`
-- **Processing:** ❌ **MASSIVE ENDPOINT DOES EVERYTHING**:
-  1. **Wound segmentation** (YOLO processing)
-  2. **Bbox detection & cropping**
-  3. **ZoeDepth processing** (8-bit & 16-bit depth maps)
-  4. **Volume estimation**
-  5. **Bbox coordinates calculation**
-- **Output:** 
-  - `processed_image` - Segmented wound
-  - `cropped_segmented_path` - Cropped segmented wound
-  - `cropped_image_path` - Cropped original region
-  - `bbox_visualization_path` - Bounding box visualization
-  - `depth_map_8bit` / `depth_map_16bit` - **DEPTH MAPS ALREADY GENERATED**
-  - `volume_estimate` - **VOLUME ALREADY CALCULATED**
+### Step 2: Initial Crop (PhotoPreviewScreen → CroppedOriginalScreen)
+- **Trigger:** After image upload, the `ProcessingScreen` is shown.
+- **Backend Call:** `POST /api/scans/{id}/process_initial_crop/`
+- **Processing:**
+  1. Segments the full original image.
+  2. Detects the bounding box (bbox) from the segmented image.
+  3. Saves the bbox data to the `Scan` model.
+  4. Crops the **original image** using the bbox.
+- **Output:** `cropped_image_path` (URL to the cropped original image).
 
-### Step 3: Smart Reuse (WoundDetectionScreen → DepthDetectionScreen)
-- **Trigger:** User clicks "Process" on WoundDetectionScreen
+### Step 3: Cropped Segmentation (CroppedOriginalScreen → WoundDetectionScreen)
+- **Trigger:** User clicks "Process" on `CroppedOriginalScreen`.
+- **Backend Call:** `POST /api/scans/{id}/process_cropped_segmentation/`
+- **Processing:**
+  1. Retrieves the saved bbox.
+  2. Crops the **full segmented image** (created in the previous step) using the bbox.
+- **Output:** `cropped_segmented_path` (URL to the cropped segmented wound).
+
+### Step 4: Depth Analysis (WoundDetectionScreen → DepthDetectionScreen)
+- **Trigger:** User clicks "Process" on `WoundDetectionScreen`.
 - **Backend Call:** `POST /api/scans/{id}/process_depth_analysis/`
-- **Processing:** ⚠️ **SMART ENDPOINT**: Checks for existing depth maps from Step 2, only reprocesses if missing
-- **Output:**
-  - **Usually**: Returns existing depth maps from Step 2 (no reprocessing)
-  - **Fallback**: Reprocesses if files missing
+- **Processing:**
+  1. Performs ZoeDepth analysis on the **cropped original image**.
+  2. No wound masking is applied.
+- **Output:** `depth_map_8bit`, `depth_map_16bit`, `volume_estimate`, `depth_metadata`.
 
-### Step 4: Independent Mesh Generation (DepthDetectionScreen → MeshDetectionScreen)
-- **Trigger:** User clicks "Process" on DepthDetectionScreen
+### Step 5: Mesh Generation (DepthDetectionScreen → MeshDetectionScreen)
+- **Trigger:** User clicks "Process" on `DepthDetectionScreen`.
 - **Backend Call:** `POST /api/scans/{id}/process_mesh_generation/`
-- **Processing:** ❌ **PARTIALLY REDUNDANT**:
-  1. **Runs its own depth analysis** (redundant with Step 2)
-  2. **STL generation**
-  3. **STL preview generation**
-- **Output:**
-  - `stl_generation.stl_file_url` - Downloadable STL file
-  - `preview_generation.preview_image_url` - STL mesh preview image
-  - `mesh_metadata` - Vertex/face counts, volume data
+- **Processing:**
+  1. Generates the STL mesh from the depth maps.
+  2. Creates a preview image of the STL mesh.
+- **Output:** `stl_generation.stl_file_url`, `preview_generation.preview_image_url`, `mesh_metadata`.
 
-### Step 5: Download Files (MeshDetectionScreen → DownloadFilesScreen)
-- **Trigger:** User clicks "Process" on MeshDetectionScreen
-- **Processing:** Navigation only
-- **Output:** File download interface
+### Step 6: Download Files (MeshDetectionScreen → DownloadFilesScreen)
+- **Trigger:** User clicks "Process" on `MeshDetectionScreen`.
+- **Processing:** Navigation only.
+- **Output:** File download interface.
 
-### ⚠️ **BACKEND ARCHITECTURE IMPLICATIONS**
-1. **Most processing happens in Step 2** (`process_wound_detection`)
-2. **Step 3 usually just returns existing data** (smart reuse)
-3. **Step 4 has some redundant depth processing**
-4. **True step-by-step processing would require backend refactoring**
-
-## Service Layer Architecture 🚨 **CRITICAL ERRORS IN PREVIOUS DOCUMENTATION**
+## Service Layer Architecture ✅ **VERIFIED**
 
 ### authService.js ✅ **VERIFIED**
-- `login(username, password)` - Authenticate user ✅ **FIXED: LoginScreen now correctly uses username**
-- `register(username, email, password)` - Register new user ✅ **FIXED: Now properly used by SignUpScreen**
+- `login(username, password)` - Authenticate user
+- `register(username, email, password)` - Register new user
 - `logout()` - Clear authentication data
 - `getUserInfo()` - Get current user data
 - `isAuthenticated()` - Check authentication status
 
 ### patientService.js ✅ **VERIFIED**
-- `getPatients()` - Fetch patient list ✅ **Used by components (alias for getAllPatients)**
-- `getAllPatients()` - Internal method ✅ **Actual implementation**
+- `getPatients()` - Fetch patient list
+- `getAllPatients()` - Internal method
 - `getPatient(patientId)` - Fetch specific patient
 - `createPatient(patientData)` - Create new patient
 - `updatePatient(patientId, patientData)` - Update patient
 - `deletePatient(patientId)` - Delete patient
 
-### scanService.js ✅ **VERIFIED**
-- `createScan(formData)` - Upload scan image ✅ **VERIFIED**
-- `getAllScans()` - Get all scans ✅ **VERIFIED: Still exists and functional**
-- `getPatientScans(patientId)` - Get scans for patient ✅ **VERIFIED**
-- `processWoundDetection(scanId)` - Step 1 processing ✅ **VERIFIED**
-- `processDepthAnalysis(scanId)` - Step 2 processing ✅ **VERIFIED**
-- `processMeshGeneration(scanId, mode)` - Step 3 processing ✅ **VERIFIED**
-- `processComprehensiveScan(scanId)` - Full pipeline ✅ **VERIFIED: Still exists as legacy method**
+### scanService.js ✅ **VERIFIED & REFACTORED**
+- `createScan(formData)` - Upload scan image
+- `getAllScans()` - Get all scans
+- `getPatientScans(patientId)` - Get scans for patient
+- `processInitialCrop(scanId)` - Step 2 processing
+- `processCroppedSegmentation(scanId)` - Step 3 processing
+- `processDepthAnalysis(scanId)` - Step 4 processing
+- `processMeshGeneration(scanId, mode)` - Step 5 processing
 
 ### services/index.js ✅ **VERIFIED: EXPORTS WORK CORRECTLY**
 ```javascript
 // Line 18 exports existing methods correctly:
-export const { getAllScans, getPatientScans, createScan, processWoundDetection, processDepthAnalysis } = scanService;
+export const { getAllScans, getPatientScans, createScan, processInitialCrop, processCroppedSegmentation, processDepthAnalysis, processMeshGeneration } = scanService;
 // All methods exist and function properly
 ```
 
@@ -349,14 +333,12 @@ export const { getAllScans, getPatientScans, createScan, processWoundDetection, 
 - Token-based authentication with AsyncStorage persistence
 - User-scoped data access (patients and scans tied to authenticated user)
 - Automatic token validation on app launch
-- ❌ **CRITICAL BUG**: Login parameter mismatch will cause authentication failures
 
 ### User Experience
 - Offline-first patient data with refresh on focus
-- Progressive AI processing with step-by-step visualization ✅ **VERIFIED: No intermediate loading screens**
+- Progressive AI processing with step-by-step visualization ✅ **VERIFIED: Intermediate loading screens in use**
 - Comprehensive error handling with user-friendly messages
 - Platform-specific file handling (web vs native)
-- ❌ **DUPLICATE PROCESSING**: Mesh generation called twice in pipeline
 
 ### Data Flow Patterns
 - Form validation before API submission
@@ -367,21 +349,22 @@ export const { getAllScans, getPatientScans, createScan, processWoundDetection, 
 ## Current Status and Next Steps
 
 ### Completed Components ✅
-- Complete authentication flow with backend integration ⚠️ **BUT with critical bugs**
+- Complete authentication flow with backend integration
 - Full patient CRUD operations with validation
 - Image capture and preview with multi-platform support
-- AI processing pipeline with 3-step workflow (but with duplicate processing)
+- **Granular, step-by-step AI processing pipeline implemented**
 - File download and sharing capabilities
 
 ### CRITICAL Issues ✅ **ALL RESOLVED**
-1. **✅ FIXED: Login parameter mismatch** - LoginScreen now uses username instead of email to match authService expectations
-2. **✅ FIXED: SignUpScreen registration** - Implemented complete registration functionality with proper form validation, error handling, and API integration
-3. **✅ FIXED: Backend router conflicts** - Removed legacy coreViews.urls registration to eliminate duplicate route conflicts
-4. **✅ FIXED: Duplicate mesh generation** - Removed redundant processMeshGeneration call from DepthDetectionScreen; now only called in MeshDetectionScreen
-5. **✅ VERIFIED: Services documentation** - Confirmed all service methods exist and function correctly
-6. **✅ CLARIFIED: DownloadFilesScreen navigation** - Current behavior (navigate to Patients List) is correct UX design for completed workflow
-7. **✅ FIXED: Storage inconsistencies** - Resolved redundant storage paths, inconsistent file naming, and scan ID confusion
-8. **✅ FIXED: Duplicate depth processing** - Eliminated redundant depth analysis; now reuses depth maps generated during wound detection
+1. **✅ FIXED: Login parameter mismatch**
+2. **✅ FIXED: SignUpScreen registration**
+3. **✅ FIXED: Backend router conflicts**
+4. **✅ FIXED: Duplicate mesh generation**
+5. **✅ VERIFIED: Services documentation**
+6. **✅ CLARIFIED: DownloadFilesScreen navigation**
+7. **✅ FIXED: Storage inconsistencies**
+8. **✅ FIXED: Duplicate depth processing**
+9. **✅ REFACTORED: Monolithic backend endpoints are now granular**
 
 ## Backend File Storage ✅ **CORRECTED AND OPTIMIZED**
 
@@ -398,11 +381,11 @@ All files are stored in `backend/media/` with consistent database-based scan IDs
 | **STL Preview Images** | `stl_previews/` | `stl_previews/scan_40_20250725_143022_preview.png` |
 
 ### Key Improvements Made
-1. **✅ Unified Storage Paths**: All depth maps now use `depth_maps_bbox/scan_{id}/` structure
-2. **✅ Database-Based IDs**: File storage now uses actual database scan.id instead of filename-based IDs
-3. **✅ Clean File Naming**: Removed redundant prefixes (`depth_8bit.png` instead of `scan_40_depth_8bit.png`)
-4. **✅ Eliminated Redundancy**: Removed legacy `depth_maps/` directory duplication
-5. **✅ Cleanup Command**: Added `cleanup_storage` management command to maintain storage hygiene
+1. **✅ Unified Storage Paths**
+2. **✅ Database-Based IDs**
+3. **✅ Clean File Naming**
+4. **✅ Eliminated Redundancy**
+5. **✅ Cleanup Command**
 
 ### Storage Management
 - **Cleanup Command**: `python manage.py cleanup_storage` (with `--dry-run` option)
@@ -438,52 +421,18 @@ python backend/test/test_full_pipeline.py
 - Comprehensive testing coverage
 
 ### Technical Debt to Address 📝
-- **🚨 URGENT: Backend Architecture Refactoring** - Current monolithic endpoints prevent true step-by-step processing
 - Consolidate duplicate AI processing methods between services ✅ **scanService and aiProcessingService both exist**
 - Standardize image handling across web/native platforms
 - Optimize bundle size and loading performance
 - Remove redundant aiProcessingService (scanService provides all needed functionality)
 
-## ⚠️ **BACKEND ARCHITECTURE RECOMMENDATIONS**
+## ✅ **BACKEND ARCHITECTURE REFACTORED**
 
-### **Current Problem:**
-The backend endpoints are **monolithic** and do multiple processing steps each, making true step-by-step user-controlled processing impossible without frontend workarounds.
+### **Previous Problem:**
+The backend endpoints were **monolithic** and did multiple processing steps each, making true step-by-step user-controlled processing impossible without frontend workarounds.
 
-### **Recommended Solutions:**
-
-#### **Option 1: Create Independent Endpoints** ⭐ **RECOMMENDED**
-```python
-# New truly independent endpoints:
-@action(detail=True, methods=['post'])
-def process_bbox_detection(self, request, pk=None):
-    """Step 1: Just bbox detection and cropping"""
-    
-@action(detail=True, methods=['post']) 
-def process_wound_segmentation(self, request, pk=None):
-    """Step 2: Just wound segmentation on cropped image"""
-    
-@action(detail=True, methods=['post'])
-def process_depth_maps(self, request, pk=None):
-    """Step 3: Just depth map generation"""
-```
-
-#### **Option 2: Add Step Parameters** 
-```python
-# Modify existing endpoint with step control:
-def process_wound_detection(self, request, pk=None):
-    step = request.data.get('step', 'all')  # 'bbox_only', 'segmentation_only', 'all'
-```
-
-#### **Option 3: Frontend Workaround** ✅ **CURRENT IMPLEMENTATION**
-- Work with existing monolithic endpoints
-- Frontend shows step-by-step UI but backend does batch processing
-- Most processing happens in first "Process" click, subsequent clicks reuse data
-
-### **Current Implementation Status:**
-- Using **Option 3** (frontend workaround)
-- `process_wound_detection` does ~80% of the work
-- `process_depth_analysis` smartly reuses existing data
-- `process_mesh_generation` has some redundant depth processing
+### **✅ Solution Implemented:**
+The backend has been refactored with independent, granular endpoints for each step of the AI processing pipeline. The frontend has been updated to call these endpoints sequentially, with a `ProcessingScreen` to provide feedback to the user between steps.
 
 ## Development Guidelines
 
@@ -504,18 +453,15 @@ def process_wound_detection(self, request, pk=None):
 ---
 
 **Next Development Task:** 
-1. **✅ COMPLETED**: All critical authentication and navigation issues fixed
-2. **⚠️ CURRENT**: Backend architecture limitations documented and understood
-3. **DECISION NEEDED**: Choose backend refactoring approach (Options 1-3 above)
-4. STL preview display optimization in MeshDetectionScreen.js
+1. STL preview display optimization in MeshDetectionScreen.js
 
 ## Graph representation ✅ **VERIFIED AND CORRECTED**
 
 ```mermaid
 graph TD
-    A[LoginScreen.js] -->|"🚨 login(email,password) - BROKEN"| B[PatientsListScreen.js]
+    A[LoginScreen.js] -->|Login| B[PatientsListScreen.js]
     A -->|"Sign up here"| C[SignUpScreen.js]
-    C -->|"❌ NO ACTUAL REGISTRATION - just alert"| A
+    C -->|Register| A
     B -->|"+ button"| D[NewPatientFormScreen.js]
     B -->|"patient item click"| E[PatientDetailScreen.js]
     B -->|"back/logout button"| A
@@ -524,29 +470,30 @@ graph TD
     E -->|"camera button"| F[CameraScreen.js]
     E -->|"scan results"| G[ScanResultsScreen.js]
     F -->|"take photo/select image"| H[PhotoPreviewScreen.js]
-    H -->|"submit"| I[CroppedOriginalScreen.js]
-    I -->|"process"| J[WoundDetectionScreen.js]
-    J -->|"process"| K[DepthDetectionScreen.js]
-    K -->|"⚠️ CALLS processMeshGeneration"| L[MeshDetectionScreen.js]
-    L -->|"⚠️ CALLS processMeshGeneration AGAIN"| M[DownloadFilesScreen.js]
+    H -->|"submit"| P[ProcessingScreen.js]
+    P -->|"step: initial_crop"| I[CroppedOriginalScreen.js]
+    I -->|"process"| P2[ProcessingScreen.js]
+    P2 -->|"step: segment_cropped"| J[WoundDetectionScreen.js]
+    J -->|"process"| P3[ProcessingScreen.js]
+    P3 -->|"step: depth_analysis"| K[DepthDetectionScreen.js]
+    K -->|"process"| P4[ProcessingScreen.js]
+    P4 -->|"step: mesh_generation"| L[MeshDetectionScreen.js]
+    L -->|"process"| M[DownloadFilesScreen.js]
     G -->|"back button"| E
-    M -->|"ONLY goes to Patients List"| B
-    
-    %% ProcessingScreen exists but unused
-    P[ProcessingScreen.js] -.->|"UNUSED - EXISTS BUT NO NAVIGATION"| P
+    M -->|"goes to Patients List"| B
     
     %% Backend API Connections (VERIFIED)
-    A -.->|"POST /api/login/ 🚨 username≠email"| N[authService.login]
-    C -.->|"❌ NOT IMPLEMENTED"| O[authService.register]
+    A -.->|"POST /api/login/"| N[authService.login]
+    C -.->|"POST /api/register/"| O[authService.register]
     B -.->|"GET /api/patients/"| PP[patientService.getPatients]
     D -.->|"POST /api/patients/"| Q[patientService.createPatient]
     E -.->|"GET /api/patients/{id}/"| R[patientService.getPatient]
     E -.->|"PUT /api/patients/{id}/"| S[patientService.updatePatient]
     E -.->|"DELETE /api/patients/{id}/"| T[patientService.deletePatient]
     H -.->|"POST /api/scans/upload_image/"| U[scanService.createScan]
-    I -.->|"POST /api/scans/{id}/process_wound_detection/"| V[scanService.processWoundDetection]
-    J -.->|"POST /api/scans/{id}/process_depth_analysis/"| W[scanService.processDepthAnalysis]
-    K -.->|"⚠️ POST /api/scans/{id}/process_mesh_generation/"| X[scanService.processMeshGeneration - FIRST CALL]
-    L -.->|"⚠️ POST /api/scans/{id}/process_mesh_generation/"| Y[scanService.processMeshGeneration - SECOND CALL]
+    P -.->|"POST /api/scans/{id}/process_initial_crop/"| V[scanService.processInitialCrop]
+    P2 -.->|"POST /api/scans/{id}/process_cropped_segmentation/"| W[scanService.processCroppedSegmentation]
+    P3 -.->|"POST /api/scans/{id}/process_depth_analysis/"| X[scanService.processDepthAnalysis]
+    P4 -.->|"POST /api/scans/{id}/process_mesh_generation/"| Y[scanService.processMeshGeneration]
     G -.->|"GET /api/scans/?patient={id} - PLACEHOLDER DATA"| Z[scanService.getPatientScans]
 ```

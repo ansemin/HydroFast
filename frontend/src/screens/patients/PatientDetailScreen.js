@@ -31,8 +31,10 @@ const PatientDetailScreen = ({ route, navigation }) => {
 
   const fetchPatientDetails = async () => {
     try {
+      console.log(`[PatientDetailScreen] Fetching details for patient ID: ${patientId}`);
       setIsLoading(true);
       const patientData = await patientService.getPatient(patientId);
+      console.log(`[PatientDetailScreen] Successfully fetched patient details for: ${patientData.first_name} ${patientData.last_name}`);
       setPatient(patientData);
       
       // Set the form states
@@ -43,27 +45,68 @@ const PatientDetailScreen = ({ route, navigation }) => {
       
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching patient details:', error);
+      console.error('[PatientDetailScreen] Error fetching patient details:', error);
       Alert.alert('Error', 'Failed to load patient details.');
       setIsLoading(false);
     }
   };
 
   const handleEdit = () => {
+    console.log(`[PatientDetailScreen] User initiated edit mode for patient: ${patient?.first_name} ${patient?.last_name}`);
     setIsEditing(true);
   };
 
   const handleSave = async () => {
+    console.log('[PatientDetailScreen] User initiated save operation');
+    
+    // Validate input lengths
+    if (contactNo.length > 25) {
+      Alert.alert('Validation Error', 'Contact number must be no more than 25 characters.');
+      return;
+    }
+
+    if (firstName.trim().length === 0) {
+      Alert.alert('Validation Error', 'First name is required.');
+      return;
+    }
+
+    if (lastName.trim().length === 0) {
+      Alert.alert('Validation Error', 'Last name is required.');
+      return;
+    }
+
+    if (nric.trim().length === 0) {
+      Alert.alert('Validation Error', 'NRIC/Passport No. is required.');
+      return;
+    }
+
+    // Check if any changes were actually made
+    const hasChanges = 
+      firstName.trim() !== (patient.first_name || '') ||
+      lastName.trim() !== (patient.last_name || '') ||
+      nric.trim() !== (patient.nric || '') ||
+      contactNo.trim() !== (patient.contact_no || '');
+
+    if (!hasChanges) {
+      console.log('[PatientDetailScreen] No changes detected, exiting edit mode without API call');
+      setIsEditing(false);
+      return;
+    }
+
+    console.log('[PatientDetailScreen] Changes detected, proceeding with save operation');
+
     try {
       const updatedPatient = {
-        first_name: firstName,
-        last_name: lastName,
-        nric: nric,
-        contact_no: contactNo || null,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        nric: nric.trim(),
+        contact_no: contactNo.trim() || null,
         details: '',
       };
 
+      console.log('[PatientDetailScreen] Sending update request to server');
       const result = await patientService.updatePatient(patientId, updatedPatient);
+      console.log('[PatientDetailScreen] Patient update successful');
       setPatient(result);
       setIsEditing(false);
       
@@ -74,6 +117,7 @@ const PatientDetailScreen = ({ route, navigation }) => {
           { 
             text: 'OK',
             onPress: () => {
+              console.log('[PatientDetailScreen] Navigating back to Patients List after successful update');
               navigation.goBack();
               setTimeout(() => {
                 navigation.navigate('Patients List');
@@ -83,7 +127,7 @@ const PatientDetailScreen = ({ route, navigation }) => {
         ]
       );
     } catch (error) {
-      console.error('Error updating patient:', error);
+      console.error('[PatientDetailScreen] Error updating patient:', error);
       
       if (error.response && error.response.data) {
         const serverErrors = error.response.data;
@@ -99,6 +143,7 @@ const PatientDetailScreen = ({ route, navigation }) => {
   };
 
   const handleCancel = () => {
+    console.log('[PatientDetailScreen] User cancelled edit operation, reverting changes');
     setFirstName(patient.first_name || '');
     setLastName(patient.last_name || '');
     setNric(patient.nric || '');
@@ -107,6 +152,7 @@ const PatientDetailScreen = ({ route, navigation }) => {
   };
 
   const handleDelete = () => {
+    console.log(`[PatientDetailScreen] User initiated delete operation for patient: ${patient?.first_name} ${patient?.last_name}`);
     Alert.alert(
       "Confirm Delete",
       "Are you sure you want to delete this patient? This action cannot be undone.",
@@ -117,12 +163,17 @@ const PatientDetailScreen = ({ route, navigation }) => {
           style: "destructive",
           onPress: async () => {
             try {
+              console.log('[PatientDetailScreen] Proceeding with patient deletion');
               await patientService.deletePatient(patientId);
+              console.log('[PatientDetailScreen] Patient deletion successful');
               Alert.alert('Success', 'Patient deleted successfully!', [
-                { text: 'OK', onPress: () => navigation.navigate('Patients List') }
+                { text: 'OK', onPress: () => {
+                  console.log('[PatientDetailScreen] Navigating to Patients List after deletion');
+                  navigation.navigate('Patients List');
+                }}
               ]);
             } catch (error) {
-              console.error('Error deleting patient:', error);
+              console.error('[PatientDetailScreen] Error deleting patient:', error);
               Alert.alert('Error', 'Failed to delete patient.');
             }
           }
@@ -132,10 +183,12 @@ const PatientDetailScreen = ({ route, navigation }) => {
   };
 
   const handleCamera = () => {
+    console.log(`[PatientDetailScreen] User navigating to Camera Page for patient: ${patient?.first_name} ${patient?.last_name} (ID: ${patientId})`);
     navigation.navigate('Camera Page', { patientId });
   };
 
   const handleViewScans = () => {
+    console.log(`[PatientDetailScreen] User navigating to Scan Results for patient: ${patient?.first_name} ${patient?.last_name} (ID: ${patientId})`);
     navigation.navigate('Scan Results', { patientId });
   };
 
@@ -173,6 +226,7 @@ const PatientDetailScreen = ({ route, navigation }) => {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name"
+              maxLength={50}
             />
           ) : (
             <Text style={styles.fieldValue}>{patient?.first_name}</Text>
@@ -188,6 +242,7 @@ const PatientDetailScreen = ({ route, navigation }) => {
               value={lastName}
               onChangeText={setLastName}
               placeholder="Enter last name"
+              maxLength={50}
             />
           ) : (
             <Text style={styles.fieldValue}>{patient?.last_name}</Text>
@@ -219,6 +274,8 @@ const PatientDetailScreen = ({ route, navigation }) => {
               value={contactNo}
               onChangeText={setContactNo}
               placeholder="Enter contact number"
+              maxLength={25}
+              keyboardType="phone-pad"
             />
           ) : (
             <Text style={styles.fieldValue}>{patient?.contact_no || ''}</Text>

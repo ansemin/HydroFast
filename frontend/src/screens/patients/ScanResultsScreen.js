@@ -8,13 +8,9 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
-  Image,
   Alert
 } from 'react-native';
-import { Svg, Path } from 'react-native-svg';
-import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import { Svg, Path, Rect } from 'react-native-svg';
 
 // Back Arrow SVG Component
 function BackArrowIcon() {
@@ -25,9 +21,28 @@ function BackArrowIcon() {
   );
 }
 
-// --- Asset Imports ---
-const leftDownloadIcon = require('../../assets/images/download_icon_green_left.png');
-const rightDownloadIcon = require('../../assets/images/download_icon_white_right.png');
+// Green Download Icon SVG Component (left icon)
+function LeftDownloadIcon() {
+  return (
+    <Svg width="35" height="35" viewBox="0 0 40 40" fill="none">
+      <Rect width="40" height="40" rx="6" fill="#27CF9F"/>
+      <Path d="M20.0005 18.019L19.9997 24.5M19.9997 24.5C20.3733 24.505 20.7418 24.2482 21.0137 23.9348L22.8346 21.8927M19.9997 24.5C19.6394 24.4952 19.2743 24.2398 18.9858 23.9348L17.1543 21.8927" stroke="white" strokeWidth="1.71836" strokeLinecap="round"/>
+      <Path d="M23.4325 10.5726L23.4325 13.7229C23.4325 14.803 23.4325 15.343 23.768 15.6785C24.1035 16.0141 24.6436 16.0141 25.7236 16.0141L28.0612 16.0141" stroke="white" strokeWidth="1.71836"/>
+      <Path d="M14.291 10.8594H23.9482C24.4269 10.8595 24.8741 11.0988 25.1396 11.4971L27.5107 15.0547C27.6675 15.2899 27.7519 15.566 27.752 15.8486V27.209C27.7519 27.9998 27.1101 28.6406 26.3193 28.6406H14.291C13.5003 28.6406 12.8594 27.9997 12.8594 27.209V12.291C12.8594 11.5003 13.5003 10.8594 14.291 10.8594Z" stroke="white" strokeWidth="1.71836"/>
+    </Svg>
+  );
+}
+
+// White Download Icon SVG Component (right icon)
+function RightDownloadIcon() {
+  return (
+    <Svg width="35" height="35" viewBox="0 0 40 40" fill="none">
+      <Rect width="40" height="40" rx="20" fill="#FCFFF8"/>
+      <Path d="M20.0002 22.069V12.4138M20.0002 22.069C18.8412 22.069 16.6759 18.8036 15.8623 17.9756M20.0002 22.069C21.1592 22.069 23.3246 18.8036 24.1382 17.9756" stroke="#707070" strokeWidth="1.58621" strokeLinecap="round" strokeLinejoin="round"/>
+      <Path d="M28.6441 23.7241C28.6441 26.3488 28.0964 26.8965 25.4717 26.8965H14.897C12.2724 26.8965 11.7246 26.3488 11.7246 23.7241" stroke="#707070" strokeWidth="1.58621" strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  );
+}
 
 // Reference the same ZIP file asset for download demo
 // const zipAssetModule = require('../../Images/0138_z0.40_mesh.zip');
@@ -118,7 +133,7 @@ const ScanResultsScreen = ({ route, navigation }) => {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('Patient Detail', { patientId })}
           >
             <BackArrowIcon />
           </TouchableOpacity>
@@ -144,7 +159,7 @@ const ScanResultsScreen = ({ route, navigation }) => {
               
               {/* Inner File Info Box */}
               <View style={styles.fileBox}>
-                <Image source={leftDownloadIcon} style={styles.fileIconLeft} />
+                <LeftDownloadIcon />
                 <View style={styles.fileInfoTextContainer}>
                   <Text style={styles.fileName}>{scan.fileName}</Text>
                   <Text style={styles.fileDetails}>{scan.fileType} {scan.fileSize}</Text> 
@@ -153,7 +168,7 @@ const ScanResultsScreen = ({ route, navigation }) => {
                   style={styles.downloadButtonRight}
                   onPress={() => Alert.alert("Download Disabled", "This feature is temporarily disabled.")}
                 >
-                  <Image source={rightDownloadIcon} style={styles.fileIconRight} />
+                  <RightDownloadIcon />
                 </TouchableOpacity>
               </View>
             </View>
@@ -242,15 +257,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  fileIconLeft: {
-    width: 35,
-    height: 35,
-    resizeMode: 'contain', 
-    marginRight: 15,
-  },
   fileInfoTextContainer: {
     flex: 1,
     justifyContent: 'center',
+    marginLeft: 15,
   },
   fileName: {
     fontSize: 14,
@@ -264,11 +274,6 @@ const styles = StyleSheet.create({
   },
   downloadButtonRight: {
     padding: 5,
-  },
-  fileIconRight: {
-    width: 35,
-    height: 35,
-    resizeMode: 'contain',
   },
 });
 

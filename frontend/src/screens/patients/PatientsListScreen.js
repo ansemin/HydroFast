@@ -38,12 +38,14 @@ const PatientsListScreen = ({navigation, route}) => {
 
   // Function to fetch patients data
   const fetchPatients = async () => {
+    console.log('[PatientsListScreen] Fetching patients list from server...');
     setIsLoading(true);
     try {
       const patients = await patientService.getPatients();
+      console.log(`[PatientsListScreen] Successfully fetched ${patients.length} patients from server`);
       setPatients(patients);
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error('[PatientsListScreen] Error fetching patients:', error);
     } finally {
       setIsLoading(false);
     }
@@ -51,16 +53,19 @@ const PatientsListScreen = ({navigation, route}) => {
 
   // Initial fetch on component mount
   useEffect(() => {
+    console.log('[PatientsListScreen] Component mounted, performing initial patient fetch...');
     fetchPatients();
   }, []);
 
   // Refresh patient list when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
+      console.log('[PatientsListScreen] Screen focused, refreshing patient list...');
       // Fetch patients when the screen comes into focus
       fetchPatients();
       
       return () => {
+        console.log('[PatientsListScreen] Screen unfocused');
         // This is the cleanup function
         // No need to do anything here
       };
@@ -92,15 +97,20 @@ const PatientsListScreen = ({navigation, route}) => {
   };
 
   const handleLogout = async () => {
+    console.log('[PatientsListScreen] User initiated logout...');
     try {
       await logout(); // This will clear the auth tokens from AsyncStorage
+      console.log('[PatientsListScreen] Logout successful, clearing auth tokens');
       Alert.alert(
         "Logged Out",
         "You have been successfully logged out.",
-        [{ text: "OK", onPress: () => navigation.replace('Login') }]
+        [{ text: "OK", onPress: () => {
+          console.log('[PatientsListScreen] Navigating to Login screen after logout');
+          navigation.replace('Login');
+        }}]
       );
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[PatientsListScreen] Logout error:', error);
       Alert.alert("Error", "Failed to log out. Please try again.");
     }
   };
@@ -164,6 +174,9 @@ const PatientsListScreen = ({navigation, route}) => {
               name={`${patient.first_name || ''} ${patient.last_name || ''}`}
               id={patient.nric}
               onPress={() => {
+                const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
+                console.log(`[PatientsListScreen] Patient selected: "${patientName}" (ID: ${patient.id}, NRIC: ${patient.nric})`);
+                console.log(`[PatientsListScreen] Navigating to Patient Detail screen for patient: ${patientName}`);
                 // Navigate to Patient Detail page with patient ID
                 navigation.navigate('Patient Detail', { patientId: patient.id });
               }}
