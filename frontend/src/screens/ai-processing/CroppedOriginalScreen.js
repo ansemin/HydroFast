@@ -23,69 +23,35 @@ const CroppedOriginalScreen = () => {
   
   const handleProcess = async () => {
     try {
-      console.log('🚀 [CroppedOriginalScreen] Starting bbox detection process...');
-      console.log('🆔 [CroppedOriginalScreen] Scan ID:', scanId);
-      console.log('👤 [CroppedOriginalScreen] Patient ID:', patientId);
-      console.log('📦 [CroppedOriginalScreen] Current scan data keys:', Object.keys(scanData || {}));
+      console.log('🚀 [CroppedOriginalScreen] Process Button Pressed.');
+      console.log('   - Current Scan ID:', scanId);
+      console.log(`   - Navigating to ProcessingScreen with step: 'segment_cropped'`);
       
-      // Check that wound segmentation results are available
-      console.log('🔍 [CroppedOriginalScreen] Checking wound segmentation results:');
-      if (scanData?.processed_image) {
-        console.log('  ✅ Processed/segmented image:', scanData.processed_image);
-      } else {
-        console.log('  ⚠️ No processed image found in scan data');
-      }
-      
-      console.log('🧭 [CroppedOriginalScreen] Navigating to ProcessingScreen for bbox detection...');
-      
-      // Navigate to ProcessingScreen for bbox detection (Step 2 of processing)
       navigation.navigate('Processing', { 
-        step: 'bbox_detection',
+        step: 'segment_cropped',
         scanId: scanId,
-        scanData: scanData, // Pass current scan data
+        scanData: scanData,
         patientId: patientId 
       });
-      
-      console.log('✅ [CroppedOriginalScreen] Navigation completed - handed off to ProcessingScreen');
+      console.log('✅ [CroppedOriginalScreen] Navigation to ProcessingScreen complete.');
     } catch (error) {
-      console.error('❌ [CroppedOriginalScreen] Error navigating to processing:', error);
-      console.error('❌ [CroppedOriginalScreen] Error details:', {
-        message: error.message,
-        scanId: scanId,
-        patientId: patientId
-      });
-      Alert.alert('Error', `Failed to start bbox detection: ${error.message}`);
+      console.error('❌ [CroppedOriginalScreen] An error occurred in handleProcess:', error);
+      Alert.alert('Navigation Error', `Failed to start next processing step: ${error.message}`);
     }
   };
 
-  // Determine image source - use segmented image from wound segmentation
+  // This screen should display the cropped *original* image from the initial processing step.
   const getImageSource = () => {
-    console.log('🔍 [CroppedOriginalScreen] Determining image source...');
-    console.log('📦 [CroppedOriginalScreen] Available scanData keys:', Object.keys(scanData || {}));
+    console.log('🔍 [CroppedOriginalScreen] Component Rendered. Determining image source...');
+    console.log(`   - Available ScanData Keys: ${Object.keys(scanData || {}).join(', ')}`);
     
-    // Priority 1: Use processed/segmented image from wound segmentation step
-    if (scanData?.processed_image) {
-      console.log('🎯 [CroppedOriginalScreen] Using processed/segmented image from wound segmentation:', scanData.processed_image);
-      return { uri: scanData.processed_image };
+    if (scanData?.cropped_image_path) {
+      console.log('🎯 [CroppedOriginalScreen] Found cropped_image_path:', scanData.cropped_image_path);
+      return { uri: scanData.cropped_image_path };
     }
     
-    // Priority 2: Use original image as fallback
-    if (scanData?.image) {
-      console.log('📷 [CroppedOriginalScreen] Using original uploaded image (fallback):', scanData.image);
-      return { uri: scanData.image };
-    } 
-    
-    // Fallback: Static image
-    console.log('⚠️ [CroppedOriginalScreen] No processed images found, using fallback');
-    console.log('📋 [CroppedOriginalScreen] Available fields:');
-    console.log('  - processed_image:', scanData?.processed_image);
-    console.log('  - image:', scanData?.image);
-    
-    if (scanData) {
-      console.log('🔍 [CroppedOriginalScreen] Full scanData structure:');
-      console.log(JSON.stringify(scanData, null, 2));
-    }
-    
+    console.log('⚠️ [CroppedOriginalScreen] cropped_image_path not found in scanData. Using fallback image.');
+    console.log('   - Full scanData for debugging:', JSON.stringify(scanData, null, 2));
     return fallbackOriginalImage;
   };
 
@@ -104,7 +70,7 @@ const CroppedOriginalScreen = () => {
         {/* Title */}
         <Text style={styles.title}>Cropped Original</Text>
 
-        {/* Image Preview - Using fixed dimensions */}
+        {/* Image Preview */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
             <Image source={getImageSource()} style={styles.image} />
@@ -113,7 +79,6 @@ const CroppedOriginalScreen = () => {
         
         {/* Action Button */}
         <View style={styles.buttonWrapper}>
-          {/* Single centered button */}
           <TouchableOpacity style={styles.processButton} onPress={handleProcess}>
             <Text style={styles.buttonText}>Process</Text>
           </TouchableOpacity>

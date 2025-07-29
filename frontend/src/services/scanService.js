@@ -34,104 +34,64 @@ const createScan = async (formData) => {
   }
 };
 
-// NEW GRANULAR: Step 1 - YOLO wound segmentation only
-const processWoundSegmentation = async (scanId) => {
+// GRANULAR 1.1: Segments, finds bbox, crops original image
+const processInitialCrop = async (scanId) => {
   try {
-    console.log(`🤖 [Frontend] Starting YOLO wound segmentation for scan ${scanId}`);
-    
-    const response = await api.post(`/scans/${scanId}/process_wound_segmentation/`, {}, {
-      timeout: 60000, // 1 minute timeout for YOLO segmentation
+    console.log(`🚀 [Frontend] Step 1.1: Starting initial crop for scan ${scanId}`);
+    const response = await api.post(`/scans/${scanId}/process_initial_crop/`, {}, {
+      timeout: 180000, // 3 minutes
     });
-    
-    console.log('✅ [Frontend] YOLO wound segmentation completed successfully');
-    console.log('🎯 [Frontend] Generated segmented image:', response.data.processed_image);
-    
+    console.log('✅ [Frontend] Step 1.1 Initial crop successful.');
     return response.data;
   } catch (error) {
-    console.error('❌ [Frontend] Error processing wound segmentation:', error);
-    if (error.code === 'ECONNABORTED') {
-      console.error('⏱️ [Frontend] Request timed out - YOLO segmentation taking longer than expected');
-    }
+    console.error('❌ [Frontend] Error during initial crop:', error);
     throw error;
   }
 };
 
-// NEW GRANULAR: Step 2 - Bbox detection and cropping only
-const processBboxDetection = async (scanId) => {
+// GRANULAR 1.2: Crops the segmented image using saved bbox
+const processCroppedSegmentation = async (scanId) => {
   try {
-    console.log(`📦 [Frontend] Starting bbox detection and cropping for scan ${scanId}`);
-    
-    const response = await api.post(`/scans/${scanId}/process_bbox_detection/`, {}, {
-      timeout: 60000, // 1 minute timeout for bbox detection
+    console.log(`🚀 [Frontend] Step 1.2: Starting cropped segmentation for scan ${scanId}`);
+    const response = await api.post(`/scans/${scanId}/process_cropped_segmentation/`, {}, {
+      timeout: 60000, // 1 minute
     });
-    
-    console.log('✅ [Frontend] Bbox detection and cropping completed successfully');
-    console.log('🔧 [Frontend] Generated files:', {
-      cropped_image_path: response.data.cropped_image_path,
-      cropped_segmented_path: response.data.cropped_segmented_path,
-      bbox_visualization_path: response.data.bbox_visualization_path
-    });
-    
+    console.log('✅ [Frontend] Step 1.2 Cropped segmentation successful.');
     return response.data;
   } catch (error) {
-    console.error('❌ [Frontend] Error processing bbox detection:', error);
-    if (error.code === 'ECONNABORTED') {
-      console.error('⏱️ [Frontend] Request timed out - bbox detection taking longer than expected');
-    }
+    console.error('❌ [Frontend] Error during cropped segmentation:', error);
     throw error;
   }
 };
 
-// SIMPLIFIED: Step 3 - ZoeDepth processing only
+// GRANULAR 3: ZoeDepth processing on cropped original
 const processDepthAnalysis = async (scanId) => {
   try {
-    console.log(`🔍 [Frontend] Starting ZoeDepth analysis for scan ${scanId}`);
-    
+    console.log(`🚀 [Frontend] Step 3: Starting ZoeDepth analysis for scan ${scanId}`);
     const response = await api.post(`/scans/${scanId}/process_depth_analysis/`, {}, {
-      timeout: 300000, // 5 minutes timeout for ZoeDepth processing
+      timeout: 300000, // 5 minutes
     });
-    
-    console.log('✅ [Frontend] ZoeDepth analysis completed successfully');
-    console.log('📊 [Frontend] Depth results:', {
-      depth_map_8bit: response.data.depth_map_8bit,
-      depth_map_16bit: response.data.depth_map_16bit,
-      volume_estimate: response.data.depth_metadata?.volume_estimate?.total_volume
-    });
-    
+    console.log('✅ [Frontend] Step 3 ZoeDepth analysis successful.');
     return response.data;
   } catch (error) {
-    console.error('❌ [Frontend] Error processing depth analysis:', error);
-    if (error.code === 'ECONNABORTED') {
-      console.error('⏱️ [Frontend] Request timed out - ZoeDepth processing taking longer than expected');
-    }
+    console.error('❌ [Frontend] Error during depth analysis:', error);
     throw error;
   }
 };
 
-// SIMPLIFIED: Step 4 - Mesh and preview generation only
+// GRANULAR 4: Mesh and preview generation
 const processMeshGeneration = async (scanId, visualization_mode = 'balanced') => {
   try {
-    console.log(`🏗️ [Frontend] Starting mesh generation for scan ${scanId} with mode: ${visualization_mode}`);
-    
+    console.log(`🚀 [Frontend] Step 4: Starting mesh generation for scan ${scanId}`);
     const response = await api.post(`/scans/${scanId}/process_mesh_generation/`, {
       visualization_mode
     }, {
-      timeout: 180000, // 3 minutes timeout for mesh generation
+      timeout: 180000, // 3 minutes
     });
-    
-    console.log('✅ [Frontend] Mesh generation completed successfully');
-    console.log('📁 [Frontend] Mesh results:', {
-      stl_file_url: response.data.stl_generation?.stl_file_url,
-      preview_image_url: response.data.preview_generation?.preview_image_url,
-      visualization_mode: response.data.stl_generation?.visualization_mode
-    });
-    
+    console.log('✅ [Frontend] Step 4 Mesh generation successful.');
     return response.data;
   } catch (error) {
-    console.error('❌ [Frontend] Error processing mesh generation:', error);
-    if (error.code === 'ECONNABORTED') {
-      console.error('⏱️ [Frontend] Request timed out - mesh generation taking longer than expected');
-    }
+    console.error('❌ [Frontend] Error during mesh generation:', error);
     throw error;
   }
 };
@@ -140,8 +100,8 @@ export const scanService = {
   getAllScans,
   getPatientScans,
   createScan,
-  processWoundSegmentation, // NEW: YOLO segmentation only
-  processBboxDetection,     // NEW: Bbox detection and cropping only
-  processDepthAnalysis,     // SIMPLIFIED: ZoeDepth only
-  processMeshGeneration,    // SIMPLIFIED: Mesh and preview only
+  processInitialCrop,
+  processCroppedSegmentation,
+  processDepthAnalysis,
+  processMeshGeneration,
 }; 

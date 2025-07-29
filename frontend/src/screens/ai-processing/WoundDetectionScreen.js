@@ -23,90 +23,35 @@ const WoundDetectionScreen = () => {
   
   const handleProcess = async () => {
     try {
-      console.log('🚀 [WoundDetectionScreen] Starting depth analysis process...');
-      console.log('🆔 [WoundDetectionScreen] Scan ID:', scanId);
-      console.log('👤 [WoundDetectionScreen] Patient ID:', patientId);
-      console.log('📦 [WoundDetectionScreen] Current scan data keys:', Object.keys(scanData || {}));
-      
-      // Check what bbox detection outputs we have
-      console.log('🔍 [WoundDetectionScreen] Checking available bbox detection outputs:');
-      if (scanData?.processed_image) {
-        console.log('  ✅ Processed/segmented image:', scanData.processed_image);
-      }
-      if (scanData?.cropped_segmented_path) {
-        console.log('  ✅ Cropped segmented image:', scanData.cropped_segmented_path);
-      }
-      if (scanData?.cropped_image_path) {
-        console.log('  ✅ Cropped original image:', scanData.cropped_image_path);
-      }
-      if (scanData?.bbox_visualization_path) {
-        console.log('  ✅ Bbox visualization:', scanData.bbox_visualization_path);
-      }
-      
-      // Validate that bbox detection was completed
-      if (!scanData?.cropped_segmented_path && !scanData?.processed_image) {
-        console.log('⚠️ [WoundDetectionScreen] Warning: No bbox detection or segmentation results found in scanData');
-        console.log('📋 [WoundDetectionScreen] This might indicate an issue with the previous processing step');
-      }
-      
-      console.log('🧭 [WoundDetectionScreen] Navigating to ProcessingScreen for depth analysis...');
-      
-      // Navigate to ProcessingScreen for depth analysis (Step 3 of processing)
+      console.log('🚀 [WoundDetectionScreen] Process Button Pressed.');
+      console.log('   - Current Scan ID:', scanId);
+      console.log(`   - Navigating to ProcessingScreen with step: 'depth_analysis'`);
+
       navigation.navigate('Processing', { 
         step: 'depth_analysis',
         scanId: scanId,
-        scanData: scanData, // Pass current scan data
+        scanData: scanData,
         patientId: patientId 
       });
-      
-      console.log('✅ [WoundDetectionScreen] Navigation completed - handed off to ProcessingScreen');
+      console.log('✅ [WoundDetectionScreen] Navigation to ProcessingScreen complete.');
     } catch (error) {
-      console.error('❌ [WoundDetectionScreen] Error navigating to processing:', error);
-      console.error('❌ [WoundDetectionScreen] Error details:', {
-        message: error.message,
-        scanId: scanId,
-        patientId: patientId
-      });
-      Alert.alert('Error', `Failed to start depth analysis: ${error.message}`);
+      console.error('❌ [WoundDetectionScreen] An error occurred in handleProcess:', error);
+      Alert.alert('Navigation Error', `Failed to start depth analysis: ${error.message}`);
     }
   };
 
-  // Determine image source - use cropped segmented image from bbox workflow
+  // This screen should display the cropped *segmented* image.
   const getImageSource = () => {
-    console.log('🔍 [WoundDetectionScreen] Determining image source...');
-    console.log('📦 [WoundDetectionScreen] Available scanData keys:', Object.keys(scanData || {}));
-    
-    // Priority 1: Use cropped segmented image from bbox workflow (the main goal)
+    console.log('🔍 [WoundDetectionScreen] Component Rendered. Determining image source...');
+    console.log(`   - Available ScanData Keys: ${Object.keys(scanData || {}).join(', ')}`);
+
     if (scanData?.cropped_segmented_path) {
-      console.log('✂️ [WoundDetectionScreen] Using cropped segmented image:', scanData.cropped_segmented_path);
+      console.log('🎯 [WoundDetectionScreen] Found cropped_segmented_path:', scanData.cropped_segmented_path);
       return { uri: scanData.cropped_segmented_path };
     }
     
-    // Priority 2: Use cropped image path (fallback from bbox workflow)
-    if (scanData?.cropped_image_path) {
-      console.log('📷 [WoundDetectionScreen] Using cropped original image:', scanData.cropped_image_path);
-      return { uri: scanData.cropped_image_path };
-    }
-    
-    // Priority 3: Use processed/segmented image if no cropped version available
-    if (scanData?.processed_image) {
-      console.log('🎯 [WoundDetectionScreen] Using processed/segmented image:', scanData.processed_image);
-      return { uri: scanData.processed_image };
-    } 
-    
-    // Priority 4: Use original image if no processed image available
-    if (scanData?.image) {
-      console.log('📷 [WoundDetectionScreen] Using original image (fallback):', scanData.image);
-      return { uri: scanData.image };
-    } 
-    
-    // Fallback: Static image
-    console.log('⚠️ [WoundDetectionScreen] No processed images found, using fallback');
-    console.log('📋 [WoundDetectionScreen] Available fields:');
-    console.log('  - cropped_segmented_path:', scanData?.cropped_segmented_path);
-    console.log('  - cropped_image_path:', scanData?.cropped_image_path);
-    console.log('  - processed_image:', scanData?.processed_image);
-    console.log('  - image:', scanData?.image);
+    console.log('⚠️ [WoundDetectionScreen] cropped_segmented_path not found in scanData. Using fallback image.');
+    console.log('   - Full scanData for debugging:', JSON.stringify(scanData, null, 2));
     return fallbackWoundImage;
   };
 
@@ -114,7 +59,6 @@ const WoundDetectionScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.container}>
-        {/* Back Button */}
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -122,19 +66,15 @@ const WoundDetectionScreen = () => {
           <BackArrowIcon />
         </TouchableOpacity>
 
-        {/* Title */}
         <Text style={styles.title}>Wound Detection</Text>
 
-        {/* Image Preview - Using fixed dimensions */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
             <Image source={getImageSource()} style={styles.image} />
           </View>
         </View>
         
-        {/* Action Button */}
         <View style={styles.buttonWrapper}>
-          {/* Single centered button */}
           <TouchableOpacity style={styles.processButton} onPress={handleProcess}>
             <Text style={styles.buttonText}>Process</Text>
           </TouchableOpacity>

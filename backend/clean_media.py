@@ -308,7 +308,7 @@ Examples:
         help='Ask for confirmation before deleting each category'
     )
     parser.add_argument(
-        '--force', '-y',
+        '--force',
         action='store_true',
         help='Delete files without any confirmation (use carefully!)'
     )
