@@ -44,7 +44,7 @@ const api = axios.create({
 // Add a request interceptor to include the auth token in requests
 api.interceptors.request.use(
   async (config) => {
-    console.log(`Making ${config.method.toUpperCase()} request to: ${config.baseURL}${config.url}`); // Debug log
+    console.log(`🚀 Making ${config.method.toUpperCase()} request to: ${config.baseURL}${config.url}`);
     const token = await AsyncStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Token ${token}`;
@@ -59,7 +59,19 @@ api.interceptors.request.use(
 // Add a response interceptor for debugging
 api.interceptors.response.use(
   (response) => {
-    console.log('Response received:', response.status);
+    console.log(`✅ Response received: ${response.status} for ${response.config.method.toUpperCase()} ${response.config.url}`);
+    
+    // Only log response data for small responses or specific endpoints
+    if (response.config.url?.includes('/patients/') && response.config.method === 'get' && !response.config.url.match(/\/patients\/\d+\/$/)) {
+      // For GET /patients/ (list all patients), log summary instead of full data
+      if (Array.isArray(response.data)) {
+        console.log(`📊 Fetched ${response.data.length} patients from server`);
+      }
+    } else if (response.data && typeof response.data === 'object' && Object.keys(response.data).length < 10) {
+      // Log small response objects (like single patient, auth tokens, etc.)
+      console.log('📦 Response data:', response.data);
+    }
+    
     return response;
   },
   (error) => {

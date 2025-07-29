@@ -93,8 +93,8 @@ const MeshDetectionScreen = () => {
       console.log('  - stl_preview_url:', scanData?.stl_preview_url);
       
       if (scanData) {
-        console.log('🔍 [MeshDetectionScreen] Full scanData structure:');
-        console.log(JSON.stringify(scanData, null, 2));
+        console.log('🔍 [MeshDetectionScreen] scanData contains keys:', Object.keys(scanData).join(', '));
+        console.log('🔍 [MeshDetectionScreen] For detailed debugging, check the Response tab in Network inspector');
       }
       
       return fallbackMeshImage;

@@ -94,8 +94,8 @@ const DepthDetectionScreen = () => {
       console.log('  - depth_metadata:', scanData?.depth_metadata ? 'available' : 'not available');
       
       if (scanData) {
-        console.log('🔍 [DepthDetectionScreen] Full scanData structure:');
-        console.log(JSON.stringify(scanData, null, 2));
+        console.log('🔍 [DepthDetectionScreen] scanData contains keys:', Object.keys(scanData).join(', '));
+        console.log('🔍 [DepthDetectionScreen] For detailed debugging, check the Response tab in Network inspector');
       }
       
       return fallbackDepthImage;

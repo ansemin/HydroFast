@@ -26,10 +26,14 @@ export default function LoginScreen({ className = "" }) {
 
   // Check if user is already authenticated
   useEffect(() => {
+    console.log('[LoginScreen] Checking if user is already authenticated...');
     const checkAuth = async () => {
       const authenticated = await isAuthenticated();
       if (authenticated) {
+        console.log('[LoginScreen] User already authenticated, navigating to Patients List');
         navigation.replace('Patients List');
+      } else {
+        console.log('[LoginScreen] User not authenticated, showing login form');
       }
     };
     
@@ -38,23 +42,27 @@ export default function LoginScreen({ className = "" }) {
 
   const handleLogin = async () => {
     if (!username) {
+      console.log('[LoginScreen] Login attempt failed: Username field is empty');
       Alert.alert("Error", "Please enter your username");
       return;
     }
     
     if (!password) {
+      console.log('[LoginScreen] Login attempt failed: Password field is empty');
       Alert.alert("Error", "Please enter your password");
       return;
     }
 
+    console.log(`[LoginScreen] Starting login process for username: "${username}"`);
     setLoading(true);
     
     try {
-      console.log(`Attempting to login with: ${username}`);
+      console.log(`[LoginScreen] Attempting authentication with server for user: ${username}`);
       await login(username, password);
+      console.log(`[LoginScreen] Login successful for user: ${username}, navigating to Patients List`);
       navigation.replace('Patients List');
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error(`[LoginScreen] Authentication failed for user: ${username}`, error);
       
       if (error.code === 'ERR_NETWORK') {
         Alert.alert(
@@ -90,6 +98,7 @@ export default function LoginScreen({ className = "" }) {
   };
 
   const handleSignUpNavigation = () => {
+    console.log('[LoginScreen] User navigating to Sign Up screen');
     navigation.navigate('Sign Up');
   };
 

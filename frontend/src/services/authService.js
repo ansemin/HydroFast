@@ -4,14 +4,14 @@ import api from './api';
 // Authentication methods
 const login = async (username, password) => {
   try {
-    console.log(`Attempting to login with username: ${username}`);
+    console.log(`[AuthService] Attempting to login with username: ${username}`);
     const response = await api.post('/login/', { username, password });
-    console.log('Login successful:', response.data);
+    console.log(`[AuthService] Login successful for user: ${username}`);
     await AsyncStorage.setItem('authToken', response.data.token);
     await AsyncStorage.setItem('userData', JSON.stringify(response.data));
     return response.data;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[AuthService] Login error:', error);
     throw error;
   }
 };

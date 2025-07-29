@@ -29,24 +29,29 @@ const CameraScreen = () => {
     // Fetch patients from backend API
     patientService.getPatients()
       .then((fetchedPatients) => {
-        console.log(fetchedPatients)
+        console.log(`[CameraScreen] Fetched ${fetchedPatients.length} patients for camera selection`);
         setPatients(fetchedPatients);
         
         // If we have a preSelectedPatientId from route params, find and select that patient
         if (preSelectedPatientId) {
           const patientToSelect = fetchedPatients.find(p => p.id === preSelectedPatientId);
           if (patientToSelect) {
+            console.log(`[CameraScreen] Pre-selected patient: ${patientToSelect.first_name} ${patientToSelect.last_name} (ID: ${patientToSelect.id})`);
             setSelectedPatient(patientToSelect);
             setCameFromPatientDetail(true);
           } else if (fetchedPatients.length > 0) {
+            console.log(`[CameraScreen] Pre-selected patient not found, defaulting to first patient: ${fetchedPatients[0].first_name} ${fetchedPatients[0].last_name}`);
             setSelectedPatient(fetchedPatients[0]);
           } else {
+            console.log('[CameraScreen] No patients available for selection');
             setSelectedPatient(null);
           }
         } else if (fetchedPatients.length > 0) {
           // No preselected patient, default to first in list
+          console.log(`[CameraScreen] No pre-selected patient, defaulting to first: ${fetchedPatients[0].first_name} ${fetchedPatients[0].last_name}`);
           setSelectedPatient(fetchedPatients[0]);
         } else {
+          console.log('[CameraScreen] No patients available for selection');
           setSelectedPatient(null);
         }
       })
