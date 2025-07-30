@@ -32,4 +32,4 @@ tzdata==2024.2
 python-decouple==3.8
 
 # File handling
-python-magic==0.4.27 
+python-magic==0.4.27 python-dotenv

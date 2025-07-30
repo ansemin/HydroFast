@@ -29,7 +29,6 @@ LOCAL_APPS = [
     'apps.scans',
     'apps.ai_processing',
     'apps.common',  # Common utilities and middleware
-    'coreViews',  # Legacy app - will be removed after migration
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
