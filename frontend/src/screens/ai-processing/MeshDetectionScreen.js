@@ -44,10 +44,26 @@ const MeshDetectionScreen = () => {
       console.log('📦 [MeshDetectionScreen] Passing complete scan data with all processing results');
       console.log('🎉 [MeshDetectionScreen] Complete AI processing pipeline finished!');
       
-      // Navigate directly to DownloadFilesScreen (no more processing needed)
+      // Navigate to DownloadFilesScreen with scan result data
+      const scanResultData = {
+        stl_file: scanData?.stl_generation?.stl_file_url,
+        preview_image: scanData?.preview_generation?.preview_image_url,
+        stl_generation: {
+          stl_file_size_mb: scanData?.stl_generation?.stl_file_size_mb || 0,
+        },
+        preview_generation: {
+          preview_file_size_mb: scanData?.preview_generation?.preview_file_size_mb || 0,
+        },
+        volume_estimate: scanData?.depth_analysis?.volume_estimate,
+        processing_metadata: {
+          mesh_metadata: scanData?.stl_generation?.mesh_metadata,
+          preview_metadata: scanData?.preview_generation?.preview_metadata,
+        }
+      };
+      
       navigation.navigate('DownloadFiles', { 
         scanId, 
-        scanData, // Should now contain mesh generation results
+        scanData: scanResultData,
         patientId 
       });
       

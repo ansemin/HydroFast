@@ -1,11 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-# Commented out unused AIModelViewSet
-# from .views import AIModelViewSet
+from .views import AIProcessingViewSet
 
 router = DefaultRouter()
-# Commented out unused aimodels endpoint - not used by frontend
-# router.register(r'aimodels', AIModelViewSet, basename='aimodels')
+router.register(r'ai-processing', AIProcessingViewSet, basename='ai-processing')
 
 urlpatterns = [
     path('', include(router.urls)),

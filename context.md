@@ -2,12 +2,13 @@
 
 ## Project Overview
 **Date Created:** 25/07/2025  
-**Last Updated:** 30/07/2025 - **VERIFIED VERSION** ✅✅
+**Last Updated:** 30/01/2025 - **PATIENT-AI PROCESSING INTEGRATION** 🔗✅
 
-**VERIFICATION STATUS:** 🎯 **SYSTEMATICALLY VERIFIED AGAINST SOURCE CODE - 95%+ ACCURACY CONFIRMED**
+**VERIFICATION STATUS:** 🎯 **SYSTEMATICALLY VERIFIED + DATABASE MIGRATION UPDATED**
 - All navigation paths verified by reading actual screen components
 - All API calls verified against service implementations  
 - All backend models verified against Django model definitions
+- ✅ **NEW**: ScanResult model and patient-centric file organization documented
 - All critical bugs confirmed in actual source files
 - All architectural claims validated through comprehensive code review
 
@@ -174,7 +175,7 @@ This document serves as a comprehensive guide to the HydroFast wound analysis mo
 - It takes a `step` parameter to determine which backend service to call.
 - It navigates to the correct screen upon completion.
 
-## Backend Data Models ✅ **VERIFIED & CLEANED**
+## Backend Data Models ✅ **VERIFIED & UPDATED - January 2025**
 
 ✅ **REDUNDANCY REMOVED**: The legacy `coreViews` app and its duplicate models (`coreViews_patient`, `coreViews_scan`, etc.) have been completely removed from the codebase and the database has been rebuilt to eliminate orphaned tables. The single source of truth for models is now the `apps/` directory.
 
@@ -197,9 +198,41 @@ class Scan(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="new_scans")
     image = models.ImageField(upload_to="scans/")
     processed_image = models.ImageField(upload_to="processed_scans/", null=True, blank=True)
+    bbox_data = models.JSONField(null=True, blank=True)  # Added in migration 0002
     created_at = models.DateTimeField(auto_now_add=True)
     is_processed = models.BooleanField(default=False)
 ```
+
+### ✅ **NEW: ScanResult Model - Migration 0003_scanresult (July 30, 2025)**
+```python
+class ScanResult(models.Model):
+    scan = models.OneToOneField(Scan, on_delete=models.CASCADE, related_name='result')
+    # File paths - using dynamic upload_to function for patient-specific organization
+    stl_file = models.FileField(upload_to=patient_scan_upload_to, null=True, blank=True)
+    depth_map_8bit = models.FileField(upload_to=patient_scan_upload_to, null=True, blank=True)
+    depth_map_16bit = models.FileField(upload_to=patient_scan_upload_to, null=True, blank=True)
+    preview_image = models.FileField(upload_to=patient_scan_upload_to, null=True, blank=True)
+    # Processing metadata
+    volume_estimate = models.FloatField(null=True, blank=True)
+    processing_metadata = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+```
+
+### 🔗 **Patient-to-AI Processing Complete Integration**
+The recent database migration (0003_scanresult) establishes a **complete data flow linking patients to AI processing results**:
+
+**Full Data Flow: Patient → Scan → ScanResult**
+1. **Patient**: Demographics and contact information
+2. **Scan**: Links patient to uploaded images, tracks processing state and bbox data
+3. **ScanResult**: OneToOne relationship storing all AI processing outputs (STL files, depth maps, previews)
+
+**Key Architecture Improvements:**
+- **Patient-Centric File Organization**: Dynamic upload paths create `{FirstName}_{LastName}/` directories
+- **Scan Attempt Tracking**: Automatic numbering for multiple scans per patient (`scan001`, `scan002`, etc.)
+- **Complete Processing Pipeline**: From image upload to STL generation fully linked to patient records
+- **Data Integrity**: OneToOne relationship ensures each scan has at most one complete result set
+- **File Existence Validation**: Serializers check actual file existence, not just database records
 
 ## API Endpoints ✅ **VERIFIED**
 
@@ -498,10 +531,10 @@ This design separates AI processing concerns from API concerns, making the proce
 9. **✅ REFACTORED: Monolithic backend endpoints are now granular**
 10. **✅ FIXED: Database and model redundancy. Removed legacy `coreViews` app and consolidated data generation scripts.**
 
-## Backend File Storage ✅ **CORRECTED AND OPTIMIZED**
+## Backend File Storage ✅ **PATIENT-CENTRIC ORGANIZATION - January 2025**
 
-### Current Storage Structure (After Fixes)
-All files are stored in `backend/media/` with consistent database-based scan IDs:
+### Current Storage Structure (After ScanResult Migration)
+All files are stored in `backend/media/` with **patient-specific organization** using the new `patient_scan_upload_to` function:
 
 | **File Type** | **Storage Directory** | **Examples** |
 |---------------|----------------------|-------------|
@@ -509,15 +542,23 @@ All files are stored in `backend/media/` with consistent database-based scan IDs
 | **Processed/Segmented Images** | `processed_scans/` | `processed_scans/scan_1753445089110_segmented.jpg` |
 | **Bbox Crop Results** | `bbox_crop_results/scan_{id}/` | `bbox_crop_results/scan_40/cropped_wound.png`<br/>`bbox_crop_results/scan_40/cropped_segmented.png`<br/>`bbox_crop_results/scan_40/bbox_visualization.png` |
 | **Depth Maps (8-bit & 16-bit)** | `depth_maps_bbox/scan_{id}/` | `depth_maps_bbox/scan_40/depth_8bit.png`<br/>`depth_maps_bbox/scan_40/depth_16bit.png` |
-| **STL Files** | `generated_stl/` | `generated_stl/scan_40_20250725_143022.stl` |
-| **STL Preview Images** | `stl_previews/` | `stl_previews/scan_40_20250725_143022_preview.png` |
+| **✅ NEW: Patient-Organized STL Files** | `{FirstName}_{LastName}/` | `Allison_Torres/Allison_Torres_scan001_result.stl`<br/>`John_Smith/John_Smith_scan002_result.stl` |
+| **✅ NEW: Patient-Organized Depth Maps** | `{FirstName}_{LastName}/` | `Allison_Torres/Allison_Torres_scan001_depth_8bit.png`<br/>`Allison_Torres/Allison_Torres_scan001_depth_16bit.png` |
+| **✅ NEW: Patient-Organized Previews** | `{FirstName}_{LastName}/` | `Allison_Torres/Allison_Torres_scan001_preview.png` |
 
-### Key Improvements Made
-1. **✅ Unified Storage Paths**
-2. **✅ Database-Based IDs**
-3. **✅ Clean File Naming**
-4. **✅ Eliminated Redundancy**
-5. **✅ Cleanup Command**
+### ✅ **New Patient-Centric File Organization**
+The `patient_scan_upload_to` function in `ScanResult` model creates:
+- **Patient Directories**: Files organized by `{FirstName}_{LastName}/`
+- **Scan Attempt Numbering**: Automatic `scan001`, `scan002`, etc. for multiple scans
+- **Clean Filenames**: Patient name + scan number + file type
+- **Special Character Handling**: Only alphanumeric, underscore, and dash allowed in folder names
+
+### Key Architecture Improvements
+1. **✅ Patient-Centric Organization**: All AI processing results grouped by patient
+2. **✅ Scan Attempt Tracking**: Clear numbering for multiple scans per patient
+3. **✅ Database-File Integration**: Upload paths dynamically generated from patient data
+4. **✅ File Existence Validation**: Serializers verify actual file presence
+5. **✅ Clean Naming Convention**: Standardized format across all file types
 
 ## Management Commands & Testing ✅ **CLEANED & VERIFIED**
 
@@ -660,9 +701,17 @@ The backend has been refactored with independent, granular endpoints for each st
 
 **Next Development Task:** 
 1. STL preview display optimization in MeshDetectionScreen.js
-2. Consider ScanResultsScreen backend integration to replace placeholder data
+2. ✅ **COMPLETED**: ScanResultsScreen backend integration with proper STL file filtering
+3. Database rebuild with new ScanResult migration for production deployment
 
-**Last Updated:** July 30, 2025 - **Codebase Cleanup Completed** 🧹✅
+**Last Updated:** January 30, 2025 - **Patient-AI Processing Integration Completed** 🔗✅
+
+### ✅ **Recent Changes Summary (January 2025)**
+- **Database Migration 0003**: Added ScanResult model with OneToOne relationship to Scan
+- **Patient-Centric File Organization**: Files now stored in patient-specific directories
+- **STL File Filtering**: Fixed frontend filtering to check actual file existence
+- **Serializer Updates**: Backend validates actual file presence before marking has_results
+- **Documentation Updated**: Context reflects complete patient-to-AI processing integration
 
 ## Graph representation ✅ **VERIFIED AND CORRECTED**
 

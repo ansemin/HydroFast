@@ -14,6 +14,11 @@ __pycache__/
 # dependencies
 node_modules/
 
+#Ignore Claude files
+.claude/
+
+# Ignore Github Codespaces
+.github
 # Expo
 .expo/
 dist/
@@ -52,6 +57,9 @@ MLIntegration/
 
 # Cursor editor files
 .cursor/
+
+# VsCode settings
+.vscode/
 
 # IDE files
 .idea/
@@ -116,3 +124,4 @@ backend/test/test image/*
 
 # Don't ignore the cleanup scripts
 # backend/clean_media.py
+backend/apps/scans/views_original_backup.py

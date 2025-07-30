@@ -10,6 +10,18 @@ const getAllScans = async () => {
   }
 };
 
+const getScans = async (params = {}) => {
+  try {
+    const queryParams = new URLSearchParams(params).toString();
+    const url = queryParams ? `/scans/?${queryParams}` : '/scans/';
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching scans:', error);
+    throw error;
+  }
+};
+
 const getPatientScans = async (patientId) => {
   try {
     const response = await api.get(`/scans/?patient=${patientId}`);
@@ -38,7 +50,7 @@ const createScan = async (formData) => {
 const processInitialCrop = async (scanId) => {
   try {
     console.log(`🚀 [Frontend] Step 1.1: Starting initial crop for scan ${scanId}`);
-    const response = await api.post(`/scans/${scanId}/process_initial_crop/`, {}, {
+    const response = await api.post(`/ai-processing/${scanId}/process_initial_crop/`, {}, {
       timeout: 180000, // 3 minutes
     });
     console.log('✅ [Frontend] Step 1.1 Initial crop successful.');
@@ -53,7 +65,7 @@ const processInitialCrop = async (scanId) => {
 const processCroppedSegmentation = async (scanId) => {
   try {
     console.log(`🚀 [Frontend] Step 1.2: Starting cropped segmentation for scan ${scanId}`);
-    const response = await api.post(`/scans/${scanId}/process_cropped_segmentation/`, {}, {
+    const response = await api.post(`/ai-processing/${scanId}/process_cropped_segmentation/`, {}, {
       timeout: 60000, // 1 minute
     });
     console.log('✅ [Frontend] Step 1.2 Cropped segmentation successful.');
@@ -68,7 +80,7 @@ const processCroppedSegmentation = async (scanId) => {
 const processDepthAnalysis = async (scanId) => {
   try {
     console.log(`🚀 [Frontend] Step 3: Starting ZoeDepth analysis for scan ${scanId}`);
-    const response = await api.post(`/scans/${scanId}/process_depth_analysis/`, {}, {
+    const response = await api.post(`/ai-processing/${scanId}/process_depth_analysis/`, {}, {
       timeout: 300000, // 5 minutes
     });
     console.log('✅ [Frontend] Step 3 ZoeDepth analysis successful.');
@@ -83,7 +95,7 @@ const processDepthAnalysis = async (scanId) => {
 const processMeshGeneration = async (scanId, visualization_mode = 'balanced') => {
   try {
     console.log(`🚀 [Frontend] Step 4: Starting mesh generation for scan ${scanId}`);
-    const response = await api.post(`/scans/${scanId}/process_mesh_generation/`, {
+    const response = await api.post(`/ai-processing/${scanId}/process_mesh_generation/`, {
       visualization_mode
     }, {
       timeout: 180000, // 3 minutes
@@ -98,6 +110,7 @@ const processMeshGeneration = async (scanId, visualization_mode = 'balanced') =>
 
 export const scanService = {
   getAllScans,
+  getScans,
   getPatientScans,
   createScan,
   processInitialCrop,
