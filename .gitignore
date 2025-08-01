@@ -68,10 +68,17 @@ MLIntegration/
 GEMINI.md
 CLAUDE.md
 db.sqlite3
+backend/backup/
 
-# Ignore patient-specific directories (new structure from ScanResult migration)
-backend/media/*/
-!backend/media/info.txt
+# Ignore specific file types in any media folder throughout the project
+**/media/**/*.jpg
+**/media/**/*.jpeg
+**/media/**/*.png
+**/media/**/*.json
+**/media/**/*.stl
+
+# Keep info.txt files in media folders
+!**/media/**/info.txt
 
 # Ignore test script outputs but not the info.txt files
 backend/test/test_complete_flow/*
