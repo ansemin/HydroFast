@@ -51,8 +51,8 @@ Project-2/
 │   │   │   ├── serializers.py # Scan + ScanResult serializers with file validation ✅ UPDATED
 │   │   │   └── management/commands/ # Management utilities
 │   │   ├── ai_processing/  # AI model integration & ZoeDepth pipeline (COMPLETE)
-│   │   │   ├── models.py   # AIModel model for storing AI model metadata
-│   │   │   ├── views.py    # AIModelViewSet (commented out - unused) ⚠️ DISABLED
+│   │   │   ├── models.py   # No models - uses direct AI model file loading
+│   │   │   ├── views.py    # Session-based AI processing endpoints
 │   │   │   ├── urls.py     # No active endpoints (commented out)
 │   │   │   ├── serializers.py # AI model data serialization
 │   │   │   └── processors/ # AI processing pipeline components (ZoeDepth integrated) ✅ ACTIVE

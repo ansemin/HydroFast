@@ -1,10 +1,6 @@
 ﻿from django.db import models
 
-class AIModel(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    model_file = models.FileField(upload_to="ai_models/")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
+# AI processing models removed - current architecture uses direct model file loading
+# YOLO models: loaded from static files (scripts/yolov8n-seg.pt)
+# ZoeDepth models: auto-downloaded and cached by PyTorch Hub
+# No database tracking needed for current session-based processing pipeline
