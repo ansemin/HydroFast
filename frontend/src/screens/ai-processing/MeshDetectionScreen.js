@@ -4,9 +4,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { scanService } from '../../services';
 import { BackArrowIcon } from '../../components/ui';
 
-// Fallback mesh image if no STL preview is available
-const fallbackMeshImage = require('../../assets/images/0138_mesh_consistent_z05.png');
-
 const MeshDetectionScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -44,10 +41,26 @@ const MeshDetectionScreen = () => {
       console.log('📦 [MeshDetectionScreen] Passing complete scan data with all processing results');
       console.log('🎉 [MeshDetectionScreen] Complete AI processing pipeline finished!');
       
-      // Navigate directly to DownloadFilesScreen (no more processing needed)
+      // Navigate to DownloadFilesScreen with scan result data
+      const scanResultData = {
+        stl_file: scanData?.stl_generation?.stl_file_url,
+        preview_image: scanData?.preview_generation?.preview_image_url,
+        stl_generation: {
+          stl_file_size_mb: scanData?.stl_generation?.stl_file_size_mb || 0,
+        },
+        preview_generation: {
+          preview_file_size_mb: scanData?.preview_generation?.preview_file_size_mb || 0,
+        },
+        volume_estimate: scanData?.depth_analysis?.volume_estimate,
+        processing_metadata: {
+          mesh_metadata: scanData?.stl_generation?.mesh_metadata,
+          preview_metadata: scanData?.preview_generation?.preview_metadata,
+        }
+      };
+      
       navigation.navigate('DownloadFiles', { 
         scanId, 
-        scanData, // Should now contain mesh generation results
+        scanData: scanResultData,
         patientId 
       });
       
@@ -77,8 +90,8 @@ const MeshDetectionScreen = () => {
       console.log('✅ [MeshDetectionScreen] Using legacy STL preview from backend:', scanData.stl_preview_url);
       return { uri: scanData.stl_preview_url };
     } else {
-      // Fallback to static mesh image
-      console.log('⚠️ [MeshDetectionScreen] Using fallback mesh image - STL preview not generated');
+      // No STL preview available
+      console.log('⚠️ [MeshDetectionScreen] No STL preview available - STL not generated yet');
       console.log('📋 [MeshDetectionScreen] Available scanData preview fields:');
       console.log('  - preview_generation?.preview_image_url:', scanData?.preview_generation?.preview_image_url);
       console.log('  - stl_preview_url:', scanData?.stl_preview_url);
@@ -88,7 +101,7 @@ const MeshDetectionScreen = () => {
         console.log('🔍 [MeshDetectionScreen] For detailed debugging, check the Response tab in Network inspector');
       }
       
-      return fallbackMeshImage;
+      return null;
     }
   };
 
@@ -110,13 +123,20 @@ const MeshDetectionScreen = () => {
         {/* STL Preview Image - Using same layout as other screens */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            <Image 
-              source={getMeshImageSource()} 
-              style={styles.image}
-              onError={(error) => {
-                console.log('Error loading STL preview image:', error.nativeEvent.error);
-              }}
-            />
+            {getMeshImageSource() ? (
+              <Image 
+                source={getMeshImageSource()} 
+                style={styles.image}
+                onError={(error) => {
+                  console.log('Error loading STL preview image:', error.nativeEvent.error);
+                }}
+              />
+            ) : (
+              <View style={[styles.image, styles.placeholderContainer]}>
+                <Text style={styles.placeholderText}>No mesh preview available</Text>
+                <Text style={styles.placeholderSubtext}>Please generate STL file first</Text>
+              </View>
+            )}
           </View>
         </View>
         
@@ -212,6 +232,27 @@ const styles = StyleSheet.create({
       android: 'Urbanist',
       default: 'sans-serif',
     }),
+  },
+  placeholderContainer: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  placeholderSubtext: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
   },
 });
 

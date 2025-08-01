@@ -14,6 +14,11 @@ __pycache__/
 # dependencies
 node_modules/
 
+#Ignore Claude files
+.claude/
+
+# Ignore Github Codespaces
+.github
 # Expo
 .expo/
 dist/
@@ -53,6 +58,9 @@ MLIntegration/
 # Cursor editor files
 .cursor/
 
+# VsCode settings
+.vscode/
+
 # IDE files
 .idea/
 
@@ -62,45 +70,15 @@ CLAUDE.md
 db.sqlite3
 backend/backup/
 
-# Ignore scan files
-backend/media/scans/*.png
-backend/media/scans/*.jpg
-backend/media/scans/*.jpeg
-backend/media/processed_scans/*.png
-backend/media/processed_scans/*.jpg
-backend/media/processed_scans/*.jpeg  
-backend/media/depth_maps/*.png
-backend/media/depth_maps/*.jpg
-backend/media/depth_maps/*.jpeg
-backend/media/depth_maps/*.json
-backend/media/generated_stl/*.stl
-backend/media/stl_previews/*.png
-backend/media/stl_previews/*.jpg
-backend/media/stl_previews/*.jpeg
+# Ignore specific file types in any media folder throughout the project
+**/media/**/*.jpg
+**/media/**/*.jpeg
+**/media/**/*.png
+**/media/**/*.json
+**/media/**/*.stl
 
-# Ignore bbox crop results (subdirectories with scan results)
-backend/media/bbox_crop_results/**/*.png
-backend/media/bbox_crop_results/**/*.jpg
-backend/media/bbox_crop_results/**/*.jpeg
-backend/media/bbox_crop_results/**/*.json
-
-# Ignore depth maps bbox files
-backend/media/depth_maps_bbox/*.png
-backend/media/depth_maps_bbox/*.jpg
-backend/media/depth_maps_bbox/*.jpeg
-backend/media/depth_maps_bbox/*.json
-
-# Ignore depth maps bbox files inside depth_maps folder
-backend/media/depth_maps/depth_maps_bbox/*.png
-backend/media/depth_maps/depth_maps_bbox/*.jpg
-backend/media/depth_maps/depth_maps_bbox/*.jpeg
-backend/media/depth_maps/depth_maps_bbox/*.json
-backend/media/depth_maps_bbox/*
-
-# Test directories and files
-backend/media/test_improved_depth/
-backend/media/test_stl_pipeline/
-backend/test_zoedepth_standalone_output/
+# Keep info.txt files in media folders
+!**/media/**/info.txt
 
 # Ignore test script outputs but not the info.txt files
 backend/test/test_complete_flow/*
@@ -116,3 +94,7 @@ backend/test/test image/*
 
 # Don't ignore the cleanup scripts
 # backend/clean_media.py
+backend/apps/scans/views_original_backup.py
+
+# Ignore logs
+backend/logs

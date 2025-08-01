@@ -491,7 +491,7 @@ class MeshPreviewGenerator(BaseProcessor):
         from django.conf import settings
         
         # Create output directory
-        output_dir = Path(settings.MEDIA_ROOT) / 'stl_previews'
+        output_dir = Path(settings.MEDIA_ROOT) / 'temp' / 'stl_previews'
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Generate filename based on STL file with cleaner naming

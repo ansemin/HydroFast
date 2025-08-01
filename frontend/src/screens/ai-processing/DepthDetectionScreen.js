@@ -4,9 +4,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { scanService } from '../../services';
 import { BackArrowIcon } from '../../components/ui';
 
-// Fallback depth image if no depth map is available
-const fallbackDepthImage = require('../../assets/images/0138_depth_grayscale_zd.png');
-
 const DepthDetectionScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -76,8 +73,8 @@ const DepthDetectionScreen = () => {
       console.log('✅ [DepthDetectionScreen] Using 16-bit depth map from backend:', scanData.depth_map_16bit);
       return { uri: scanData.depth_map_16bit };
     } else {
-      // Fallback to static depth image
-      console.log('⚠️ [DepthDetectionScreen] Using fallback depth image - depth maps not available');
+      // No depth maps available
+      console.log('⚠️ [DepthDetectionScreen] No depth maps available - depth processing not done yet');
       console.log('📋 [DepthDetectionScreen] Available depth fields:');
       console.log('  - depth_map_8bit:', scanData?.depth_map_8bit);
       console.log('  - depth_map_16bit:', scanData?.depth_map_16bit);
@@ -89,7 +86,7 @@ const DepthDetectionScreen = () => {
         console.log('🔍 [DepthDetectionScreen] For detailed debugging, check the Response tab in Network inspector');
       }
       
-      return fallbackDepthImage;
+      return null;
     }
   };
 
@@ -111,13 +108,20 @@ const DepthDetectionScreen = () => {
         {/* Depth Image Preview - Using same layout as WoundDetectionScreen */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            <Image 
-              source={getDepthImageSource()} 
-              style={styles.image}
-              onError={(error) => {
-                console.log('Error loading depth image:', error.nativeEvent.error);
-              }}
-            />
+            {getDepthImageSource() ? (
+              <Image 
+                source={getDepthImageSource()} 
+                style={styles.image}
+                onError={(error) => {
+                  console.log('Error loading depth image:', error.nativeEvent.error);
+                }}
+              />
+            ) : (
+              <View style={[styles.image, styles.placeholderContainer]}>
+                <Text style={styles.placeholderText}>No depth map available</Text>
+                <Text style={styles.placeholderSubtext}>Please generate depth map first</Text>
+              </View>
+            )}
           </View>
         </View>
         
@@ -212,6 +216,27 @@ const styles = StyleSheet.create({
       android: 'Urbanist',
       default: 'sans-serif',
     }),
+  },
+  placeholderContainer: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  placeholderSubtext: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
   },
 });
 

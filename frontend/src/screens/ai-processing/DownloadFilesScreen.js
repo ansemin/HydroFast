@@ -51,25 +51,23 @@ const DownloadFilesScreen = () => {
         return;
       }
 
-      // Check if this is a simulation URL
-      if (url.startsWith('simulation://')) {
-        Alert.alert(
-          'Simulation Mode', 
-          `This is a demo. In the real app, ${filename} would be downloaded from the server.`,
-          [{ text: 'OK', style: 'default' }]
-        );
-        return;
+      // Ensure URL is absolute
+      let downloadUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        // If it's a relative URL, prepend the base URL
+        const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
+        downloadUrl = url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
       }
 
-      console.log(`Downloading ${filename} from:`, url);
+      console.log(`Downloading ${filename} from:`, downloadUrl);
       
       // Open the URL in the browser/default app
-      const supported = await Linking.canOpenURL(url);
+      const supported = await Linking.canOpenURL(downloadUrl);
       if (supported) {
-        await Linking.openURL(url);
+        await Linking.openURL(downloadUrl);
         Alert.alert('Download Started', `${filename} download has been initiated`);
       } else {
-        Alert.alert('Error', `Cannot open URL: ${url}`);
+        Alert.alert('Error', `Cannot open URL: ${downloadUrl}`);
       }
     } catch (error) {
       console.error(`Error downloading ${filename}:`, error);
@@ -77,104 +75,51 @@ const DownloadFilesScreen = () => {
     }
   };
 
-  // Get the STL files for download (STL file + STL preview)
+  // Get the STL files for download (STL file + STL preview ONLY)
   const getSTLFiles = () => {
     const files = [];
     
-    // Check if we have scanData with STL file info, otherwise use simulation data
-    const isSimulation = !scanData?.stl_file_url && !scanData?.stl_filename;
-    
-    if (isSimulation) {
-      // Simulation mode - return mock STL files for testing
-      return [
-        {
-          name: 'HydroFast_STL',
-          filename: 'hydrofast_model.stl',
-          url: 'simulation://hydrofast_model.stl',
-          type: '3D Model',
-          size: '2.4MB',
-          isMainFile: true
-        },
-        {
-          name: 'STL Preview',
-          filename: 'hydrofast_preview.png',
-          url: 'simulation://hydrofast_preview.png',
-          type: 'Image',
-          size: '1.2MB',
-          isMainFile: false
-        }
-      ];
+    // Check if we have scanData with real file info
+    if (!scanData) {
+      // No scan data - return empty array
+      return [];
+    }
+
+    // Get patient name from the scan data or URL
+    let patientName = 'Patient';
+    if (scanData.stl_file) {
+      // Extract patient name from file path: /media/Allison_Torres/Allison_Torres_scan002_wound_model.stl
+      const pathParts = scanData.stl_file.split('/');
+      const fileName = pathParts[pathParts.length - 1]; // Get the filename
+      const match = fileName.match(/^(.+?)_scan\d+/); // Extract patient name before "_scan"
+      if (match) {
+        patientName = match[1].replace(/_/g, ' '); // Replace underscores with spaces
+      }
     }
 
     // Add STL file if available
-    if (scanData?.stl_file_url) {
-      const fileSize = scanData?.mesh_metadata?.file_size_mb ? `${scanData.mesh_metadata.file_size_mb}MB` : '2.4MB';
+    if (scanData.stl_file) {
+      const fileSize = scanData.stl_generation?.stl_file_size_mb ? `${scanData.stl_generation.stl_file_size_mb}MB` : 'Unknown';
       files.push({
-        name: 'HydroFast_STL',
-        filename: scanData.stl_file_url.split('/').pop() || 'hydrofast_model.stl',
-        url: scanData.stl_file_url,
+        name: `${patientName} STL`,
+        filename: scanData.stl_file.split('/').pop() || 'wound_model.stl',
+        url: scanData.stl_file,
         type: '3D Model',
         size: fileSize,
-        isMainFile: true
-      });
-    } else if (scanData?.stl_filename) {
-      const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
-      files.push({
-        name: 'HydroFast_STL',
-        filename: scanData.stl_filename,
-        url: `${baseUrl}/media/generated_stl/${scanData.stl_filename}`,
-        type: '3D Model',
-        size: scanData?.mesh_metadata?.file_size_mb ? `${scanData.mesh_metadata.file_size_mb}MB` : '2.4MB',
         isMainFile: true
       });
     }
 
     // Add STL preview if available
-    if (scanData?.stl_preview_url) {
+    if (scanData.preview_image) {
+      const fileSize = scanData.preview_generation?.preview_file_size_mb ? `${scanData.preview_generation.preview_file_size_mb}MB` : 'Unknown';
       files.push({
-        name: 'STL Preview',
-        filename: scanData.stl_preview_url.split('/').pop() || 'stl_preview.png',
-        url: scanData.stl_preview_url,
+        name: `${patientName} STL Preview`,
+        filename: scanData.preview_image.split('/').pop() || 'preview.png',
+        url: scanData.preview_image,
         type: 'Image',
-        size: '1.2MB',
+        size: fileSize,
         isMainFile: false
-      });
-    } else if (scanData?.preview_generation?.preview_image_url) {
-      files.push({
-        name: 'STL Preview',
-        filename: scanData.preview_generation.preview_image_url.split('/').pop() || 'stl_preview.png',
-        url: scanData.preview_generation.preview_image_url,
-        type: 'Image',
-        size: '1.2MB',
-        isMainFile: false
-      });
-    } else if (scanId) {
-      // Construct STL preview path based on pattern: depth_8bit_YYYYMMDD_HHMMSS_preview.png
-      const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
-      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
-      const previewFilename = `depth_8bit_${timestamp}_preview.png`;
-      files.push({
-        name: 'STL Preview',
-        filename: previewFilename,
-        url: `${baseUrl}/media/stl_previews/${previewFilename}`,
-        type: 'Image',
-        size: '1.2MB',
-        isMainFile: false
-      });
-    }
-
-    // Fallback: if we have a scanId but no STL file, try to construct one
-    if (files.length === 0 && scanId) {
-      const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
-      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
-      const expectedFilename = `depth_8bit_${timestamp}.stl`;
-      files.push({
-        name: 'HydroFast_STL',
-        filename: expectedFilename,
-        url: `${baseUrl}/media/generated_stl/${expectedFilename}`,
-        type: '3D Model',
-        size: '2.4MB',
-        isMainFile: true
       });
     }
 
@@ -186,18 +131,6 @@ const DownloadFilesScreen = () => {
       const files = getSTLFiles();
       if (files.length === 0) {
         Alert.alert('No Files', 'No files are available for download');
-        return;
-      }
-
-      // Check if we're in simulation mode
-      const isSimulation = files.some(file => file.url.startsWith('simulation://'));
-      
-      if (isSimulation) {
-        Alert.alert(
-          'Simulation Mode',
-          `This is a demo. In the real app, all ${files.length} files would be downloaded as a ZIP archive.`,
-          [{ text: 'OK', style: 'default' }]
-        );
         return;
       }
 
@@ -241,51 +174,50 @@ const DownloadFilesScreen = () => {
         <Text style={styles.subtitle}>Your Files Are Ready</Text>
 
         {/* STL Files */}
-        {stlFiles.length > 0 ? (
-          <View style={styles.fileContainer}>
-            {stlFiles.map((file, index) => {
-              const currentDate = new Date();
-              const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
-              
-              return (
-                <View key={index} style={styles.scanCard}>
-                  {/* Scan Card Header */}
-                  <View style={styles.scanCardHeader}>
-                    <Text style={styles.scanCardTitle}>
-                      {file.isMainFile ? 'STL File' : 'STL Preview'}
-                    </Text>
-                    <Text style={styles.scanCardDate}>{formattedDate}</Text>
-                  </View>
-                  
-                  {/* Inner File Info Box */}
-                  <View style={styles.fileBox}>
-                    <FileIcon />
-                    <View style={styles.fileInfoTextContainer}>
-                      <Text style={styles.fileName}>{file.name}</Text>
-                      <Text style={styles.fileDetails}>{file.type} {file.size}</Text>
+        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {stlFiles.length > 0 ? (
+            <View style={styles.fileContainer}>
+              {stlFiles.map((file, index) => {
+                const currentDate = new Date();
+                const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
+                
+                return (
+                  <View key={index} style={styles.scanCard}>
+                    {/* Scan Card Header */}
+                    <View style={styles.scanCardHeader}>
+                      <Text style={styles.scanCardTitle}>
+                        {file.isMainFile ? 'STL File' : 'STL Preview'}
+                      </Text>
+                      <Text style={styles.scanCardDate}>{formattedDate}</Text>
                     </View>
-                    <TouchableOpacity
-                      style={styles.downloadButtonRight}
-                      onPress={() => downloadFile(file.url, file.filename)}
-                    >
-                      <DownloadButtonIcon />
-                    </TouchableOpacity>
+                    
+                    {/* Inner File Info Box */}
+                    <View style={styles.fileBox}>
+                      <FileIcon />
+                      <View style={styles.fileInfoTextContainer}>
+                        <Text style={styles.fileName}>{file.name}</Text>
+                        <Text style={styles.fileDetails}>{file.type} {file.size}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.downloadButtonRight}
+                        onPress={() => downloadFile(file.url, file.filename)}
+                      >
+                        <DownloadButtonIcon />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.noFileContainer}>
-            <Text style={styles.noFileText}>No STL files available for download</Text>
-            <Text style={styles.noFileSubtext}>
-              Please ensure all processing steps have been completed.
-            </Text>
-          </View>
-        )}
-
-        {/* Spacer to push download button to bottom */}
-        <View style={styles.spacer} />
+                );
+              })}
+            </View>
+          ) : (
+            <View style={styles.noFileContainer}>
+              <Text style={styles.noFileText}>No STL files available for download</Text>
+              <Text style={styles.noFileSubtext}>
+                Please ensure all processing steps have been completed.
+              </Text>
+            </View>
+          )}
+        </ScrollView>
 
         {/* Download All Button */}
         {stlFiles.length > 0 && (
@@ -308,6 +240,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FCFFF8',
     padding: 10,
     borderRadius: 30,
+  },
+  scrollContent: {
+    flex: 1,
   },
   backButton: {
     position: 'absolute',
@@ -333,7 +268,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#000000',
-    marginBottom: 58,
+    marginBottom: 40, // Reduced margin to move download boxes up
     marginLeft: 15, // Add left margin to move text to the left
     fontFamily: Platform.select({
       ios: 'Urbanist',
@@ -461,9 +396,6 @@ const styles = StyleSheet.create({
   downloadButtonContainer: {
     marginLeft: 'auto',
   },
-  spacer: {
-    flex: 1, // This will push the download button to the bottom
-  },
   noFileContainer: {
     alignItems: 'center',
     padding: 40,
@@ -497,7 +429,8 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: 'center',
     alignSelf: 'center',
-    marginBottom: 30, // Add bottom margin for spacing from screen edge
+    marginBottom: 20, // Reduced bottom margin to move button up
+    marginTop: 10, // Added top margin to move button down from content
     shadowColor: '#70E7BB',
     shadowOffset: {
       width: 0,

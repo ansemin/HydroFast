@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,12 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { Svg, Path, Rect } from 'react-native-svg';
 import { BackArrowIcon } from '../../components/ui';
+import { scanService } from '../../services';
 
 // Green Download Icon SVG Component (left icon)
 function LeftDownloadIcon() {
@@ -36,38 +38,95 @@ function RightDownloadIcon() {
   );
 }
 
-// Reference the same ZIP file asset for download demo
-// const zipAssetModule = require('../../Images/0138_z0.40_mesh.zip');
-
-// Placeholder data for scans
-const scansData = [
-  {
-    id: '001',
-    scanTitle: 'Scan #001',
-    date: '11 Apr 2025',
-    fileName: 'STL result.zip',
-    fileType: 'ZIP Archive',
-    fileSize: '14.2 MB',
-  },
-  {
-    id: '002',
-    scanTitle: 'Scan #002',
-    date: '11 Apr 2025',
-    fileName: 'STL result.zip',
-    fileType: 'ZIP Archive',
-    fileSize: '14.2 MB',
-  },
-];
-
 const ScanResultsScreen = ({ route, navigation }) => {
   // Safely access patientId from route params
-  const patientId = route.params?.patientId; 
+  const patientId = route.params?.patientId;
+  const [scans, setScans] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!patientId) {
       console.warn('ScanResultsScreen loaded without a patientId parameter.');
+      setIsLoading(false);
+      return;
     }
+    
+    fetchPatientScans();
   }, [patientId]);
+
+  const fetchPatientScans = async () => {
+    try {
+      console.log(`[ScanResultsScreen] Fetching scans for patient ID: ${patientId}`);
+      setIsLoading(true);
+      
+      // Fetch scans filtered by patient
+      const scansData = await scanService.getScans({ patient: patientId });
+      console.log(`[ScanResultsScreen] Fetched ${scansData.length} scans for patient`);
+      
+      // Debug: Log the structure of the first scan if available
+      if (scansData.length > 0) {
+        console.log('[ScanResultsScreen] Sample scan data structure:', {
+          id: scansData[0].id,
+          is_processed: scansData[0].is_processed,
+          has_results: scansData[0].has_results,
+          result: scansData[0].result ? {
+            stl_file: scansData[0].result.stl_file,
+            preview_image: scansData[0].result.preview_image,
+            file_sizes: scansData[0].result.file_sizes
+          } : null
+        });
+      }
+      
+      // Filter only scans with actual STL files
+      const scansWithSTL = scansData.filter(scan => {
+        return scan.result && scan.result.stl_file && scan.result.stl_file.trim() !== '';
+      });
+      console.log(`[ScanResultsScreen] Filtered to ${scansWithSTL.length} scans with STL files`);
+      setScans(scansWithSTL);
+      
+    } catch (error) {
+      console.error('[ScanResultsScreen] Error fetching scans:', error);
+      Alert.alert('Error', 'Failed to load scan results.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'Unknown';
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
+  };
+
+  const handleDownload = (scan) => {
+    // Navigate to download screen with properly structured scan data
+    const scanData = {
+      stl_file: scan.result?.stl_file,
+      preview_image: scan.result?.preview_image,
+      depth_map_8bit: scan.result?.depth_map_8bit,
+      depth_map_16bit: scan.result?.depth_map_16bit,
+      stl_generation: {
+        stl_file_size_mb: scan.result?.file_sizes?.stl_file || 0,
+      },
+      preview_generation: {
+        preview_file_size_mb: scan.result?.file_sizes?.preview_image || 0,
+      },
+      volume_estimate: scan.result?.volume_estimate,
+      processing_metadata: scan.result?.processing_metadata,
+    };
+
+    navigation.navigate('Download Files', {
+      scanId: scan.id,
+      scanData: scanData,
+      patientId: patientId
+    });
+  };
 
   // Download handler copied from DownloadFilesScreen
   /*
@@ -137,34 +196,75 @@ const ScanResultsScreen = ({ route, navigation }) => {
         </View>
 
         {/* Content Area */} 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={true}
+          bounces={true}
+        >
           <Text style={styles.subTitle}>Previous Scans</Text>
 
-          {/* Map through placeholder scan data */} 
-          {scansData.map((scan) => (
-            <View key={scan.id} style={styles.scanCard}>
-              {/* Scan Card Header */}
-              <View style={styles.scanCardHeader}>
-                <Text style={styles.scanCardTitle}>{scan.scanTitle}</Text>
-                <Text style={styles.scanCardDate}>{scan.date}</Text>
-              </View>
-              
-              {/* Inner File Info Box */}
-              <View style={styles.fileBox}>
-                <LeftDownloadIcon />
-                <View style={styles.fileInfoTextContainer}>
-                  <Text style={styles.fileName}>{scan.fileName}</Text>
-                  <Text style={styles.fileDetails}>{scan.fileType} {scan.fileSize}</Text> 
-                </View>
-                <TouchableOpacity 
-                  style={styles.downloadButtonRight}
-                  onPress={() => Alert.alert("Download Disabled", "This feature is temporarily disabled.")}
-                >
-                  <RightDownloadIcon />
-                </TouchableOpacity>
-              </View>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#27CFA0" />
+              <Text style={styles.loadingText}>Loading scan results...</Text>
             </View>
-          ))}
+          ) : scans.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No scan results found</Text>
+              <Text style={styles.emptySubText}>
+                Complete a scan to see results here
+              </Text>
+            </View>
+          ) : (
+            scans.map((scan) => {
+              const scanNumber = scan.scan_attempt_number || scan.id;
+              const fileSize = scan.result?.file_sizes?.stl_file || 0;
+              
+              // Get patient name for display
+              const patientName = scan.patient_name || 'Unknown Patient';
+              
+              // Check if scan has actual STL file
+              const hasSTLFile = scan.result?.stl_file;
+              const hasPreview = scan.result?.preview_image;
+              
+              return (
+                <View key={scan.id} style={styles.scanCard}>
+                  {/* Scan Card Header */}
+                  <View style={styles.scanCardHeader}>
+                    <Text style={styles.scanCardTitle}>Scan #{scanNumber.toString().padStart(3, '0')}</Text>
+                    <Text style={styles.scanCardDate}>{formatDate(scan.created_at)}</Text>
+                  </View>
+                  
+                  {/* Inner File Info Box */}
+                  <View style={styles.fileBox}>
+                    <LeftDownloadIcon />
+                    <View style={styles.fileInfoTextContainer}>
+                      <Text style={styles.fileName}>
+                        {hasSTLFile ? `${patientName} STL` : 'No STL Available'}
+                      </Text>
+                      <Text style={styles.fileDetails}>
+                        {hasSTLFile 
+                          ? `3D Model • ${formatFileSize(fileSize * 1024 * 1024)}`
+                          : 'Processing incomplete'
+                        }
+                      </Text> 
+                    </View>
+                    <TouchableOpacity 
+                      style={[
+                        styles.downloadButtonRight,
+                        !hasSTLFile && styles.downloadButtonDisabled
+                      ]}
+                      onPress={() => hasSTLFile && handleDownload(scan)}
+                      disabled={!hasSTLFile}
+                    >
+                      <RightDownloadIcon />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -203,7 +303,9 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 20,
-    paddingTop: 10, 
+    paddingTop: 10,
+    paddingBottom: 30, // Add bottom padding for better scrolling
+    flexGrow: 1, // Ensure content container grows to fill available space
   },
   subTitle: {
     fontSize: 18,
@@ -266,6 +368,36 @@ const styles = StyleSheet.create({
   },
   downloadButtonRight: {
     padding: 5,
+  },
+  downloadButtonDisabled: {
+    opacity: 0.5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 10,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#999999',
+    textAlign: 'center',
   },
 });
 

@@ -4,7 +4,7 @@ Detects and segments wounds in uploaded images.
 """
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 import logging
 
 import cv2
@@ -22,7 +22,7 @@ class WoundDetector(BaseProcessor):
     Detects wounds in images and returns bounding boxes and segmentation masks.
     """
     
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize the wound detector.
         
@@ -77,7 +77,7 @@ class WoundDetector(BaseProcessor):
                 logger.error(f"Failed to load fallback model: {str(fallback_error)}")
                 raise RuntimeError(f"Could not load any YOLO model. Original error: {str(e)}, Fallback error: {str(fallback_error)}")
     
-    def process(self, image_path: str) -> Dict[str, Any]:
+    def process(self, image_path: str) -> str:
         """
         Detect wounds in the input image.
         
@@ -85,7 +85,7 @@ class WoundDetector(BaseProcessor):
             image_path: Path to the input image
             
         Returns:
-            Dictionary containing detection results
+            Path to the processed image file
         """
         self.validate_input(image_path)
         preprocessed = self.preprocess(image_path)
@@ -136,16 +136,17 @@ class WoundDetector(BaseProcessor):
         logger.info(f"Preprocessing image: {image_path}")
         return image_path  # Return original for now
     
-    def postprocess(self, results, original_image_path):
+    def postprocess(self, results, original_image_path, output_path=None):
         """
         Postprocess detection results.
         
         Args:
             results: Raw detection results from YOLO
             original_image_path: Path to the original image
+            output_path: Optional custom output path, defaults to temp directory
             
         Returns:
-            Relative path to the processed image for Django FileField
+            Path to the processed image
         """
         try:
             original_image = cv2.imread(original_image_path)
@@ -169,21 +170,24 @@ class WoundDetector(BaseProcessor):
                 processed_image = cv2.bitwise_and(original_image, original_image, mask=mask)
                 logger.info("Successfully processed segmentation mask")
             
-            # Create output path in processed_scans directory
-            import os
-            from django.conf import settings
-            
-            # Ensure processed_scans directory exists
-            processed_dir = os.path.join(settings.MEDIA_ROOT, 'processed_scans')
-            os.makedirs(processed_dir, exist_ok=True)
-            
-            # Generate filename based on original image
-            original_filename = os.path.basename(original_image_path)
-            name, ext = os.path.splitext(original_filename)
-            processed_filename = f"{name}_segmented{ext}"
-            
-            # Full path for saving
-            output_path = os.path.join(processed_dir, processed_filename)
+            # Use provided output path or create one in temp directory
+            if output_path is None:
+                from django.conf import settings
+                
+                # Create temp processed directory
+                temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp', 'processed_scans')
+                os.makedirs(temp_dir, exist_ok=True)
+                
+                # Generate filename based on original image
+                original_filename = os.path.basename(original_image_path)
+                name, ext = os.path.splitext(original_filename)
+                processed_filename = f"{name}_segmented{ext}"
+                
+                # Full path for saving
+                output_path = os.path.join(temp_dir, processed_filename)
+            else:
+                # Ensure the output directory exists
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
             
             # Save the processed image
             success = cv2.imwrite(output_path, processed_image)

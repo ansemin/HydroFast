@@ -1,1 +1,12 @@
-This directory contains files saved from the app. 
+Media files for the HydroFast application.
+
+This directory will contain patient-organized scan results in the following structure:
+- {patient_name}/
+  - scan_{scan_id}/
+    - {scan_id}.stl
+    - {scan_id}_preview.png
+    - depth_map_8bit.png
+    - depth_map_16bit.png
+    - metadata.json
+
+This optimized structure provides better organization and eliminates redundant intermediate files.
