@@ -4,9 +4,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { scanService } from '../../services';
 import { BackArrowIcon } from '../../components/ui';
 
-// Fallback image if no processed image is available
-const fallbackWoundImage = require('../../assets/images/0138_segmented.png');
-
 const WoundDetectionScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -33,17 +30,14 @@ const WoundDetectionScreen = () => {
 
   // This screen should display the cropped *segmented* image.
   const getImageSource = () => {
-    console.log('🔍 [WoundDetectionScreen] Component Rendered. Determining image source...');
-    console.log(`   - Available ScanData Keys: ${Object.keys(scanData || {}).join(', ')}`);
-
     if (scanData?.cropped_segmented_path) {
       console.log('🎯 [WoundDetectionScreen] Found cropped_segmented_path:', scanData.cropped_segmented_path);
       return { uri: scanData.cropped_segmented_path };
     }
     
-    console.log('⚠️ [WoundDetectionScreen] cropped_segmented_path not found in scanData. Using fallback image.');
+    console.log('⚠️ [WoundDetectionScreen] cropped_segmented_path not found in scanData.');
     console.log('   - Full scanData for debugging:', JSON.stringify(scanData, null, 2));
-    return fallbackWoundImage;
+    return null;
   };
 
   return (
@@ -61,7 +55,14 @@ const WoundDetectionScreen = () => {
 
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            <Image source={getImageSource()} style={styles.image} />
+            {getImageSource() ? (
+              <Image source={getImageSource()} style={styles.image} />
+            ) : (
+              <View style={[styles.image, styles.placeholderContainer]}>
+                <Text style={styles.placeholderText}>No processed image available</Text>
+                <Text style={styles.placeholderSubtext}>Please run AI processing first</Text>
+              </View>
+            )}
           </View>
         </View>
         
@@ -156,6 +157,27 @@ const styles = StyleSheet.create({
       android: 'Urbanist',
       default: 'sans-serif',
     }),
+  },
+  placeholderContainer: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  placeholderSubtext: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
   },
 });
 

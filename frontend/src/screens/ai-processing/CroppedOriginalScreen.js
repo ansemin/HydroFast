@@ -4,9 +4,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { scanService } from '../../services';
 import { BackArrowIcon } from '../../components/ui';
 
-// Fallback image if no cropped original image is available
-const fallbackOriginalImage = require('../../assets/images/0138_segmented.png');
-
 const CroppedOriginalScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -41,9 +38,9 @@ const CroppedOriginalScreen = () => {
       return { uri: scanData.cropped_image_path };
     }
     
-    console.log('⚠️ [CroppedOriginalScreen] cropped_image_path not found in scanData. Using fallback image.');
+    console.log('⚠️ [CroppedOriginalScreen] cropped_image_path not found in scanData.');
     console.log('   - Full scanData for debugging:', JSON.stringify(scanData, null, 2));
-    return fallbackOriginalImage;
+    return null;
   };
 
   return (
@@ -64,7 +61,14 @@ const CroppedOriginalScreen = () => {
         {/* Image Preview */}
         <View style={styles.imageOuterContainer}>
           <View style={styles.imageContainer}>
-            <Image source={getImageSource()} style={styles.image} />
+            {getImageSource() ? (
+              <Image source={getImageSource()} style={styles.image} />
+            ) : (
+              <View style={[styles.image, styles.placeholderContainer]}>
+                <Text style={styles.placeholderText}>No cropped image available</Text>
+                <Text style={styles.placeholderSubtext}>Please upload and crop image first</Text>
+              </View>
+            )}
           </View>
         </View>
         
@@ -160,6 +164,27 @@ const styles = StyleSheet.create({
       android: 'Urbanist',
       default: 'sans-serif',
     }),
+  },
+  placeholderContainer: {
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  placeholderSubtext: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
   },
 });
 

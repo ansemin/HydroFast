@@ -355,8 +355,8 @@ class MeshGenerator(BaseProcessor):
         """
         from django.conf import settings
         
-        # Create output directory
-        output_dir = Path(settings.MEDIA_ROOT) / 'generated_stl'
+        # Create output directory in temp folder
+        output_dir = Path(settings.MEDIA_ROOT) / 'temp' / 'generated_stl'
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Extract scan ID from the depth map path to match our new naming convention

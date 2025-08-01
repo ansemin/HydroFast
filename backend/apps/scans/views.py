@@ -79,7 +79,8 @@ class ScanViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def upload_image(self, request):
         """
-        Upload an image for a patient - Basic scan creation only
+        Upload an image for a patient - Creates lightweight processing session
+        Image is stored temporarily for processing, not in the database
         
         For AI processing, use the dedicated endpoints:
         - /api/ai-processing/{scan_id}/process_initial_crop/
@@ -123,31 +124,49 @@ class ScanViewSet(viewsets.ModelViewSet):
             print(f"  - Name: {image.name}")
             print(f"  - Content type: {image.content_type}")
             
-            # Create the scan data
+            # Store image temporarily and create lightweight processing session
+            import os
+            from django.conf import settings
+            from apps.ai_processing.session_manager import SessionManager
+
+            # Create the lightweight scan (processing session) first
             scan_data = {
                 'patient': patient_id,
-                'image': image
+                # No image field - handled temporarily in session
             }
-            print(f"📦 [Backend] Creating scan with data:")
+            print(f"📦 [Backend] Creating lightweight processing session:")
             print(f"  - Patient: {patient_id}")
-            print(f"  - Image: {image.name}")
             
             # Validate and save the scan
             print(f"⚙️ [Backend] Validating scan data...")
             serializer = self.get_serializer(data=scan_data)
             if serializer.is_valid():
                 print(f"✅ [Backend] Scan data validation successful")
-                print(f"💾 [Backend] Saving scan to database...")
+                print(f"💾 [Backend] Saving processing session to database...")
                 self.perform_create(serializer)  # Use perform_create to handle anonymous users
                 
                 scan_id = serializer.data.get('id')
-                image_url = serializer.data.get('image')
-                print(f"✅ [Backend] Scan created successfully!")
+                session_id = serializer.data.get('session_id')
+                print(f"✅ [Backend] Processing session created successfully!")
                 print(f"🆔 [Backend] Generated scan ID: {scan_id}")
-                print(f"🔗 [Backend] Image URL: {image_url}")
+                print(f"🔑 [Backend] Generated session ID: {session_id}")
+                
+                # Initialize session manager and save image to session directory
+                session = SessionManager.get_session(session_id)
+                
+                # Save original image directly to session using SessionManager
+                original_image_path = session.save_original_image(image)
+                
+                print(f"📁 [Backend] Stored image in session directory: {original_image_path}")
                 print(f"📤 [Backend] Returning scan data to frontend")
                 
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                # Return scan data with session information for processing
+                response_data = serializer.data.copy()
+                response_data['temp_image_path'] = original_image_path
+                response_data['session_directory'] = session.session_dir
+                response_data['message'] = 'Processing session created. Image stored in session directory for AI processing.'
+                
+                return Response(response_data, status=status.HTTP_201_CREATED)
             else:
                 print(f"❌ [Backend] Validation errors: {serializer.errors}")
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

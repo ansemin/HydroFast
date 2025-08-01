@@ -3,21 +3,27 @@ from .models import Scan, ScanResult
 
 class ScanResultSerializer(serializers.ModelSerializer):
     scan_id = serializers.ReadOnlyField(source='scan.id')
-    patient_name = serializers.SerializerMethodField()
+    # Use the database patient_name field if available, fallback to computed name
+    patient_name_display = serializers.SerializerMethodField()
     scan_date = serializers.SerializerMethodField()
     file_sizes = serializers.SerializerMethodField()
     
     class Meta:
         model = ScanResult
         fields = [
-            'id', 'scan_id', 'patient_name', 'scan_date',
+            'id', 'scan_id', 'patient_name', 'patient_name_display', 'scan_date',
             'stl_file', 'depth_map_8bit', 'depth_map_16bit', 'preview_image',
             'volume_estimate', 'processing_metadata', 'file_sizes',
             'created_at', 'updated_at'
         ]
     
-    def get_patient_name(self, obj):
-        if obj.scan and obj.scan.patient:
+    def get_patient_name_display(self, obj):
+        """Get display-friendly patient name"""
+        if obj.patient_name:
+            # Use stored patient_name (underscore format) and make it display-friendly
+            return obj.patient_name.replace('_', ' ')
+        elif obj.scan and obj.scan.patient:
+            # Fallback to computed name from patient model
             return f"{obj.scan.patient.first_name} {obj.scan.patient.last_name}"
         return "Unknown"
     
@@ -64,7 +70,7 @@ class ScanSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Scan
-        fields = ['id', 'user', 'patient', 'patient_name', 'image', 'is_processed', 
+        fields = ['id', 'user', 'patient', 'patient_name', 'session_id', 'is_processed', 
                   'date', 'time', 'has_results', 'scan_attempt_number', 'result', 'created_at']
 
     def get_patient_name(self, obj):
