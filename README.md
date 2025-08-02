@@ -139,6 +139,7 @@
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
+<div style="width: 80%; margin: auto;">
 ```mermaid
 graph TB
     subgraph "📱 Mobile Frontend (React Native/Expo)"
@@ -177,6 +178,8 @@ graph TB
     style J fill:#fce4ec
     style N fill:#fff3e0
 ```
+```
+</div>
 
 ### AI Processing Pipeline Detail
 ```mermaid
