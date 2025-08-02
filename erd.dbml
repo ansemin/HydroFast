@@ -1,0 +1,122 @@
+// HydroFast App - Updated ERD (DBML Format)
+// Reflects actual implementation with session-based AI processing architecture
+// Last Updated: August 2, 2025 - SESSION-BASED ARCHITECTURE + REMOVED UNUSED AI_MODELS TABLE
+
+Table users {
+  id integer [pk, increment] // Django's built-in User model
+  username varchar [unique, not null]
+  email varchar [unique, not null]
+  first_name varchar
+  last_name varchar
+  password varchar [not null, note: 'Django handles password hashing']
+  is_active boolean [default: true]
+  is_staff boolean [default: false]
+  is_superuser boolean [default: false]
+  date_joined timestamp [default: `now()`]
+  last_login timestamp
+}
+
+Table user_profiles {
+  id integer [pk, increment]
+  user_id integer [unique, not null, note: 'OneToOne relationship with User']
+  is_admin boolean [default: false, note: 'Additional admin flag for app-specific permissions']
+}
+
+Table patients {
+  id integer [pk, increment]
+  user_id integer [not null, note: 'ID of the user who manages this patient']
+  first_name varchar [not null, note: 'Max length: 50']
+  last_name varchar [not null, note: 'Max length: 50'] 
+  nric varchar [unique, not null, note: 'NRIC/Passport Number - Max length: 9, must be unique']
+  date_of_birth date [null, note: 'Optional date of birth']
+  contact_no varchar [null, note: 'Optional contact number - Max length: 15']
+  details text [note: 'Additional patient details - TextField, can be blank']
+}
+
+Table scans {
+  id integer [pk, increment] // Serves as Scan ID
+  user_id integer [not null, note: 'User who created this scan']
+  patient_id integer [not null, note: 'Patient this scan belongs to']
+  session_id uuid [unique, not null, note: 'UUID for session-based processing - tracks temporary files']
+  created_at timestamp [default: `now()`]
+  is_processed boolean [default: false, note: 'Indicates if AI processing is complete']
+  
+  Note: '''
+  Lightweight processing session tracker.
+  Uses session-based temporary file storage during processing.
+  Final results stored in ScanResult model after completion.
+  Session files automatically cleaned up after processing.
+  '''
+}
+
+Table scan_results {
+  id integer [pk, increment]
+  scan_id integer [unique, not null, note: 'OneToOne relationship with Scan']
+  patient_name varchar [note: 'Cached patient name for better organization - Max length: 100']
+  
+  // File storage fields - using dynamic upload paths: {patient_name}/scan_{scan_id}/{filename}
+  stl_file varchar [null, note: 'Path to generated 3D Model file (STL)']
+  depth_map_8bit varchar [null, note: 'Path to 8-bit depth map image']
+  depth_map_16bit varchar [null, note: 'Path to 16-bit depth map image'] 
+  preview_image varchar [null, note: 'Path to STL preview/thumbnail image']
+  
+  // Processing results and metadata
+  volume_estimate float [null, note: 'Calculated wound volume in cubic units']
+  processing_metadata json [null, note: 'JSON field storing AI processing metadata']
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [note: 'Auto-updated on save']
+  
+  Note: '''
+  Final results after session-based AI processing completion.
+  Files organized in patient-centric directory structure.
+  Auto-populates patient_name from related scan.patient.
+  '''
+}
+
+// --- Relationships ---
+
+// User -> UserProfile (OneToOne)
+Ref user_profile: users.id - user_profiles.user_id [delete: cascade]
+
+// User -> Patients (OneToMany) 
+Ref user_patients: users.id < patients.user_id [delete: cascade]
+
+// User -> Scans (OneToMany)
+Ref user_scans: users.id < scans.user_id [delete: cascade]
+
+// Patient -> Scans (OneToMany)
+Ref patient_scans: patients.id < scans.patient_id [delete: cascade]
+
+// Scan -> ScanResult (OneToOne)
+Ref scan_result: scans.id - scan_results.scan_id [delete: cascade]
+
+// --- Session-Based Processing Architecture Notes ---
+Note: '''
+SESSION-BASED ARCHITECTURE (August 2025):
+
+1. Processing Flow:
+   - Scan created with unique session_id UUID
+   - Temporary files stored in: media/temp/sessions/{session_id}/
+   - AI processing uses SessionManager for file isolation
+   - Final results migrated to: media/{patient_name}/scan_{scan_id}/
+   - Session files automatically cleaned up after completion
+
+2. File Organization:
+   - Temporary: media/temp/sessions/{session_id}/*
+   - Final: media/{patient_name}/scan_{scan_id}/*
+   - Comprehensive temp cleanup after mesh generation
+
+3. Concurrent Processing:
+   - Multiple users can process simultaneously
+   - Session isolation prevents file conflicts
+   - Error-safe cleanup guaranteed
+
+4. AI Model Management:
+   - YOLO models: Static files (scripts/yolov8n-seg.pt)
+   - ZoeDepth models: Auto-downloaded and cached by PyTorch Hub
+   - No database tracking needed for current architecture
+
+5. Data Flow:
+   Patient -> Scan (with session_id) -> Temporary Processing -> ScanResult (final files)
+'''
