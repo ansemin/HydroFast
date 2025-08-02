@@ -139,61 +139,66 @@
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
-<div style="width: 80%; margin: auto;">
 ```mermaid
 graph TB
-    subgraph "📱 Mobile Frontend (React Native/Expo)"
-        A[Authentication] --> B[Patient Management]
-        B --> C[Camera Interface]
-        C --> D[AI Processing UI]
-        D --> E[3D Visualization]
+    subgraph main[" "]
+        subgraph "📱 Mobile Frontend (React Native/Expo)"
+            A[Authentication] --> B[Patient Management]
+            B --> C[Camera Interface]
+            C --> D[AI Processing UI]
+            D --> E[3D Visualization]
+        end
+        
+        subgraph "🌐 Backend API (Django REST Framework)"
+            F[Auth Service] --> G[Patient API]
+            G --> H[Scan Management] 
+            H --> I[AI Processing Pipeline]
+        end
+        
+        subgraph "💾 Data Management"
+            N[SQLite/PostgreSQL<br/><50ms Queries] --> O[Session Storage<br/>Auto Cleanup]
+            O --> P[Patient Files<br/>Organized Structure]
+        end
+        
+        subgraph "🤖 AI Processing Engine"
+            J[YOLO Wound Segmentation<br/>IoU: 0.721 • Dice: 0.838] --> K[ZoeDepth Analysis<br/>63s Processing]
+            K --> L[3D Mesh Generation<br/>28K Vertices]
+            L --> M[STL Export<br/>2.7MB Files]
+        end
+        
+        A -.->|JWT Auth| F
+        B -.->|REST API| G
+        C -.->|Image Upload| H
+        D -.->|Processing Requests| I
+        I --> J
+        F --> N
     end
-    
-    subgraph "🌐 Backend API (Django REST Framework)"
-        F[Auth Service] --> G[Patient API]
-        G --> H[Scan Management] 
-        H --> I[AI Processing Pipeline]
-    end
-    
-    subgraph "🤖 AI Processing Engine"
-        J[YOLO Wound Segmentation<br/>IoU: 0.721<br/>Dice: 0.838] --> K[ZoeDepth Analysis<br/>63s Processing]
-        K --> L[3D Mesh Generation<br/>28K Vertices]
-        L --> M[STL Export<br/>2.7MB Files]
-    end
-    
-    subgraph "💾 Data Management"
-        N[SQLite/PostgreSQL<br/><50ms Queries] --> O[Session Storage<br/>Auto Cleanup]
-        O --> P[Patient Files<br/>Organized Structure]
-    end
-    
-    A -.->|JWT Auth| F
-    B -.->|REST API| G
-    C -.->|Image Upload| H
-    D -.->|Processing Requests| I
-    I --> J
-    F --> N
     
     style A fill:#e3f2fd
     style F fill:#f1f8e9
     style J fill:#fce4ec
     style N fill:#fff3e0
 ```
-```
-</div>
 
 ### AI Processing Pipeline Detail
 ```mermaid
 flowchart LR
-    A[📸 Raw Image<br/>208KB Upload] --> B[🎯 YOLO Detection<br/>656ms Inference]
-    B --> C[✂️ Bbox Extraction<br/>162x177px Crop]
-    C --> D[🔍 ZoeDepth Analysis<br/>63s Processing]
-    D --> E[📊 Depth Maps<br/>8bit + 16bit]
-    E --> F[🧊 Mesh Generation<br/>11s STL Creation]
-    F --> G[📄 Final Output<br/>2.7MB STL File]
-    
-    B -.-> B1[Segmentation Mask<br/>IoU: 0.721<br/>Dice: 0.838<br/>Pixel Accuracy: 99.7%]
-    D -.-> D1[Volume Estimate<br/>403.77 mm³]
-    F -.-> F1[Static Preview PNG<br/>105KB Preview Image]
+    subgraph main[" "]
+        direction LR
+        A[📸 Raw Image<br/>208KB Upload<br/>Smartphone Camera] 
+        B[🎯 YOLO Detection<br/>656ms Inference<br/>Wound Segmentation]
+        C[✂️ Bbox Extraction<br/>162x177px Crop<br/>Region of Interest]
+        D[🔍 ZoeDepth Analysis<br/>63s Processing<br/>Monocular Depth Est.]
+        E[📊 Depth Maps<br/>8bit + 16bit<br/>Spatial Analysis]
+        F[🧊 Mesh Generation<br/>11s STL Creation<br/>3D Reconstruction]
+        G[📄 Final Output<br/>2.7MB STL File<br/>3D Printing Ready]
+        
+        A --> B --> C --> D --> E --> F --> G
+        
+        B -.-> B1[Segmentation Mask<br/>IoU: 0.721<br/>Dice: 0.838<br/>Pixel Accuracy: 99.7%]
+        D -.-> D1[Volume Estimate<br/>403.77 mm³<br/>Clinical Measurements]
+        F -.-> F1[Static Preview PNG<br/>105KB Preview Image<br/>Quality Validation]
+    end
     
     style A fill:#e8f5e8
     style G fill:#e3f2fd
