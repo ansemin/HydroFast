@@ -1,7 +1,7 @@
 # 🌊 HydroFast - AI-Powered Wound Analysis Platform
 
 <p align="center">
-  <img src="frontend/src/assets/images/HydroFast.svg" alt="HydroFast Logo" width="400"/>
+  <img src="frontend/src/assets/images/HydroFast.svg" alt="HydroFast Logo" width="600"/>
 </p>
 
 <p align="center">
@@ -64,9 +64,10 @@
 
 ### AI Processing & 3D Reconstruction Pipeline
 <p align="center">
-  <img src="frontend/src/assets/images/YOLOdetection.png" alt="YOLO Wound Detection" width="220" style="margin: 0 10px;"/>
-  <img src="frontend/src/assets/images/Depth Analysis.png" alt="Depth Analysis" width="220" style="margin: 0 10px;"/>
-  <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="220" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/photopreview.png" alt="Photo Preview" width="180" style="margin: 0 8px;"/>
+  <img src="frontend/src/assets/images/YOLOdetection.png" alt="YOLO Wound Detection" width="180" style="margin: 0 8px;"/>
+  <img src="frontend/src/assets/images/Depth Analysis.png" alt="Depth Analysis" width="180" style="margin: 0 8px;"/>
+  <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="180" style="margin: 0 8px;"/>
 </p>
 
 ### AI Processing Pipeline Detail
