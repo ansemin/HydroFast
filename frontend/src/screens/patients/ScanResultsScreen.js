@@ -9,7 +9,8 @@ import {
   StatusBar,
   Platform,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Linking
 } from 'react-native';
 import { Svg, Path, Rect } from 'react-native-svg';
 import { BackArrowIcon } from '../../components/ui';
@@ -104,28 +105,43 @@ const ScanResultsScreen = ({ route, navigation }) => {
     return `${mb.toFixed(1)} MB`;
   };
 
-  const handleDownload = (scan) => {
-    // Navigate to download screen with properly structured scan data
-    const scanData = {
-      stl_file: scan.result?.stl_file,
-      preview_image: scan.result?.preview_image,
-      depth_map_8bit: scan.result?.depth_map_8bit,
-      depth_map_16bit: scan.result?.depth_map_16bit,
-      stl_generation: {
-        stl_file_size_mb: scan.result?.file_sizes?.stl_file || 0,
-      },
-      preview_generation: {
-        preview_file_size_mb: scan.result?.file_sizes?.preview_image || 0,
-      },
-      volume_estimate: scan.result?.volume_estimate,
-      processing_metadata: scan.result?.processing_metadata,
-    };
+  const handleDownload = async (scan) => {
+    try {
+      // Get STL file URL from scan result
+      const stlFileUrl = scan.result?.stl_file;
+      
+      if (!stlFileUrl) {
+        Alert.alert('Error', 'STL file not available for download');
+        return;
+      }
 
-    navigation.navigate('Download Files', {
-      scanId: scan.id,
-      scanData: scanData,
-      patientId: patientId
-    });
+      // Ensure URL is absolute
+      let downloadUrl = stlFileUrl;
+      if (!stlFileUrl.startsWith('http://') && !stlFileUrl.startsWith('https://')) {
+        // If it's a relative URL, prepend the base URL from your API
+        const baseUrl = 'http://172.30.120.224:8000'; // Use your API base URL
+        downloadUrl = stlFileUrl.startsWith('/') ? `${baseUrl}${stlFileUrl}` : `${baseUrl}/${stlFileUrl}`;
+      }
+
+      // Generate filename
+      const patientName = scan.patient_name || 'Patient';
+      const scanNumber = scan.scan_attempt_number || scan.id;
+      const filename = `${patientName.replace(/\s+/g, '_')}_Scan_${scanNumber.toString().padStart(3, '0')}.stl`;
+
+      console.log(`Downloading ${filename} from:`, downloadUrl);
+      
+      // Open the URL in the browser/default app for download
+      const supported = await Linking.canOpenURL(downloadUrl);
+      if (supported) {
+        await Linking.openURL(downloadUrl);
+        Alert.alert('Download Started', `${filename} download has been initiated`);
+      } else {
+        Alert.alert('Error', `Cannot open download URL`);
+      }
+    } catch (error) {
+      console.error('Error downloading STL file:', error);
+      Alert.alert('Download Error', `Failed to download STL file: ${error.message}`);
+    }
   };
 
   // Download handler copied from DownloadFilesScreen
