@@ -87,7 +87,7 @@
 - **Patient Management:** Comprehensive CRUD operations with search, edit, and history tracking
 - **AI Processing Screens:** Real-time progress indicators with technical visualizations and metrics
 - **3D Visualization:** Static mesh previews with technical specifications
-- **File Management:** Organized patient-centric download system with automatic cleanup
+- **File Management:** Individual file downloads (STL models, preview images) with patient-centric organization and automatic cleanup
 - **Session Management:** UUID-based processing with secure temporary file handling
 
 ### Mobile Design Highlights
@@ -95,6 +95,12 @@
 - **Medical UI/UX:** Healthcare-focused design patterns with accessibility considerations
 - **Performance Optimization:** Smart caching and offline capability
 - **Professional Aesthetics:** Clean, medical-grade interface suitable for clinical environments
+
+### Download System Architecture
+- **Individual File Downloads:** Each file (STL models, preview images, depth maps) downloads separately through the device's default browser/app
+- **Download All Feature:** Sequential download of all available files with 1-second delays between downloads
+- **File Access:** Direct URL-based downloads using `Linking.openURL()` for cross-platform compatibility
+- **Patient Organization:** Files organized in patient-specific directories for easy management
 
 ## 🏗️ System Architecture
 
@@ -107,8 +113,11 @@
 - **Network:** Smart caching with offline capability
 
 ### Backend (Django + AI Processing)
-- **Processing:** Session-based pipeline with automatic cleanup
-- **Concurrency:** 50+ simultaneous processing sessions
+- **Processing:** Session-based pipeline with comprehensive automatic temp file cleanup
+- **Concurrency:** Multiple simultaneous processing sessions with isolated temporary storage
+- **Session Manager:** UUID-based temporary file management with automatic cleanup of all temp directories (`generated_stl`, `stl_previews`, `processed_scans`, sessions) and error-safe operations ensuring zero temp accumulation
+- **API Architecture:** RESTful endpoints with granular AI processing steps for step-by-step workflow
+- **Database:** SQLite development with PostgreSQL production support and patient-centric file organization
 
 ### AI/ML Pipeline
 - **Depth Estimation:** ZoeDepth monocular depth estimation from smartphone images
