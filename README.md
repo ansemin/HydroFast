@@ -1,7 +1,7 @@
 # 🌊 HydroFast - AI-Powered Wound Analysis Platform
 
 <p align="center">
-  <img src="frontend/src/assets/images/HydroFast.png" alt="HydroFast Logo" width="400"/>
+  <img src="frontend/src/assets/images/HydroFast.svg" alt="HydroFast Logo" width="600"/>
 </p>
 
 <p align="center">
@@ -22,6 +22,14 @@
 **Clinical Challenge:** Traditional wound assessment suffers from 44% measurement errors, subjective documentation, and lacks 3D analysis capabilities, leading to treatment delays and poor patient outcomes.
 
 **HydroFast Solution:** Transforms smartphone cameras into medical-grade 3D assessment tools using AI-powered wound segmentation (YOLOv8) and depth estimation (ZoeDepth) to generate patient-specific 3D models for personalized wound care and improved healing outcomes.
+
+## 📊 Performance Metrics
+
+### 🧠 AI Model Performance
+- **YOLOv8 Segmentation:** IoU: 0.721, Dice: 0.838, **Pixel Accuracy: 99.7%**
+- **Complete Pipeline:** 65-75 seconds (YOLO: 656ms, ZoeDepth: 63s, STL: 11s)
+- **Clinical Impact:** 44% measurement improvement, 75% faster documentation
+- **3D Output:** ~30,000 vertices, STL files ready for 3D printing
 
 ## ✨ Core Features & Demo
 
@@ -56,10 +64,14 @@
 
 ### AI Processing & 3D Reconstruction Pipeline
 <p align="center">
-  <img src="frontend/src/assets/images/YOLOdetection.png" alt="YOLO Wound Detection" width="220" style="margin: 0 10px;"/>
-  <img src="frontend/src/assets/images/Depth Analysis.png" alt="Depth Analysis" width="220" style="margin: 0 10px;"/>
-  <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="220" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/photopreview.png" alt="Photo Preview" width="180" style="margin: 0 8px;"/>
+  <img src="frontend/src/assets/images/YOLOdetection.png" alt="YOLO Wound Detection" width="180" style="margin: 0 8px;"/>
+  <img src="frontend/src/assets/images/Depth Analysis.png" alt="Depth Analysis" width="180" style="margin: 0 8px;"/>
+  <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="180" style="margin: 0 8px;"/>
 </p>
+
+### AI Processing Pipeline Detail
+![AI Processing Pipeline](frontend/src/assets/images/AI%20processing%20pipeline.png)
 
 ### Key Features Detail
 - **Authentication & Dashboard:** Clean medical app design with role-based access to 20 sample patients
@@ -80,35 +92,31 @@
 ### High-Level Architecture
 <img src="frontend/src/assets/images/highlevel%20system%20architecture.png" alt="High-Level System Architecture" width="600"/>
 
-### AI Processing Pipeline Detail
-![AI Processing Pipeline](frontend/src/assets/images/AI%20processing%20pipeline.png)
+### Frontend (React Native + Expo)
+- **Framework:** React Native 0.76.9 with Expo SDK 52
+- **Navigation:** React Navigation 6 with optimized stack management
+- **State Management:** React hooks with context API
+- **Performance:** 59MB bundle size, <3s startup time
+- **Network:** Smart caching with offline capability
 
-## 📊 Performance Metrics
+### Backend (Django + AI Processing)
+- **API Framework:** Django 5.1.3 with REST Framework
+- **AI Models:** ZoeDepth (PyTorch), YOLO v8 (Ultralytics)
+- **Processing:** Session-based pipeline with automatic cleanup
+- **Performance:** 60-420ms API response times
+- **Concurrency:** 50+ simultaneous processing sessions
 
-### 🧠 AI Model Performance
-- **YOLOv8 Segmentation:** IoU: 0.721, Dice: 0.838, Pixel Accuracy: 99.7%
-- **Processing Efficiency:** Complete AI analysis in 65-75 seconds
-- **ZoeDepth Analysis:** Monocular depth estimation from smartphone images
-- **Pipeline Breakdown:** YOLO: 656ms, ZoeDepth: 63s, STL: 11s
+### AI/ML Pipeline
+- **Depth Estimation:** ZoeDepth monocular depth estimation from smartphone images
+- **Wound Segmentation:** YOLOv8 achieving IoU: 0.721, Dice: 0.838, Pixel Accuracy: 99.7%
+- **3D Generation:** NumPy-STL mesh processing with STL export
 
-### 🏗️ System Performance (Production Metrics)
-- **API Response Time:** 60-420ms average endpoint latency
-- **Database Performance:** <50ms query response time for patient records
-- **Concurrent Processing:** 50+ simultaneous AI analysis sessions
-- **Memory Efficiency:** <4GB RAM usage for 1080p image processing
-- **Storage Optimization:** 95% temporary file reduction through automated cleanup
+### Infrastructure & DevOps
+- **Database:** SQLite (dev) / PostgreSQL (prod) with <50ms queries
+- **Storage:** Organized patient-centric file structure
+- **Testing:** Comprehensive test suite with 95% coverage
+- **Deployment:** Docker-ready with environment configuration
 
-### 📱 Mobile Application Performance
-- **Bundle Optimization:** 59MB Android app size with native performance
-- **Network Efficiency:** Smart caching reducing bandwidth usage by 60%
-- **Battery Performance:** Optimized processing minimizing device thermal impact
-- **Cross-Platform Consistency:** 99.2% feature parity between iOS/Android
-
-### 🏥 Clinical Impact Metrics
-- **AI Performance:** IoU: 0.721, Dice: 0.838, Pixel Accuracy: 99.7%
-- **Documentation Time:** 75% reduction vs traditional methods
-- **Measurement Accuracy:** 44% improvement over ruler-based assessments
-- **3D Model Quality:** 28,674 vertices, 56,672 faces per STL (2.7MB average)
 
 ## 🚀 Quick Start
 
@@ -177,33 +185,6 @@ npm install
 npx expo start
 # Scan QR code with Expo Go app on mobile device
 ```
-
-## 🛠️ Tech Stack & Architecture
-
-### Frontend (React Native + Expo)
-- **Framework:** React Native 0.76.9 with Expo SDK 52
-- **Navigation:** React Navigation 6 with optimized stack management
-- **State Management:** React hooks with context API
-- **Performance:** 59MB bundle size, <3s startup time
-- **Network:** Smart caching with offline capability
-
-### Backend (Django + AI Processing)
-- **API Framework:** Django 5.1.3 with REST Framework
-- **AI Models:** ZoeDepth (PyTorch), YOLO v8 (Ultralytics)
-- **Processing:** Session-based pipeline with automatic cleanup
-- **Performance:** 60-420ms API response times
-- **Concurrency:** 50+ simultaneous processing sessions
-
-### AI/ML Pipeline
-- **Depth Estimation:** ZoeDepth monocular depth estimation from smartphone images
-- **Wound Segmentation:** YOLOv8 achieving IoU: 0.721, Dice: 0.838, Pixel Accuracy: 99.7%
-- **3D Generation:** NumPy-STL mesh processing with STL export
-
-### Infrastructure & DevOps
-- **Database:** SQLite (dev) / PostgreSQL (prod) with <50ms queries
-- **Storage:** Organized patient-centric file structure
-- **Testing:** Comprehensive test suite with 95% coverage
-- **Deployment:** Docker-ready with environment configuration
 
 ## ⚠️ Current Limitations
 
