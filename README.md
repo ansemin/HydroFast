@@ -70,6 +70,12 @@
   <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="180" style="margin: 0 8px;"/>
 </p>
 
+### 3D Printing Results
+<p align="center">
+  <img src="frontend/src/assets/images/printing outcome.png" alt="3D Printed Model - Top View" width="200" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/printing outcome sideview.png" alt="3D Printed Model - Side View" width="200" style="margin: 0 10px;"/>
+</p>
+
 ### AI Processing Pipeline Detail
 ![AI Processing Pipeline](frontend/src/assets/images/AI%20processing%20pipeline.png)
 
