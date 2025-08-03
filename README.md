@@ -35,21 +35,21 @@
 
 ### 1. **Patient Management & Database Integration**
 <p align="center">
-  <img src="frontend/src/assets/images/Patient Management DataBase Integration.gif" alt="Patient Management & Database Integration Demo" width="300"/>
+  <img src="frontend/src/assets/images/Patient Management DataBase Integration.gif" alt="Patient Management & Database Integration Demo" width="500"/>
 </p>
 
 - Securely manage patient records with full CRUD functionality on a cross-platform mobile app with comprehensive history tracking.
 
 ### 2. **AI-Powered Analysis & 3D Reconstruction**
 <p align="center">
-  <img src="frontend/src/assets/images/AI powered analysis and 3D contruction.gif" alt="AI-Powered Analysis & 3D Reconstruction Demo" width="300"/>
+  <img src="frontend/src/assets/images/AI powered analysis and 3D contruction.gif" alt="AI-Powered Analysis & 3D Reconstruction Demo" width="500"/>
 </p>
 
 - Transform smartphone images into medical-grade 3D models using AI-powered wound segmentation and depth estimation to generate detailed STL files for analysis.
 
 ### 3. **Complete End-to-End Workflow**
 <p align="center">
-  <img src="frontend/src/assets/images/CompleteEnd2Endflow.gif" alt="Complete End-to-End Workflow Demo" width="300"/>
+  <img src="frontend/src/assets/images/CompleteEnd2Endflow.gif" alt="Complete End-to-End Workflow Demo" width="500"/>
 </p>
 
 - Experience the full clinical workflow, from patient creation to final 3D model generation. The platform automates measurements and securely stores all data, including the exported STL files, in the patient's history.
