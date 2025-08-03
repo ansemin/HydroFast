@@ -5,12 +5,8 @@
 </p>
 
 <p align="center">
-  <em>Revolutionary AI-powered mobile wound assessment with 3D reconstruction and medical-grade precision</em>
+  <em>AI-powered mobile wound assessment with 3D reconstruction and medical-grade precision</em>
 </p>
-
----
-
-**👨‍💼 AI Engineer:** Anse Min | [LinkedIn](https://www.linkedin.com/in/ansemin/) | 📧 ansemin1025@gmail.com
 
 ---
 
@@ -27,33 +23,65 @@
 
 **HydroFast Solution:** Transforms smartphone cameras into medical-grade 3D assessment tools using AI-powered wound segmentation (YOLOv8) and depth estimation (ZoeDepth) to generate patient-specific 3D models for personalized wound care and improved healing outcomes.
 
-## ✨ Core Features
+## ✨ Core Features & Demo
 
-### 🤖 AI-Powered Analysis
-- **YOLOv8 Segmentation:** Real-time wound boundary detection (99.7% accuracy)
-- **ZoeDepth 3D Reconstruction:** Precise volumetric analysis from smartphone cameras
-- **Automated Measurements:** Area, perimeter, and depth calculations eliminating manual errors
+### 1. **Patient Management & Database Integration**
+- **GIF Demo (40s):** *Login → Patient List (20 patients) → Add New Patient → Edit Patient Details → View Patient History*
+- **Description:** Securely manage patient records with full CRUD functionality on a cross-platform mobile app (iOS/Android). The intuitive interface provides seamless database integration, starting with a pre-populated list of 20 sample patients and enabling comprehensive history tracking.
 
-### 📱 Mobile-First Design
-- **Cross-Platform:** React Native for iOS/Android deployment
-- **User-Friendly Interface:** Intuitive capture and analysis workflow
-- **Real-Time Processing:** Instant AI feedback and 3D visualization
+### 2. **AI-Powered Analysis & 3D Reconstruction**
+- **GIF Demo (35s):** *Select Patient → View Previous Scans → New Scan Upload → AI Processing → Results Saved to Patient Record*
+- **Description:** Transform smartphone images into medical-grade 3D models. Our pipeline uses YOLOv8 for precise wound segmentation (99.7% pixel accuracy) and ZoeDepth for depth estimation, providing instant AI feedback and generating a detailed 3D STL file for analysis.
 
-### 💾 Clinical Integration
-- **3D Model Export:** STL files for 3D printing and analysis
-- **Patient Management:** Secure data storage with progress tracking
-- **Professional Documentation:** Standardized wound assessment reports
+### 3. **Complete End-to-End Workflow**
+- **GIF Demo (60s):** *Patient Creation → Wound Photo → AI Analysis → STL Generation → Download & Patient History Update*
+- **Description:** Experience the full clinical workflow, from patient creation to final 3D model generation. The platform automates measurements, generates professional documentation, and securely stores all data, including the exported STL files, in the patient's history.
 
-## 🎬 Demo GIFs
+### 🏥 Usage Workflow
+1. **Login** with demo credentials
+2. **Select Patient** from the 20 sample patients
+3. **Capture/Upload** wound image
+4. **Run AI Analysis** (YOLO + ZoeDepth + STL generation)
+5. **Download Results** (3D model, measurements, reports)\
 
-### 1. **Patient Management & Database Integration** (40 seconds)
-*[GIF: Login → Patient List (20 patients) → Add New Patient → Edit Patient Details → View Patient History]*
+## 📱 UI Screenshots
 
-### 2. **AI Scan Results & Database Connectivity** (35 seconds)
-*[GIF: Select Patient → View Previous Scans → New Scan Upload → AI Processing → Results Saved to Patient Record]*
+### Patient Management & Database Workflow
+<p align="center">
+  <img src="frontend/src/assets/images/PatientList.png" alt="Patient Directory" width="180" style="margin: 0 5px;"/>
+  <img src="frontend/src/assets/images/Add Patient.png" alt="Add New Patient" width="180" style="margin: 0 5px;"/>
+  <img src="frontend/src/assets/images/ScanResults.png" alt="Scan Results History" width="180" style="margin: 0 5px;"/>
+  <img src="frontend/src/assets/images/DownloadFiles.png" alt="Download Files" width="180" style="margin: 0 5px;"/>
+</p>
 
-### 3. **Complete Workflow: Patient to 3D Model** (60 seconds)
-*[GIF: Patient Creation → Wound Photo → AI Analysis → STL Generation → Download & Patient History Update]*
+### AI Processing & 3D Reconstruction Pipeline
+<p align="center">
+  <img src="frontend/src/assets/images/YOLOdetection.png" alt="YOLO Wound Detection" width="220" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/Depth Analysis.png" alt="Depth Analysis" width="220" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="220" style="margin: 0 10px;"/>
+</p>
+
+### Key Features Detail
+- **Authentication & Dashboard:** Clean medical app design with role-based access to 20 sample patients
+- **Patient Management:** Comprehensive CRUD operations with search, edit, and history tracking
+- **AI Processing Screens:** Real-time progress indicators with technical visualizations and metrics
+- **3D Visualization:** Static mesh previews with technical specifications (28K+ vertices, 2.7MB STL)
+- **File Management:** Organized patient-centric download system with automatic cleanup
+- **Session Management:** UUID-based processing with secure temporary file handling
+
+### Mobile Design Highlights
+- **Cross-Platform Consistency:** 99.2% feature parity between iOS/Android with 59MB bundle size
+- **Medical UI/UX:** Healthcare-focused design patterns with accessibility considerations
+- **Performance Optimization:** <3s startup time with smart caching and offline capability
+- **Professional Aesthetics:** Clean, medical-grade interface suitable for clinical environments
+
+## 🏗️ System Architecture
+
+### High-Level Architecture
+<img src="frontend/src/assets/images/highlevel%20system%20architecture.png" alt="High-Level System Architecture" width="600"/>
+
+### AI Processing Pipeline Detail
+![AI Processing Pipeline](frontend/src/assets/images/AI%20processing%20pipeline.png)
 
 ## 📊 Performance Metrics
 
@@ -105,78 +133,50 @@ cd backend
 pip install -r requirements.txt
 ```
 
-#### 2. Database Setup
+#### 2. Configure Environment Variables
+Create a `.env` file in the project root directory (`/HydroFast/.env`):
+```env
+# Required for creating default admin and user accounts
+DEFAULT_ADMIN_PASSWORD=your_secure_admin_password
+DEFAULT_USER_PASSWORD=your_secure_user_password
+```
+
+#### 3. Database Setup
 ```bash
-# Initialize database with sample data
+# Initialize database and create users with passwords from .env
 python manage.py migrate
 python manage.py create_default_user
 python manage.py load_sample_patients
 ```
 
-#### 3. Get Your IP Address and Update Configuration
+#### 4. Get Your IP Address and Update Frontend Configuration
 ```bash
 # Get your IP address
 ipconfig
 # Note your IPv4 address (e.g., 172.30.1.3)
 ```
 
-Create `.env` file in `frontend/` directory:
-```
+Create a separate `.env` file in the `frontend/` directory:
+```env
 API_BASE_URL=http://YOUR_IP_ADDRESS:8000
-BACKEND_PASSWORD=your_secure_password_here
+# This can be the same as DEFAULT_USER_PASSWORD
+BACKEND_PASSWORD=your_secure_user_password
 ```
 
-#### 4. Start Backend Server
+#### 5. Start Backend Server
 ```bash
 cd backend/scripts
 python run_server.py
 # Server will start at http://YOUR_IP:8000
 ```
 
-#### 5. Start Mobile App
+#### 6. Start Mobile App
 ```bash
 cd frontend
 npm install
 npx expo start
 # Scan QR code with Expo Go app on mobile device
 ```
-
-### 🏥 Usage Workflow
-1. **Login** with demo credentials
-2. **Select Patient** from the 20 sample patients
-3. **Capture/Upload** wound image
-4. **Run AI Analysis** (YOLO + ZoeDepth + STL generation)
-5. **Download Results** (3D model, measurements, reports)
-
-## 📱 UI Screenshots
-
-### Core Workflow Screens
-| Patient Management | AI Processing | Results & Export |
-|-------------------|---------------|------------------|
-| ![Patient List](screenshots/patient-list.png) | ![YOLO Detection](screenshots/yolo-detection.png) | ![STL Preview](screenshots/stl-preview.png) |
-| ![Add Patient](screenshots/add-patient.png) | ![Depth Analysis](screenshots/depth-analysis.png) | ![Download Files](screenshots/download-files.png) |
-
-### Key Features Detail
-- **Authentication & Dashboard:** Clean medical app design with role-based access to 20 sample patients
-- **Patient Management:** Comprehensive CRUD operations with search, edit, and history tracking
-- **AI Processing Screens:** Real-time progress indicators with technical visualizations and metrics
-- **3D Visualization:** Static mesh previews with technical specifications (28K+ vertices, 2.7MB STL)
-- **File Management:** Organized patient-centric download system with automatic cleanup
-- **Session Management:** UUID-based processing with secure temporary file handling
-
-### Mobile Design Highlights
-- **Cross-Platform Consistency:** 99.2% feature parity between iOS/Android with 59MB bundle size
-- **Medical UI/UX:** Healthcare-focused design patterns with accessibility considerations
-- **Performance Optimization:** <3s startup time with smart caching and offline capability
-- **Professional Aesthetics:** Clean, medical-grade interface suitable for clinical environments
-
-## 🏗️ System Architecture
-
-### High-Level Architecture
-<img src="frontend/src/assets/images/highlevel%20system%20architecture.png" alt="High-Level System Architecture" width="600"/>
-
-### AI Processing Pipeline Detail
-![AI Processing Pipeline](frontend/src/assets/images/AI%20processing%20pipeline.png)
 
 ## 🛠️ Tech Stack & Architecture
 
