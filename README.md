@@ -46,11 +46,20 @@
 
 ## 📱 UI Screenshots
 
-### Core Workflow Screens
-| Patient Management | AI Processing | Results & Export |
-|-------------------|---------------|------------------|
-| ![Patient List](screenshots/patient-list.png) | ![YOLO Detection](screenshots/yolo-detection.png) | ![STL Preview](screenshots/stl-preview.png) |
-| ![Add Patient](screenshots/add-patient.png) | ![Depth Analysis](screenshots/depth-analysis.png) | ![Download Files](screenshots/download-files.png) |
+### Patient Management & Database Workflow
+<p align="center">
+  <img src="frontend/src/assets/images/PatientList.png" alt="Patient Directory" width="180" style="margin: 0 5px;"/>
+  <img src="frontend/src/assets/images/Add Patient.png" alt="Add New Patient" width="180" style="margin: 0 5px;"/>
+  <img src="frontend/src/assets/images/ScanResults.png" alt="Scan Results History" width="180" style="margin: 0 5px;"/>
+  <img src="frontend/src/assets/images/DownloadFiles.png" alt="Download Files" width="180" style="margin: 0 5px;"/>
+</p>
+
+### AI Processing & 3D Reconstruction Pipeline
+<p align="center">
+  <img src="frontend/src/assets/images/YOLOdetection.png" alt="YOLO Wound Detection" width="220" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/Depth Analysis.png" alt="Depth Analysis" width="220" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="220" style="margin: 0 10px;"/>
+</p>
 
 ### Key Features Detail
 - **Authentication & Dashboard:** Clean medical app design with role-based access to 20 sample patients
