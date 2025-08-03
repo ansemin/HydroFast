@@ -98,3 +98,8 @@ backend/apps/scans/views_original_backup.py
 
 # Ignore logs
 backend/logs
+
+# Documentation files
+erd.dbml
+context.md
+Project directory.md
