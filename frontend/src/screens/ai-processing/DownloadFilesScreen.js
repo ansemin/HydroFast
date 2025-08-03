@@ -14,6 +14,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { BackArrowIcon } from '../../components/ui';
+import { API_BASE_URL } from '@env';
 
 // Green File Icon SVG Component
 function FileIcon() {
@@ -51,11 +52,11 @@ const DownloadFilesScreen = () => {
         return;
       }
 
-      // Ensure URL is absolute
+      // Ensure URL is absolute using the same logic as the API service
       let downloadUrl = url;
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        // If it's a relative URL, prepend the base URL
-        const baseUrl = __DEV__ ? 'http://localhost:8000' : 'https://your-production-url.com';
+        // Use the same base URL configuration as the API service
+        const baseUrl = API_BASE_URL ? `http://${API_BASE_URL}:8000` : 'http://127.0.0.1:8000';
         downloadUrl = url.startsWith('/') ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
       }
 

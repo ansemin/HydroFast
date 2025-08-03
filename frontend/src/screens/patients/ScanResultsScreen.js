@@ -15,6 +15,7 @@ import {
 import { Svg, Path, Rect } from 'react-native-svg';
 import { BackArrowIcon } from '../../components/ui';
 import { scanService } from '../../services';
+import { API_BASE_URL } from '@env';
 
 // Green Download Icon SVG Component (left icon)
 function LeftDownloadIcon() {
@@ -115,11 +116,11 @@ const ScanResultsScreen = ({ route, navigation }) => {
         return;
       }
 
-      // Ensure URL is absolute
+      // Construct the download URL using the same logic as the API service
       let downloadUrl = stlFileUrl;
       if (!stlFileUrl.startsWith('http://') && !stlFileUrl.startsWith('https://')) {
-        // If it's a relative URL, prepend the base URL from your API
-        const baseUrl = 'http://172.30.120.224:8000'; // Use your API base URL
+        // Use the same base URL configuration as the API service
+        const baseUrl = API_BASE_URL ? `http://${API_BASE_URL}:8000` : 'http://127.0.0.1:8000';
         downloadUrl = stlFileUrl.startsWith('/') ? `${baseUrl}${stlFileUrl}` : `${baseUrl}/${stlFileUrl}`;
       }
 
@@ -143,54 +144,6 @@ const ScanResultsScreen = ({ route, navigation }) => {
       Alert.alert('Download Error', `Failed to download STL file: ${error.message}`);
     }
   };
-
-  // Download handler copied from DownloadFilesScreen
-  /*
-  const handleDownload = async (scanItem) => {
-    const downloadFilename = `${scanItem.fileName}.zip`;
-    console.log(`Download initiated for ${downloadFilename}...`);
-    
-    try {
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert('Error', 'Sharing is not available on this device');
-        return;
-      }
-
-      const asset = Asset.fromModule(zipAssetModule);
-      const networkUri = asset.uri;
-
-      if (!networkUri) {
-        Alert.alert('Error', 'Could not resolve the asset network URI.');
-        return;
-      }
-
-      const localDestinationUri = FileSystem.cacheDirectory + downloadFilename;
-      console.log(`Attempting download from ${networkUri} to ${localDestinationUri}`);
-      
-      const downloadResult = await FileSystem.downloadAsync(
-        networkUri,
-        localDestinationUri
-      );
-
-      if (downloadResult.status !== 200) {
-        throw new Error(`Failed to download file: Server responded with status ${downloadResult.status}`);
-      }
-
-      console.log('Download complete:', downloadResult);
-
-      await Sharing.shareAsync(downloadResult.uri, { 
-        mimeType: 'application/zip',
-        dialogTitle: `Save or Share ${downloadFilename}`,
-        UTI: 'public.zip-archive'
-      });
-      console.log(`Sharing dialog prompted for ${downloadFilename}.`);
-
-    } catch (error) {
-      console.error('Error during FileSystem.downloadAsync/share process:', error);
-      Alert.alert('Download Error', `Failed to download or share the file: ${error.message}`);
-    }
-  };
-  */
 
   return (
     <SafeAreaView style={styles.safeArea}>
