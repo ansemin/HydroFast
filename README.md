@@ -45,14 +45,14 @@
 - **GIF Demo (60s):** *Patient Creation → Wound Photo → AI Analysis → STL Generation → Download & Patient History Update*
 - **Description:** Experience the full clinical workflow, from patient creation to final 3D model generation. The platform automates measurements, generates professional documentation, and securely stores all data, including the exported STL files, in the patient's history.
 
+
+## 📱 UI Showcase
 ### 🏥 Usage Workflow
 1. **Login** with demo credentials
 2. **Select Patient** from the 20 sample patients
 3. **Capture/Upload** wound image
 4. **Run AI Analysis** (YOLO + ZoeDepth + STL generation)
 5. **Download Results** (3D model, measurements, reports)\
-
-## 📱 UI Screenshots
 
 ### Patient Management & Database Workflow
 <p align="center">
@@ -68,6 +68,12 @@
   <img src="frontend/src/assets/images/YOLOdetection.png" alt="YOLO Wound Detection" width="180" style="margin: 0 8px;"/>
   <img src="frontend/src/assets/images/Depth Analysis.png" alt="Depth Analysis" width="180" style="margin: 0 8px;"/>
   <img src="frontend/src/assets/images/STL preview.png" alt="3D STL Preview" width="180" style="margin: 0 8px;"/>
+</p>
+
+### 3D Printing Results
+<p align="center">
+  <img src="frontend/src/assets/images/printing outcome.png" alt="3D Printed Model - Top View" width="200" style="margin: 0 10px;"/>
+  <img src="frontend/src/assets/images/printing outcome sideview.png" alt="3D Printed Model - Side View" width="200" style="margin: 0 10px;"/>
 </p>
 
 ### AI Processing Pipeline Detail
@@ -90,7 +96,7 @@
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
-<img src="frontend/src/assets/images/highlevel%20system%20architecture.png" alt="High-Level System Architecture" width="600"/>
+<img src="frontend/src/assets/images/highlevel system architecture.png" alt="High-Level System Architecture" width="600"/>
 
 ### Frontend (React Native + Expo)
 - **Framework:** React Native 0.76.9 with Expo SDK 52
@@ -185,6 +191,31 @@ npm install
 npx expo start
 # Scan QR code with Expo Go app on mobile device
 ```
+
+## 📊 Development & Monitoring
+
+### Comprehensive Logging System
+HydroFast features detailed logging across both frontend and backend for comprehensive monitoring and debugging:
+
+**Backend Logging:**
+```bash
+🔵 [2025-08-03 13:45:21,925] INFO - apps.ai_processing.session_manager: Session directory ready
+🔵 [2025-08-03 13:45:28,783] INFO - apps.ai_processing.processors.wound_detector: Successfully processed segmentation mask
+🔵 [2025-08-03 13:45:41,861] INFO - apps.ai_processing.processors.zoedepth_processor: Successfully loaded ZoeD_NK model
+🔵 [2025-08-03 13:46:09,796] INFO - apps.ai_processing.session_manager: Total temp cleanup completed
+```
+
+**Frontend Logging:**
+```bash
+(NOBRIDGE) LOG [PatientService] ✅ Successfully fetched 20 patients (took 115ms)
+(NOBRIDGE) LOG [ProcessingScreen] API call for depth_analysis successful
+(NOBRIDGE) LOG [MeshDetectionScreen] Complete AI processing pipeline finished!
+```
+
+- **Real-time monitoring** of API calls, processing steps, and user interactions
+- **Performance tracking** with execution times and resource usage
+- **Session management** logging for UUID-based temporary file handling
+- **Error tracking** with detailed stack traces and context information
 
 ## ⚠️ Current Limitations
 
